@@ -32,6 +32,7 @@ namespace CoreLib
     /// double screen2worldXlength(double x)
     /// double screen2worldYlength(double y)
     /// ---  ワールド座標系での図形描画
+    /// void drawWPoint(PointD p, int size = 1)
     /// void drawWLine(Line l)
     /// void drawWLine(LineD l)
     /// void drawWLine(Point lps, Point lpe)
@@ -309,6 +310,22 @@ namespace CoreLib
         }
 
         //  ---  ワールド座標系での図形描画
+
+        /// <summary>
+        /// 点の描画
+        /// </summary>
+        /// <param name="p">点座標</param>
+        /// <param name="size">サイズ(screensize)</param>
+        public void drawWPoint(PointD p, int size = 1)
+        {
+            PointD ps = cnvWorld2Screen(p);
+            if (mClipping) {
+                if (!ps.isInside(mView))
+                    return;
+            }
+            drawPoint(ps, size);
+        }
+
 
         /// <summary>
         /// 線分の描画
