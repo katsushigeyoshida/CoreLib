@@ -129,11 +129,29 @@ namespace CoreLib
             return new Point3D(x, y, z);
         }
 
+        /// <summary>
+        /// 指定分を加えた値を返す
+        /// </summary>
+        /// <param name="p">指定値</param>
+        /// <returns>加えた値</returns>
         public Point3D add(Point3D p)
         {
             this.x += p.x;
             this.y += p.y;
             this.z += p.z;
+            return new Point3D(x, y, z);
+        }
+
+        /// <summary>
+        /// 指定分を引いた値を返す
+        /// </summary>
+        /// <param name="p">指定値</param>
+        /// <returns>引いた値</returns>
+        public Point3D sub(Point3D p)
+        {
+            this.x -= p.x;
+            this.y -= p.y;
+            this.z -= p.z;
             return new Point3D(x, y, z);
         }
 
