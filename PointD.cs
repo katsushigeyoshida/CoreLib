@@ -117,6 +117,15 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 符号を反転する
+        /// </summary>
+        public void invert()
+        {
+            x *= -1.0;
+            y *= -1.0;
+        }
+
+        /// <summary>
         /// Pointクラスに変換
         /// </summary>
         /// <returns></returns>
@@ -285,6 +294,19 @@ namespace CoreLib
             double dy = (y - cp.y) * scale;
             x = cp.x + dx;
             y = cp.y + dy;
+        }
+
+        /// <summary>
+        /// 四角形の内側かどうかを判定
+        /// </summary>
+        /// <param name="r">四角形(Rect)</param>
+        /// <returns>内外判定</returns>
+        public bool isInside(Rect r)
+        {
+            if (x < r.Left || x > r.Right || y < r.Top || y > r.Bottom)
+                return false;
+            else
+                return true;
         }
     }
 }
