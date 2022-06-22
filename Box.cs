@@ -400,8 +400,7 @@ namespace CoreLib
         /// <param name="zoom">スケール</param>
         public void zoom(Point cp, double zoom)
         {
-            setCenter(new PointD(cp));
-            this.zoom(zoom);
+            this.zoom(new PointD(cp), zoom);
         }
 
         /// <summary>
@@ -409,10 +408,12 @@ namespace CoreLib
         /// </summary>
         /// <param name="cp">座標</param>
         /// <param name="zoom">スケール</param>
-        public void zoom(PointD cp, double zoom)
+        public void zoom(PointD p, double zoom)
         {
-            setCenter(cp);
             this.zoom(zoom);
+            PointD v = p.vector(this.getCenter());
+            v.scale(zoom - 1.0);
+            this.offset(v);
         }
 
         /// <summary>
