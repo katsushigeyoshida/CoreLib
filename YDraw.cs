@@ -19,6 +19,7 @@ namespace CoreLib
     /// void clear()
     /// void setBackColor(Brush color)
     /// 
+    /// void drawPoint(PointD p, int size = 1)
     /// void drawLine(Line l)
     /// void drawLine(Point ps, Point pe)
     /// void drawLine(double xs, double ys, double xe, double ye)
@@ -111,6 +112,24 @@ namespace CoreLib
         public void setBackColor(Brush color)
         {
             mCanvas.Background = color;
+        }
+
+        /// <summary>
+        /// 点の描画
+        /// </summary>
+        /// <param name="p">点座標</param>
+        /// <param name="size">点の大きさ</param>
+        public void drawPoint(PointD p, int size = 1)
+        {
+            PointD ps = p.toCopy();
+            PointD pe = p.toCopy();
+            ps.Offset(-size / 2.0, -size / 2.0);
+            pe.Offset( size / 2.0, -size / 2.0);
+            for (int y = 0; y < size; y++) {
+                drawLine(ps, pe);
+                ps.Offset(0.0, 1.0);
+                pe.Offset(0.0, 1.0);
+            }
         }
 
         /// <summary>
