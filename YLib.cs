@@ -1467,10 +1467,10 @@ namespace CoreLib
         /// <param name="jdc">ユリウス日</param>
         /// <param name="type">歴日文字列タイプ</param>
         /// <returns>歴日文字列</returns>
-        public string JulianDay2DateYear(int jd, int type = 0)
+        public string JulianDay2DateYear(double jd, int type = 0)
         {
             string date = "";
-            int jdc = jd;
+            double jdc = jd;
             if (type == 9) {
                 //  年変わりを同じ週にするためユリウス日を週頭に変更
                 jd = jdc - (jdc + 1) % 7;
@@ -1501,12 +1501,12 @@ namespace CoreLib
                     break;
                 case 7:     //  yyyy年mm月ww週
                     int jdt = date2JulianDay(year, month, 1) + 1;
-                    weekNo = (jd + 1) / 7 - jdt / 7 + 1;
+                    weekNo = ((int)jd + 1) / 7 - jdt / 7 + 1;
                     date = string.Format("{0}年{1}月{2}週", year, month, weekNo);
                     break;
                 case 8:     //  yyyy年ww週
                 case 9:     //  yyyy年ww週(年変わり同じ週)
-                    weekNo = (jd + 1) / 7 - (date2JulianDay(year, 1, 1) + 1) / 7 + 1;
+                    weekNo = ((int)jd + 1) / 7 - (date2JulianDay(year, 1, 1) + 1) / 7 + 1;
                     date = string.Format("{0}年{1}週", year, weekNo);
                     break;
                 default:    //  yyyy/mm/dd
