@@ -1,8 +1,8 @@
-﻿using Microsoft.Win32;
-using Microsoft.WindowsAPICodePack.Dialogs;
+﻿using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -10,12 +10,20 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace CoreLib
 {
     /// <summary>
     /// 汎用ライブラリ
+    /// 
+    /// ---  API関数  ------
+    /// int GetWindowRect(IntPtr hWnd, out iRect rect)
+    /// IntPtr GetForegroundWindow()
+    /// short GetKeyState(int nVirtkey)
+    /// bool IsClickDownLeft()
+    /// bool IsClickDownRight()
     /// 
     /// ---  システム関連  ------
     ///  void DoEvents()
@@ -90,6 +98,10 @@ namespace CoreLib
     ///  List<PointD> divideCircleList(PointD c, double r, int div = 32)
     ///  List<Point> divideCircleList(Point c, double r, int div = 32)
     ///  Point averagePoint(List<Point> pList)
+    ///  Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe)
+    ///  Bitmap getActiveWindowCapture()
+    ///  BitmapSource bitmap2BitmapSource(Bitmap bitmap)
+    ///  void SaveBitmapSourceToFile(BitmapSource bitmapSource, string filePath)
     ///  
     ///  ---  数値処理関連  ------
     ///  double mod(double a, double b)
@@ -147,6 +159,45 @@ namespace CoreLib
         public void test()
         {
 
+        }
+
+        //  ---  API関数  ------
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct iRect
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+        //  ウインドウの外側のサイズを取得
+        //  hWnd ; ウィンドウ・ハンドル
+        //  rect : Rect構造体
+        [DllImport("user32.Dll")]
+        public static extern int GetWindowRect(IntPtr hWnd, out iRect rect);
+
+        //  フォアグラウンドウィンドウ(ActiveWindow)の取得
+        //  Return : ウィンドウ・ハンドル
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+        //  クリックされているか判定用
+        //  nVirtkey : 状態を知りたいキーコード
+        [DllImport("user32.dll")]
+        private static extern short GetKeyState(int nVirtkey);
+        //クリック判定
+        //  マウス左ボタン(0x01)(VK_LBUTTON)の状態
+        //  押されていたらマイナス値(-127)、なかったら0
+        public bool IsClickDownLeft()
+        {
+            return GetKeyState(0x01) < 0;
+        }
+
+        //  マウス右ボタン(0x02)(VK_RBUTTON)の状態
+        //  押されていたらマイナス値(-127)、なかったら0
+        public bool IsClickDownRight()
+        {
+            return GetKeyState(0x02) < 0;
         }
 
         //  ---  システム関連  ------
@@ -1555,9 +1606,9 @@ namespace CoreLib
         /// <param name="po">点座標</param>
         /// <param name="rotate">回転角度(rad)</param>
         /// <returns>回転後の座標</returns>
-        public Point rotateOrg(Point po, double rotate)
+        public System.Windows.Point rotateOrg(System.Windows.Point po, double rotate)
         {
-            Point p = new Point();
+            System.Windows.Point p = new System.Windows.Point();
             p.X = po.X * Math.Cos(rotate) - po.Y * Math.Sin(rotate);
             p.Y = po.X * Math.Sin(rotate) + po.Y * Math.Cos(rotate);
             return p;
@@ -1570,11 +1621,11 @@ namespace CoreLib
         /// <param name="po">点座標</param>
         /// <param name="rotate">回転角度(rad)</param>
         /// <returns>回転後の座標</returns>
-        public Point rotatePoint(Point ctr, Point po, double rotate)
+        public System.Windows.Point rotatePoint(System.Windows.Point ctr, System.Windows.Point po, double rotate)
         {
-            Point p = new Point(po.X - ctr.X, po.Y - ctr.Y);
+            System.Windows.Point p = new System.Windows.Point(po.X - ctr.X, po.Y - ctr.Y);
             p = rotateOrg(p, rotate);
-            return new Point(p.X + ctr.X, p.Y + ctr.Y);
+            return new System.Windows.Point(p.X + ctr.X, p.Y + ctr.Y);
         }
 
         /// <summary>
@@ -1582,7 +1633,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="po"></param>
         /// <returns></returns>
-        public double angleOrg(Point po)
+        public double angleOrg(System.Windows.Point po)
         {
             return Math.Atan2(po.Y, po.X);
         }
@@ -1593,9 +1644,9 @@ namespace CoreLib
         /// <param name="ctr">中心点</param>
         /// <param name="po">点座標</param>
         /// <returns>回転角度</returns>
-        public double anglePoint(Point ctr, Point po)
+        public double anglePoint(System.Windows.Point ctr, System.Windows.Point po)
         {
-            Point p = new Point(po.X - ctr.X, po.Y - ctr.Y);
+            System.Windows.Point p = new System.Windows.Point(po.X - ctr.X, po.Y - ctr.Y);
             return angleOrg(p);
         }
 
@@ -1616,13 +1667,13 @@ namespace CoreLib
         /// <param name="c">中心座標</param>
         /// <param name="r">半径</param>
         /// <returns>頂点リスト</returns>
-        public List<Point> circlePeakPoint(Point c, double r)
+        public List<System.Windows.Point> circlePeakPoint(System.Windows.Point c, double r)
         {
-            List<Point> cpList = new List<Point>();
-            cpList.Add(new Point(c.X + r, c.Y));
-            cpList.Add(new Point(c.X, c.Y + r));
-            cpList.Add(new Point(c.X - r, c.Y));
-            cpList.Add(new Point(c.X, c.Y - r));
+            List<System.Windows.Point> cpList = new List<System.Windows.Point>();
+            cpList.Add(new System.Windows.Point(c.X + r, c.Y));
+            cpList.Add(new System.Windows.Point(c.X, c.Y + r));
+            cpList.Add(new System.Windows.Point(c.X - r, c.Y));
+            cpList.Add(new System.Windows.Point(c.X, c.Y - r));
             return cpList;
         }
 
@@ -1637,8 +1688,8 @@ namespace CoreLib
         public List<PointD> arcPeakPoint(PointD c, double r, double sa, double ea)
         {
             List<PointD> pointList = new List<PointD>();
-            List<Point> plist = arcPeakPoint(c.toPoint(), r, sa, ea);
-            foreach (Point p in plist)
+            List<System.Windows.Point> plist = arcPeakPoint(c.toPoint(), r, sa, ea);
+            foreach (System.Windows.Point p in plist)
                 pointList.Add(new PointD(p));
             return pointList;
         }
@@ -1651,12 +1702,12 @@ namespace CoreLib
         /// <param name="sa">開始角(rad)</param>
         /// <param name="ea">終了角(rad)</param>
         /// <returns>頂点リスト</returns>
-        public List<Point> arcPeakPoint(Point c, double r, double sa, double ea)
+        public List<System.Windows.Point> arcPeakPoint(System.Windows.Point c, double r, double sa, double ea)
         {
-            Point sp = rotatePoint(c, new Point(c.X + r, c.Y), sa);
-            Point ep = rotatePoint(c, new Point(c.X + r, c.Y), ea);
-            List<Point> cpList = circlePeakPoint(c, r);     //  円としての頂点座標
-            List<Point> plist = new List<Point>();
+            System.Windows.Point sp = rotatePoint(c, new System.Windows.Point(c.X + r, c.Y), sa);
+            System.Windows.Point ep = rotatePoint(c, new System.Windows.Point(c.X + r, c.Y), ea);
+            List<System.Windows.Point> cpList = circlePeakPoint(c, r);     //  円としての頂点座標
+            List<System.Windows.Point> plist = new List<System.Windows.Point>();
             int saq = angleQuadrant(sa);                    //  端点の象限
             int eaq = angleQuadrant(ea);
             if (eaq < saq || (saq == eaq && ea < sa)) {
@@ -1678,12 +1729,12 @@ namespace CoreLib
         /// <returns>ソートリスト</returns>
         public List<PointD> pointSort(List<PointD> plist)
         {
-            List<Point> pointList = new List<Point>();
+            List<System.Windows.Point> pointList = new List<System.Windows.Point>();
             foreach (PointD p in plist)
                 pointList.Add(p.toPoint());
-            List<Point> splist = pointSort(pointList);
+            List<System.Windows.Point> splist = pointSort(pointList);
             plist.Clear();
-            foreach (Point p in splist)
+            foreach (System.Windows.Point p in splist)
                 plist.Add(new PointD(p));
             return plist;
         }
@@ -1693,17 +1744,17 @@ namespace CoreLib
         /// </summary>
         /// <param name="plist">点リスト</param>
         /// <returns>ソートリスト</returns>
-        public List<Point> pointSort(List<Point> plist)
+        public List<System.Windows.Point> pointSort(List<System.Windows.Point> plist)
         {
             if (plist.Count < 2)
                 return plist;
-            Point ap = averagePoint(plist);
-            List<(double, Point)> angList = new List<(double, Point)>();
-            foreach (Point p in plist) {
+            System.Windows.Point ap = averagePoint(plist);
+            List<(double, System.Windows.Point)> angList = new List<(double, System.Windows.Point)>();
+            foreach (System.Windows.Point p in plist) {
                 angList.Add((anglePoint(ap, p), p));
             }
             angList.Sort((a, b) => Math.Sign(a.Item1 - b.Item1));
-            List<Point> spList = new List<Point>();
+            List<System.Windows.Point> spList = new List<System.Windows.Point>();
             for (int i = 0; i < angList.Count; i++)
                 spList.Add(angList[i].Item2);
             return spList;
@@ -1764,9 +1815,9 @@ namespace CoreLib
         /// <returns>点座標リスト</returns>
         public List<PointD> divideCircleList(PointD c, double r, int div = 32)
         {
-            List<Point> pList = divideCircleList(c.toPoint(), r, div);
+            List<System.Windows.Point> pList = divideCircleList(c.toPoint(), r, div);
             List<PointD> pointList = new List<PointD>();
-            foreach (Point p in pList)
+            foreach (System.Windows.Point p in pList)
                 pointList.Add(new PointD(p));
             return pointList;
         }
@@ -1778,14 +1829,14 @@ namespace CoreLib
         /// <param name="r">半径</param>
         /// <param name="div">分割数</param>
         /// <returns>点座標リスト</returns>
-        public List<Point> divideCircleList(Point c, double r, int div = 32)
+        public List<System.Windows.Point> divideCircleList(System.Windows.Point c, double r, int div = 32)
         {
-            List<Point> plist = new List<Point>();
+            List<System.Windows.Point> plist = new List<System.Windows.Point>();
             if (4 < div) {
                 for (double a = 0.0; a < Math.PI * 2.0; a += Math.PI * 2.0 / div) {
                     double dx = r * Math.Cos(a);
                     double dy = r * Math.Sin(a);
-                    Point p = new Point(c.X + dx, c.Y + dy);
+                    System.Windows.Point p = new System.Windows.Point(c.X + dx, c.Y + dy);
                     plist.Add(p);
                 }
             }
@@ -1798,10 +1849,10 @@ namespace CoreLib
         /// </summary>
         /// <param name="pList">点リスト</param>
         /// <returns>点座標</returns>
-        public Point averagePoint(List<Point> pList)
+        public System.Windows.Point averagePoint(List<System.Windows.Point> pList)
         {
-            Point ap = new Point();
-            foreach (Point lp in pList) {
+            System.Windows.Point ap = new System.Windows.Point();
+            foreach (System.Windows.Point lp in pList) {
                 ap.X += lp.X;
                 ap.Y += lp.Y;
             }
@@ -1809,6 +1860,95 @@ namespace CoreLib
             ap.Y /= pList.Count;
             return ap;
         }
+
+        /// <summary>
+        /// 画面の指定領域をキャプチャする
+        /// </summary>
+        /// <param name="ps">左上座標</param>
+        /// <param name="pe">右下座標</param>
+        /// <returns>Bitmapデータ</returns>
+        public Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe)
+        {
+            if (ps.X > pe.X) {
+                int t = ps.X;
+                ps.X = pe.X;
+                pe.X = t;
+            }
+            if (ps.Y > pe.Y) {
+                int t = ps.Y;
+                ps.Y = pe.Y;
+                pe.Y = t;
+            }
+            Rectangle rectangle = new Rectangle(ps.X, ps.Y, pe.X - ps.X, pe.Y - ps.Y);
+            Bitmap bitmap = new Bitmap(rectangle.Width, rectangle.Height);
+            Graphics graphics = Graphics.FromImage(bitmap);
+            graphics.CopyFromScreen(new System.Drawing.Point(rectangle.X, rectangle.Y),
+                new System.Drawing.Point(0, 0), rectangle.Size);
+            graphics.Dispose();
+            return bitmap;
+        }
+
+        /// <summary>
+        /// アクティブウィンドウの画面をキャプチャする
+        /// </summary>
+        /// <returns>Bitmapデータ</returns>
+        public Bitmap getActiveWindowCapture()
+        {
+            YLib.iRect rect;
+            IntPtr activeWindow = YLib.GetForegroundWindow();
+            YLib.GetWindowRect(activeWindow, out rect);
+            return getScreen(new System.Drawing.Point(rect.left + 7, rect.top),
+                new System.Drawing.Point(rect.right - 7, rect.bottom - 7));
+        }
+
+        /// <summary>
+        /// BitMap からBitmapSourceに変換
+        /// https://qiita.com/YSRKEN/items/a24bf2173f0129a5825c
+        /// </summary>
+        /// <param name="bitmap"></param>
+        /// <returns></returns>
+        public BitmapSource bitmap2BitmapSource(System.Drawing.Bitmap bitmap)
+        {
+            // MemoryStreamを利用した変換処理
+            using (var ms = new System.IO.MemoryStream()) {
+                // MemoryStreamに書き出す
+                bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+                // MemoryStreamをシーク
+                ms.Seek(0, System.IO.SeekOrigin.Begin);
+                // MemoryStreamからBitmapFrameを作成
+                // (BitmapFrameはBitmapSourceを継承しているのでそのまま渡せばOK)
+                System.Windows.Media.Imaging.BitmapSource bitmapSource =
+                    System.Windows.Media.Imaging.BitmapFrame.Create(
+                        ms,
+                        System.Windows.Media.Imaging.BitmapCreateOptions.None,
+                        System.Windows.Media.Imaging.BitmapCacheOption.OnLoad
+                    );
+                return bitmapSource;
+            }
+        }
+
+        /// <summary>
+        /// 画像データをファイルに保存
+        /// </summary>
+        /// <param name="bitmapSource">ビットマップデータ</param>
+        /// <param name="filePath">ファイル名(png/jpg/bmp)</param>
+        public void SaveBitmapSourceToFile(BitmapSource bitmapSource, string filePath)
+        {
+            string ext = System.IO.Path.GetExtension(filePath);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create)) {
+                BitmapEncoder encoder = new PngBitmapEncoder();
+                if (ext.ToLower().CompareTo(".png") == 0)
+                    encoder = new PngBitmapEncoder();
+                else if (ext.ToLower().CompareTo(".jpeg") == 0 || ext.ToLower().CompareTo(".jpg") == 0)
+                    encoder = new JpegBitmapEncoder();
+                else if (ext.ToLower().CompareTo(".bmp") == 0)
+                    encoder = new BmpBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                encoder.Save(fileStream);
+            }
+        }
+
 
         //  ---  数値処理関連  ------
 
@@ -2040,7 +2180,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="coordinate">度分秒文字列</param>
         /// <returns>座標値</returns>
-        public Point cnvCoordinate(string coordinate)
+        public System.Windows.Point cnvCoordinate(string coordinate)
         {
             char[] stripChars = new char[] { ' ', '.' };
             double latitude = 0.0;
@@ -2048,7 +2188,7 @@ namespace CoreLib
             int a1 = coordinate.IndexOf("北緯");
             int b1 = coordinate.IndexOf("東経");
             if (a1 < 0 || b1 < 0)
-                return new Point(0, 0);
+                return new System.Windows.Point(0, 0);
             int n = coordinate.IndexOf("北緯", b1);
             if (0 <= n)
                 coordinate = coordinate.Substring(0, n);
@@ -2084,7 +2224,7 @@ namespace CoreLib
                 }
             }
 
-            return new Point(longitude, latitude);
+            return new System.Windows.Point(longitude, latitude);
         }
 
         /// <summary>
@@ -2093,7 +2233,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="coordinate">座標</param>
         /// <returns></returns>
-        public Point cnvCoordinate2(string coordinate)
+        public System.Windows.Point cnvCoordinate2(string coordinate)
         {
             char[] stripChars = new char[] { ' ', '.' };
             List<string[]> datas = getPattern(coordinate.Trim(), mCoordinatePattern[0]);
@@ -2112,7 +2252,7 @@ namespace CoreLib
                     }
                 }
 
-                return new Point(longitude, latitude);
+                return new System.Windows.Point(longitude, latitude);
             }
             //  秒なし
             datas = getPattern(coordinate.Trim(), mCoordinatePattern[1]);
@@ -2129,7 +2269,7 @@ namespace CoreLib
                     }
                 }
 
-                return new Point(longitude, latitude);
+                return new System.Windows.Point(longitude, latitude);
             }
             //  分・秒なし
             datas = getPattern(coordinate.Trim(), mCoordinatePattern[2]);
@@ -2144,10 +2284,10 @@ namespace CoreLib
                     }
                 }
 
-                return new Point(longitude, latitude);
+                return new System.Windows.Point(longitude, latitude);
             }
 
-            return new Point(0.0, 0.0);
+            return new System.Windows.Point(0.0, 0.0);
         }
 
         /// <summary>
