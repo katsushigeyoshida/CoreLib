@@ -79,6 +79,7 @@ namespace CoreLib
         public bool mInvert = false;            //  倒立
         public bool mAspectFix = true;          //  アスペクト比固定
         public bool mTextOverWrite = true;      //  文字が重なった時に前の文字を透かす
+        public double mPerspectivLength = 0.0;
 
         private double[,] mMatrix = new double[4,4];    //  3D座標変換パラメータ
 
@@ -742,8 +743,8 @@ namespace CoreLib
         /// <param name="ep">終点座標</param>
         public void draw3DWLine(Point3D sp, Point3D ep)
         {
-            Point3D sp3 = matrix(sp);
-            Point3D ep3 = matrix(ep);
+            Point3D sp3 = perspective(matrix(sp));
+            Point3D ep3 = perspective(matrix(ep));
             drawWLine(sp3.toPointXY(), ep3.toPointXY());
         }
 
@@ -754,8 +755,27 @@ namespace CoreLib
         /// <param name="r">円のの半径</param>
         public void draw3DWCircle(Point3D cp, double r)
         {
-            Point3D cp3 = matrix(cp);
+            Point3D cp3 = perspective(matrix(cp));
             drawWCircle(cp3.toPointXY(), r);
+        }
+
+        /// <summary>
+        /// 3次元座標でポリゴンを描画
+        /// </summary>
+        /// <param name="wpList">3D座標リスト</param>
+        public void draw3DWPolygon(List<Point3D> wpList)
+        {
+            List<Point3D> p3List = new List<Point3D>();
+            for (int i = 0; i < wpList.Count; i++) {
+                p3List.Add(perspective(matrix(wpList[i])));
+            }
+            if (!shading(p3List))
+                return;
+            List<PointD> pList = new List<PointD>();
+            for (int i = 0; i < p3List.Count; i++) {
+                pList.Add(p3List[i].toPointXY());
+            }
+            drawWPolygon(pList);
         }
 
         /// <summary>
@@ -771,6 +791,38 @@ namespace CoreLib
             op.z = mMatrix[2, 0] * p.x + mMatrix[2, 1] * p.y + mMatrix[2, 2] * p.z + mMatrix[2, 3];
             return op;
         }
+
+        /// <summary>
+        /// 透視変換
+        /// 視点からスクリーン(z = 0)までの距離 (mPerspectivLength) を設定
+        /// </summary>
+        /// <param name="p">3D座標</param>
+        /// <returns></returns>
+        private Point3D perspective(Point3D p)
+        {
+            Point3D po = new Point3D(p.x, p.y, p.z);
+            if (mPerspectivLength != 0) {
+                double w = mPerspectivLength / (p.z + mPerspectivLength);
+                po.x = p.x / w;
+                po.y = p.y / w;
+            }
+            return po;
+        }
+
+        /// <summary>
+        /// 隠面判定
+        /// </summary>
+        /// <param name="plist">3D座標リスト</param>
+        /// <returns>隠面判定(隠面=false)</returns>
+        public bool shading(List<Point3D> plist)
+        {
+            if (plist.Count < 3)
+                return true;
+            Point3D v1 = plist[0].vector(plist[1]);
+            Point3D v2 = plist[1].vector(plist[2]);
+            return v1.crossProduct(v2).z > 0;
+        }
+
 
         //  ---  三次元変換マトリックスパラメータの設定
 
