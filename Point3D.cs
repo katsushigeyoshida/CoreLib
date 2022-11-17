@@ -121,6 +121,41 @@ namespace CoreLib
             this.z += offset.z;
         }
 
+        /// <summary>
+        /// 自点座標から指定座標へのベクトル
+        /// </summary>
+        /// <param name="p">指定座標</param>
+        /// <returns>ベクトル</returns>
+        public Point3D vector(Point3D p)
+        {
+            return new Point3D(p.x - x, p.y - y, p.z - z);
+        }
+
+        /// <summary>
+        /// 自ベクトルと指定ベクトルの内積(合成ベクトルの長さ)
+        /// </summary>
+        /// <param name="p">指定ベクトル</param>
+        /// <returns>内積</returns>
+        public double innerProduct(Point3D p)
+        {
+            return (x * p.x + y * p.y + z * p.z);
+        }
+
+        /// <summary>
+        /// 自ベクトルと指定ベクトルの外積(２つのベクトルが作る平行四辺形に垂直のベクトル)
+        /// </summary>
+        /// <param name="p">指定ベクトル</param>
+        /// <returns>内積</returns>
+        public Point3D crossProduct(Point3D p)
+        {
+            Point3D v = new Point3D();
+            v.x =  y * p.z - p.y * z;
+            v.y = -x * p.z + p.x * z;
+            v.z =  x * p.y - p.x * y;
+            return v;
+        }
+
+
         public Point3D add(double x, double y, double z)
         {
             this.x += x;

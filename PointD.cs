@@ -195,6 +195,27 @@ namespace CoreLib
             return new PointD(p.x - x, p.y - y);
         }
 
+
+        /// <summary>
+        /// 自ベクトルと指定ベクトルの内積(合成ベクトルの長さ)
+        /// </summary>
+        /// <param name="p">指定ベクトル</param>
+        /// <returns>内積</returns>
+        public double innerProduct(PointD p)
+        {
+            return (x * p.x + y * p.y);
+        }
+
+        /// <summary>
+        /// 自ベクトルと指定ベクトルの外積(ベクトルの平行判定 0の時平行、点が線上かの判定)
+        /// </summary>
+        /// <param name="p">指定ベクトル</param>
+        /// <returns>外積</returns>
+        public double crossProduct(PointD p)
+        {
+            return (x * p.y - y * p.x);
+        }
+
         /// <summary>
         /// 極座標からの取り込み
         /// </summary>
