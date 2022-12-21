@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -59,17 +61,6 @@ namespace CoreLib
     /// Point rotatePoint(Point po, Point ctr, double rotate)
     /// Point rotateOrg(Point po, double rotate)
     /// Size measureWText(string text)
-    /// ---  三次元変換表示
-    ///  void draw3DWLine(Point3D sp, Point3D ep)
-    ///  void draw3DWCircle(Point3D cp, double r)
-    ///  Point3D matrix(Point3D p)
-    ///  ---  三次元変換マトリックスパラメータの設定
-    ///  void matrixClear()
-    ///  tarnslate(double dx, double dy, double dz)
-    ///  void rotateX(double th)
-    ///  void rotateY(double th)
-    ///  void rotateZ(double th)
-    ///  void scale(double sx, double sy, double sz)
     /// 
     /// </summary>
     public class YWorldDraw : YDraw
@@ -79,9 +70,6 @@ namespace CoreLib
         public bool mInvert = false;            //  倒立
         public bool mAspectFix = true;          //  アスペクト比固定
         public bool mTextOverWrite = true;      //  文字が重なった時に前の文字を透かす
-        public double mPerspectivLength = 0.0;
-
-        private double[,] mMatrix = new double[4,4];    //  3D座標変換パラメータ
 
         private YLib ylib = new YLib();
 
@@ -732,195 +720,6 @@ namespace CoreLib
             size.Height = size.Height / Math.Abs(world2screenYlength(1));
 
             return size;
-        }
-
-        //  ---  三次元変換表示
-
-        /// <summary>
-        /// 3次元座標での線分の描画
-        /// </summary>
-        /// <param name="sp">始点座標</param>
-        /// <param name="ep">終点座標</param>
-        public void draw3DWLine(Point3D sp, Point3D ep)
-        {
-            Point3D sp3 = perspective(matrix(sp));
-            Point3D ep3 = perspective(matrix(ep));
-            drawWLine(sp3.toPointXY(), ep3.toPointXY());
-        }
-
-        /// <summary>
-        /// 3次元座標で円を描画
-        /// </summary>
-        /// <param name="cp">中心座標</param>
-        /// <param name="r">円のの半径</param>
-        public void draw3DWCircle(Point3D cp, double r)
-        {
-            Point3D cp3 = perspective(matrix(cp));
-            drawWCircle(cp3.toPointXY(), r);
-        }
-
-        /// <summary>
-        /// 3次元座標でポリゴンを描画
-        /// </summary>
-        /// <param name="wpList">3D座標リスト</param>
-        public void draw3DWPolygon(List<Point3D> wpList)
-        {
-            List<Point3D> p3List = new List<Point3D>();
-            for (int i = 0; i < wpList.Count; i++) {
-                p3List.Add(perspective(matrix(wpList[i])));
-            }
-            if (!shading(p3List))
-                return;
-            List<PointD> pList = new List<PointD>();
-            for (int i = 0; i < p3List.Count; i++) {
-                pList.Add(p3List[i].toPointXY());
-            }
-            drawWPolygon(pList);
-        }
-
-        /// <summary>
-        /// 変換パラメータを使って座標変換をおこなう
-        /// </summary>
-        /// <param name="p">3次元座標</param>
-        /// <returns>変換座標</returns>
-        private Point3D matrix(Point3D p)
-        {
-            Point3D op = new Point3D();
-            op.x = mMatrix[0, 0] * p.x + mMatrix[0, 1] * p.y + mMatrix[0, 2] * p.z + mMatrix[0, 3];
-            op.y = mMatrix[1, 0] * p.x + mMatrix[1, 1] * p.y + mMatrix[1, 2] * p.z + mMatrix[1, 3];
-            op.z = mMatrix[2, 0] * p.x + mMatrix[2, 1] * p.y + mMatrix[2, 2] * p.z + mMatrix[2, 3];
-            return op;
-        }
-
-        /// <summary>
-        /// 透視変換
-        /// 視点からスクリーン(z = 0)までの距離 (mPerspectivLength) を設定
-        /// </summary>
-        /// <param name="p">3D座標</param>
-        /// <returns></returns>
-        private Point3D perspective(Point3D p)
-        {
-            Point3D po = new Point3D(p.x, p.y, p.z);
-            if (mPerspectivLength != 0) {
-                double w = mPerspectivLength / (p.z + mPerspectivLength);
-                po.x = p.x / w;
-                po.y = p.y / w;
-            }
-            return po;
-        }
-
-        /// <summary>
-        /// 隠面判定
-        /// </summary>
-        /// <param name="plist">3D座標リスト</param>
-        /// <returns>隠面判定(隠面=false)</returns>
-        public bool shading(List<Point3D> plist)
-        {
-            if (plist.Count < 3)
-                return true;
-            Point3D v1 = plist[0].vector(plist[1]);
-            Point3D v2 = plist[1].vector(plist[2]);
-            return v1.crossProduct(v2).z > 0;
-        }
-
-
-        //  ---  三次元変換マトリックスパラメータの設定
-
-        /// <summary>
-        /// 座標変換パラメートの初期化
-        /// 単位行列を設定
-        /// </summary>
-        public void matrixClear()
-        {
-            mMatrix = ylib.unitMatrix(4);
-        }
-
-        /// <summary>
-        /// 平行移動パラメータ追加設定
-        /// 既存変換パラメータに行列の積を実施
-        /// </summary>
-        /// <param name="dx">X軸方向の移動量</param>
-        /// <param name="dy">Y軸方向の移動量</param>
-        /// <param name="dz">Z軸方向の移動量</param>
-        public void tarnslate(double dx, double dy, double dz)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = 1;
-            mp[1, 1] = 1;
-            mp[2, 2] = 1;
-            mp[3, 0] = dx;
-            mp[3, 1] = dy;
-            mp[3, 2] = dz;
-            mp[3, 3] = 1;
-            mMatrix = ylib.matrixMulti(mMatrix, mp);
-        }
-
-        /// <summary>
-        /// X軸回転パラメータ追加設定
-        /// 既存変換パラメータに行列の積を実施
-        /// </summary>
-        /// <param name="th">回転角(rad)</param>
-        public void rotateX(double th)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = 1.0;
-            mp[1, 1] =  Math.Cos(th);
-            mp[1, 2] =  Math.Sin(th);
-            mp[2, 1] = -Math.Sin(th);
-            mp[2, 2] =  Math.Cos(th);
-            mp[3, 3] = 1.0;
-            mMatrix = ylib.matrixMulti(mMatrix, mp);
-        }
-
-        /// <summary>
-        /// Y軸回転パラメータ追加設定
-        /// 既存変換パラメータに行列の積を実施
-        /// </summary>
-        /// <param name="th">回転角(rad)</param>
-        public void rotateY(double th)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] =  Math.Cos(th);
-            mp[0, 2] = -Math.Sin(th);
-            mp[1, 1] = 1.0;
-            mp[2, 0] =  Math.Sin(th);
-            mp[2, 2] =  Math.Cos(th);
-            mp[3, 3] = 1.0;
-            mMatrix = ylib.matrixMulti(mMatrix, mp);
-        }
-
-        /// <summary>
-        /// Z軸回転パラメータ追加設定
-        /// 既存変換パラメータに行列の積を実施
-        /// </summary>
-        /// <param name="th">回転角(rad)</param>
-        public void rotateZ(double th)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] =  Math.Cos(th);
-            mp[0, 1] =  Math.Sin(th);
-            mp[1, 0] = -Math.Sin(th);
-            mp[1, 1] =  Math.Cos(th);
-            mp[2, 2] = 1.0;
-            mp[3, 3] = 1.0;
-            mMatrix = ylib.matrixMulti(mMatrix, mp);
-        }
-
-        /// <summary>
-        /// 3次元縮尺パラメータ追加設定
-        /// 既存変換パラメータに行列の積を実施
-        /// </summary>
-        /// <param name="sx">X方向縮尺</param>
-        /// <param name="sy">Y方向縮尺</param>
-        /// <param name="sz">Z方向縮尺</param>
-        public void scale(double sx, double sy, double sz)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = sx;
-            mp[1, 1] = sy;
-            mp[2, 2] = sz;
-            mp[3, 3] = 1.0;
-            mMatrix = ylib.matrixMulti(mMatrix, mp);
         }
 
     }
