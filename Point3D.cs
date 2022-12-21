@@ -64,6 +64,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コピーデータを返す
+        /// </summary>
+        /// <returns>コピー座標</returns>
+        public Point3D toCopy()
+        {
+            Point3D p = new Point3D();
+            p.x = this.x;
+            p.y = this.y;
+            p.z = this.z;
+            return p;
+        }
+
+        /// <summary>
         /// XY座標を2次元変換
         /// </summary>
         /// <returns>2D座標</returns>
@@ -91,13 +104,25 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 座標値を〇クリアする
+        /// 座標値を0クリアする
         /// </summary>
         public void clear()
         {
             this.x = 0.0;
             this.y = 0.0;
             this.z = 0.0;
+        }
+
+        /// <summary>
+        /// 座標値が0かの確認
+        /// </summary>
+        /// <returns>0状態</returns>
+        public bool isEmpty()
+        {
+            if (x == 0 && y ==0 && z == 0)
+                return true;
+            else
+                return false;
         }
 
         /// <summary>
@@ -129,6 +154,20 @@ namespace CoreLib
         public Point3D vector(Point3D p)
         {
             return new Point3D(p.x - x, p.y - y, p.z - z);
+        }
+
+        /// <summary>
+        /// ベクトル同士の角度(内積から角度を求める)
+        /// 内積(a1b1+a2b2+a3b3) = |a||b|cos(θ)
+        /// cos(θ) = (a1b1+a2b2+a3b3)/(|a||b|)
+        /// </summary>
+        /// <param name="v">対象ベクトル</param>
+        /// <returns>角度(rad)</returns>
+        public double angle(Point3D v)
+        {
+            double costheta = (x * v.x + y * v.y + z * v.z) / 
+                (Math.Sqrt(x * x + y * y + z * z) * Math.Sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+            return Math.Acos(costheta);
         }
 
         /// <summary>
@@ -280,12 +319,12 @@ namespace CoreLib
         /// </summary>
         /// <param name="mp"></param>
         /// <returns></returns>
-        Point3D matrix(double[,] mp)
+        public Point3D matrix(double[,] mp)
         {
             Point3D p = new Point3D();
-            p.x = mp[0, 0] * x + mp[0, 1] * y + mp[0, 2] * z + mp[0, 3];
-            p.y = mp[1, 0] * x + mp[1, 1] * y + mp[1, 2] * z + mp[1, 3];
-            p.z = mp[2, 0] * x + mp[2, 1] * y + mp[2, 2] * z + mp[2, 3];
+            p.x = mp[0, 0] * x + mp[0, 1] * y + mp[0, 2] * z + mp[3, 0];
+            p.y = mp[1, 0] * x + mp[1, 1] * y + mp[1, 2] * z + mp[3, 1];
+            p.z = mp[2, 0] * x + mp[2, 1] * y + mp[2, 2] * z + mp[3, 2];
             return p;
         }
     }
