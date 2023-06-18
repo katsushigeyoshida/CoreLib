@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
+using System.Runtime.ConstrainedExecution;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace CoreLib
 {
@@ -17,6 +15,8 @@ namespace CoreLib
     /// ---  ViewとWorldの領域設定
     /// void setViewArea(double left, double top, double right, double bottom)
     /// void setWorldWindow(double left, double top, double right, double bottom)
+    /// void setWorldWindow(Box area)
+    /// void setWorldWindow()
     /// void setWorldTextSize(double size)
     /// double getWorldTextSize()
     /// void aspectFix()
@@ -25,9 +25,7 @@ namespace CoreLib
     /// double cnvWorld2ScreenY(double y)
     /// double cnvScreen2WorldX(double x)
     /// double cnvScreen2WorldY(double y)
-    /// Point cnvWorld2Screen(Point wp)
     /// PointD cnvWorld2Screen(PointD wp)
-    /// Point cnvScreen2World(Point sp)
     /// PointD cnvScreen2World(PointD sp)
     /// double world2screenXlength(double x)
     /// double world2screenYlength(double y)
@@ -35,31 +33,23 @@ namespace CoreLib
     /// double screen2worldYlength(double y)
     /// ---  ワールド座標系での図形描画
     /// void drawWPoint(PointD p, int size = 1)
-    /// void drawWLine(Line l)
     /// void drawWLine(LineD l)
-    /// void drawWLine(Point lps, Point lpe)
     /// void drawWLine(PointD lps, PointD lpe)
-    /// void drawWArc(Point center, double radius, double startAngle, double endAngle)
+    /// void drawWArc(ArcD arc)
     /// void drawWArc(PointD center, double radius, double startAngle, double endAngle)
-    /// void drawWArcSub(Point center, double radius, double startAngle, double endAngle)
     /// void drawWArcSub(PointD center, double radius, double startAngle, double endAngle)
-    /// void drawWCircle(Point ctr, double radius)
     /// void drawWCircle(PointD ctr, double radius)
     /// void drawWRectangle(Rect rect, double rotate = 0.0
+    /// void drawWRectangle(Box box, double rotate = 0.0)
     /// void drawWRectangle(PointD ps, PointD pe, double rotate = 0.0)
     /// List<PointD> toPointList(PointD ps, PointD pe, double rotate = 0.0)
     /// void drawWPolygon(List<Point> wpList)
     /// void drawWPolygon(List<PointD> wpList)
-    /// void drawWText(string text, PointD p, double rotate = 0.0)
-    /// void drawWText(string text, Point p, double rotate = 0.0)
-    /// void drawWText(string text, PointD p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
-    /// void drawWText(string text, Point p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
+    /// void drawWText(TextD text)
+    /// void drawWText(string text, PointD p, double textSize = 0, double rotate = 0, 
+    ///     HorizontalAlignment ha = HorizontalAlignment.Left, VerticalAlignment va = VerticalAlignment.Top)
     /// ---  文字列パラメータ処理
-    /// List<Point> toPointList(Point ps, Point pe, double rotate = 0.0)
-    /// Box textBoxArea(string text, Point p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
-    /// Point transformPoint(Point po, Size size, double rotate)
-    /// Point rotatePoint(Point po, Point ctr, double rotate)
-    /// Point rotateOrg(Point po, double rotate)
+    /// List<PointD> textBoxArea(string text, PointD p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
     /// Size measureWText(string text)
     /// 
     /// </summary>
@@ -125,8 +115,34 @@ namespace CoreLib
         public void setWorldWindow(double left, double top, double right, double bottom)
         {
             //  Rectにデータを入れるとleft<right, top<bottomの関係に補正される
-            mWorld = new Box(new Point(left, top), new Point(right, bottom));
+            mWorld = new Box(new PointD(left, top), new PointD(right, bottom));
             mInvert = top < bottom;
+            if (mAspectFix)
+                aspectFix();
+        }
+
+        /// <summary>
+        /// WorldWindowの設定
+        /// </summary>
+        /// <param name="area">Box領域</param>
+        public void setWorldWindow(Box area)
+        {
+            //  Rectにデータを入れるとleft<right, top<bottomの関係に補正される
+            mWorld = area;
+            mInvert = mWorld.Top < mWorld.Bottom;   //  上下の向き
+            if (mAspectFix)
+                aspectFix();
+        }
+
+        /// <summary>
+        /// WorldWindowを再計算
+        /// </summary>
+        public void setWorldWindow()
+        {
+            //  Rectにデータを入れるとleft<right, top<bottomの関係に補正される
+            if (mWorld == null)
+                mWorld = new Box(mView);
+            mInvert = mWorld.Top < mWorld.Bottom;   //  上下の向き
             if (mAspectFix)
                 aspectFix();
         }
@@ -146,7 +162,7 @@ namespace CoreLib
         /// <returns>文字サイズ</returns>
         public double getWorldTextSize()
         {
-            return screen2worldYlength(mTextSize);
+            return Math.Abs(screen2worldYlength(mTextSize));
         }
 
         /// <summary>
@@ -161,12 +177,12 @@ namespace CoreLib
             //  縦横で小さい方を論理座標をビューポートに合わせる
             if (mWorld.Height < wHeight) {
                 double dy = Math.Sign(mWorld.Bottom - mWorld.Top) * (wHeight - mWorld.Height);
-                mWorld = new Box(new Point(mWorld.Left, mWorld.Top - dy / 2),
-                    new Point(mWorld.Right, mWorld.Bottom + dy / 2));
+                mWorld = new Box(new PointD(mWorld.Left, mWorld.Top - dy / 2),
+                    new PointD(mWorld.Right, mWorld.Bottom + dy / 2));
             } else {
                 double dx = Math.Sign(mWorld.Right - mWorld.Left) * (wWidth - mWorld.Width);
-                mWorld = new Box(new Point(mWorld.Left - dx / 2, mWorld.Top),
-                    new Point(mWorld.Right + dx / 2, mWorld.Bottom));
+                mWorld = new Box(new PointD(mWorld.Left - dx / 2, mWorld.Top),
+                    new PointD(mWorld.Right + dx / 2, mWorld.Bottom));
             }
         }
 
@@ -217,35 +233,32 @@ namespace CoreLib
         /// </summary>
         /// <param name="wp">ワールド座標</param>
         /// <returns>スクリーン座標</returns>
-        public Point cnvWorld2Screen(Point wp)
-        {
-            Point sp = new Point();
-            sp.X = cnvWorld2ScreenX(wp.X);
-            sp.Y = cnvWorld2ScreenY(wp.Y);
-            return sp;
-        }
-
-        /// <summary>
-        /// 論理座標(ワールド座標)をスクリーン座標に変換する
-        /// </summary>
-        /// <param name="wp">ワールド座標</param>
-        /// <returns>スクリーン座標</returns>
         public PointD cnvWorld2Screen(PointD wp)
         {
            return new PointD(cnvWorld2ScreenX(wp.x), cnvWorld2ScreenY(wp.y));
         }
 
         /// <summary>
-        /// スクリーン座標を論理座標(ワールド座標)に変換
+        /// 論理座標(ワールド座標)をスクリーン座標に変換する
         /// </summary>
-        /// <param name="sp"></param>
-        /// <returns></returns>
-        public Point cnvScreen2World(Point sp)
+        /// <param name="wl">ワールド座標<</param>
+        /// <returns>スクリーン座標</returns>
+        public LineD cnvWorld2Screen(LineD wl)
         {
-            Point wp = new Point();
-            wp.X = cnvScreen2WorldX(sp.X);
-            wp.Y = cnvScreen2WorldY(sp.Y);
-            return wp;
+            return new LineD(cnvWorld2Screen(wl.ps), cnvWorld2Screen(wl.pe));
+        }
+
+        /// <summary>
+        /// 論理座標(ワールド座標)をスクリーン座標に変換する
+        /// </summary>
+        /// <param name="warc">ワールド座標</param>
+        /// <returns>スクリーン座標</returns>
+        public ArcD cnvWorld2Screen(ArcD warc)
+        {
+            ArcD arc = new ArcD(cnvWorld2Screen(warc.mCp), world2screenXlength(warc.mR));
+            arc.mSa = mInvert ? warc.mSa : Math.PI * 2 - warc.mEa;
+            arc.mEa = mInvert ? warc.mEa : Math.PI * 2 - warc.mSa;
+            return arc;
         }
 
         /// <summary>
@@ -302,59 +315,31 @@ namespace CoreLib
 
         /// <summary>
         /// 点の描画
+        /// 形状 type : 0=dot 1:cross 2:plus 3:box 4: Circle
         /// </summary>
         /// <param name="p">点座標</param>
         /// <param name="size">サイズ(screensize)</param>
-        public void drawWPoint(PointD p, int size = 1)
+        public void drawWPoint(PointD p)
         {
             PointD ps = cnvWorld2Screen(p);
             if (mClipping) {
                 if (!ps.isInside(mView))
                     return;
             }
-            drawPoint(ps, size);
-        }
-
-
-        /// <summary>
-        /// 線分の描画
-        /// </summary>
-        /// <param name="l">線分データ</param>
-        public void drawWLine(Line l)
-        {
-            drawWLine(new PointD(l.X1, l.Y1), new PointD(l.X2, l.Y2));
+            drawPoint(ps);
         }
 
         /// <summary>
-        /// 線分の描画
+        /// 線分の描画(線種 0:実線 1:破線 2:一点鎖線 2:二点鎖線)
         /// </summary>
         /// <param name="l">線分データ</param>
         public void drawWLine(LineD l)
         {
-            drawWLine(new Point(l.ps.x, l.ps.y), new Point(l.pe.x, l.pe.y));
+            drawWLine(l.ps, l.pe);
         }
 
         /// <summary>
-        /// 線分の描画
-        /// </summary>
-        /// <param name="ps">始点座標</param>
-        /// <param name="pe">終点座標</param>
-        public void drawWLine(Point lps, Point lpe)
-        {
-            Point ps = cnvWorld2Screen(lps);
-            Point pe = cnvWorld2Screen(lpe);
-            if (mClipping) {
-                LineD l = new LineD(ps, pe);
-                LineD cl = l.clippingLine(mView);
-                if (cl != null)
-                    drawLine(cl.ps, cl.pe);
-            } else {
-                drawLine(ps, pe);
-            }
-        }
-
-        /// <summary>
-        /// 線分の描画
+        /// 線分の描画(線種 0:実線 1:破線 2:一点鎖線 2:二点鎖線)
         /// </summary>
         /// <param name="ps">始点座標</param>
         /// <param name="pe">終点座標</param>
@@ -366,9 +351,9 @@ namespace CoreLib
                 LineD l = new LineD(ps, pe);
                 LineD cl = l.clippingLine(mView);
                 if (cl != null)
-                    drawLine(cl.ps, cl.pe);
+                    drawLine(cl);
             } else {
-                drawLine(ps, pe);
+                drawLine(new LineD(ps, pe));
             }
         }
 
@@ -379,52 +364,64 @@ namespace CoreLib
         /// <param name="radius">半径</param>
         /// <param name="startAngle">開始角度(rad)</param>
         /// <param name="endAngle">終了角度(rad)</param>
-        public void drawWArc(Point center, double radius, double startAngle, double endAngle)
+        public void drawWArc(PointD center, double radius, double startAngle, double endAngle, bool close = true)
         {
-            drawWArc(new PointD(center), radius, startAngle, endAngle);
+            drawWArc(new ArcD(center, radius, startAngle, endAngle));
         }
 
         /// <summary>
         /// 円弧の描画
         /// </summary>
-        /// <param name="center">中心座標</param>
-        /// <param name="radius">半径</param>
-        /// <param name="startAngle">開始角度(rad)</param>
-        /// <param name="endAngle">終了角度(rad)</param>
-        public void drawWArc(PointD center, double radius, double startAngle, double endAngle)
+        /// <param name="arc">ArcD</param>
+        public void drawWArc(ArcD arc, bool close = true)
         {
-            if (2 * Math.PI <= Math.Abs(endAngle - startAngle))
-                drawWCircle(center, radius);
-            else {
+            if (2 * Math.PI <= Math.Abs(arc.mOpenAngle)) {
+                //  円の描画
+                drawWCircle(arc.mCp, arc.mR, close);
+            } else {
+                //  円弧の描画
                 if (mClipping) {
-                    if (mWorld.insideChk(center, radius, startAngle, endAngle)) {
-                        drawWArcSub(center, radius, startAngle, endAngle);
+                    //  クリッピングあり
+                    if (mWorld.insideChk(arc)) {
+                        //  クリッピング処理なし
+                        if (mLineType == 0)
+                            drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa);
+                        else
+                            drawArc(cnvWorld2Screen(arc));
                     } else {
-                        double sr = world2screenXlength(radius);
-                        if (20 < sr) {
-                            int div = sr < 100 ? 8 : (sr < 400 ? 32 : 64);  //円弧をポリゴンに変換する時の分割数
-                            List<PointD> plist = ylib.devideArcList(center, radius, startAngle, endAngle, div);
-                            plist = mWorld.clipPolygon2PolygonList(plist);
-                            drawWPolygon(plist);
+                        //  クリッピング処理あり
+                        double sr = world2screenXlength(arc.mR);
+                        if (10 < sr) {
+                            if (close) {
+                                int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
+                                List<PointD> plist = arc.toAnglePointList(Math.PI * 2 / div);
+                                plist = mWorld.clipPolygonList(plist);
+                                drawWPolygon(plist);
+                            } else {
+                                List<PointD> plist = mWorld.intersection(arc);
+                                List<double> alist = new List<double>();
+                                foreach (PointD p in plist)
+                                    alist.Add(arc.getAngle(p));
+                                alist.Sort();
+                                PointD sp = arc.startPoint();
+                                if (mWorld.insideChk(sp) && !alist.Contains(arc.mSa))
+                                    alist.Insert(0, arc.mSa);
+                                PointD ep = arc.endPoint();
+                                if (mWorld.insideChk(ep) && !alist.Contains(arc.mEa))
+                                    alist.Add(arc.mEa);
+                                for (int i = 0; i < alist.Count - 1; i += 2) {
+                                    ArcD subArc = arc.toCopy();
+                                    subArc.mSa = alist[i];
+                                    subArc.mEa = alist[i + 1];
+                                    drawArc(cnvWorld2Screen(subArc));
+                                }
+                            }
                         }
                     }
                 } else {
-                    drawWArcSub(center, radius, startAngle, endAngle);
+                    drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa);
                 }
             }
-        }
-
-
-        /// <summary>
-        /// 円弧を楕円弧に変換して表示
-        /// </summary>
-        /// <param name="center">中心点</param>
-        /// <param name="radius">半径</param>
-        /// <param name="startAngle">開始角(rad)</param>
-        /// <param name="endAngle">終了角(rad)</param>
-        private void drawWArcSub(Point center, double radius, double startAngle, double endAngle)
-        {
-            drawWArcSub(new PointD(center), radius, startAngle, endAngle);
         }
 
         /// <summary>
@@ -440,11 +437,11 @@ namespace CoreLib
             Size size = new Size(Math.Abs(world2screenXlength(radius)), Math.Abs(world2screenYlength(radius)));     //  X軸半径,Y軸半径
                                                                                                                     //  始点座標
             PointD startPoint = new PointD(radius * Math.Cos(startAngle), Math.Sign(mWorld.Top - mWorld.Bottom) * radius * Math.Sin(startAngle));
-            startPoint.Offset(center.x, center.y);
+            startPoint.offset(center.x, center.y);
             startPoint = cnvWorld2Screen(startPoint);
             //  終点座標
             PointD endPoint = new PointD(radius * Math.Cos(endAngle), Math.Sign(mWorld.Top - mWorld.Bottom) * radius * Math.Sin(endAngle));
-            endPoint.Offset(center.x, center.y);
+            endPoint.offset(center.x, center.y);
             endPoint = cnvWorld2Screen(endPoint);
 
             bool isLarge = (endAngle - startAngle) > Math.PI ? true : false; //  180°を超える円弧化かを指定
@@ -456,29 +453,32 @@ namespace CoreLib
         /// </summary>
         /// <param name="ctr">中心座標</param>
         /// <param name="radius">半径</param>        
-        public void drawWCircle(Point ctr, double radius)
-        {
-            drawWCircle(new PointD(ctr), radius);
-        }
-
-        /// <summary>
-        /// 円の描画
-        /// </summary>
-        /// <param name="ctr">中心座標</param>
-        /// <param name="radius">半径</param>        
-        public void drawWCircle(PointD ctr, double radius)
+        public void drawWCircle(PointD ctr, double radius, bool close = true)
         {
             if (mClipping) {
-                if (mWorld.insideChk(ctr, radius)) {
+                if (mWorld.insideChk(ctr, radius * 2)) {
                     drawCircle(cnvWorld2Screen(ctr), world2screenXlength(radius));
                 } else if (mWorld.circleInsideChk(ctr, radius)) {
-                    drawWRectangle(mWorld.ToRect());
+                    // Boxが円の内側
+                    if (close)          //  Boxないすべて塗潰し
+                        drawWRectangle(mWorld.ToRect());
                 } else {
                     double sr = world2screenXlength(radius);
-                    if (20 < sr) {
-                        int div = sr < 100 ? 8 : (sr < 400 ? 32 : 64);
-                        List<PointD> plist = mWorld.clipCircle2PolygonList(ctr, radius, div);   //  BOXと円の交点リスト
-                        drawWPolygon(plist);
+                    if (10 < sr) {
+                        ArcD arc = new ArcD(ctr, radius);
+                        if (close) {
+                            int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
+                            List<PointD> plist = arc.toPointList(div);
+                            plist = mWorld.clipPolygonList(plist);
+                            drawWPolygon(plist);
+                        } else {
+                            List<PointD> plist = mWorld.intersection(arc);
+                            for (int i = 0; i < plist.Count - 1; i += 2) {
+                                ArcD subArc = arc.toCopy();
+                                subArc.setPoint(plist[i], plist[i + 1]);
+                                drawArc(new ArcD(cnvWorld2Screen(subArc.mCp), world2screenXlength(subArc.mR), subArc.mSa, subArc.mEa));
+                            }
+                        }
                     }
                 }
             } else {
@@ -499,6 +499,16 @@ namespace CoreLib
         /// <summary>
         /// 四角形の描画
         /// </summary>
+        /// <param name="box">Boxデータ</param>
+        /// <param name="rotate">回転角(rad)</param>
+        public void drawWRectangle(Box box, double rotate = 0.0)
+        {
+            drawWRectangle(box.TopLeft, box.BottomRight, rotate);
+        }
+
+        /// <summary>
+        /// 四角形の描画
+        /// </summary>
         /// <param name="ps">四角形の端点座標</param>
         /// <param name="pe">四角形の端点座標</param>
         /// <param name="rotate">回転角(rad)</param>
@@ -506,8 +516,10 @@ namespace CoreLib
         {
             if (mClipping) {
                 List<PointD> plist = toPointList(ps, pe, rotate);
-                plist = mWorld.clipPolygon2PolygonList(plist);
+                plist = mWorld.clipPolygonList(plist);
+                mClipping = false;
                 drawWPolygon(plist);
+                mClipping = true;
             } else {
                 Rect rect = new Rect(cnvWorld2Screen(ps).toPoint(), cnvWorld2Screen(pe).toPoint());
                 drawRectangle(rect, rotate);
@@ -527,34 +539,60 @@ namespace CoreLib
             PointD ctr = b.getCenter();
             List<PointD> plist = b.ToPointDList();
             for (int i = 0; i < plist.Count; i++)
-                plist[i].rotatePoint(ctr, rotate);
+                plist[i].rotate(ctr, rotate);
             return plist;
         }
 
-
         /// <summary>
-        /// ポリゴンの描画
+        /// ポリラインの描画
         /// </summary>
-        /// <param name="wpList">点座標リスト</param>
-        public void drawWPolygon(List<Point> wpList)
+        /// <param name="wpList">座標リスト</param>
+        public void drawWPolyline(List<PointD> wpList)
         {
-            List<Point> pointList = new List<Point>();
-            foreach (Point p in wpList) {
-                pointList.Add(cnvWorld2Screen(p));
+            if (mClipping) {
+                for (int i = 0; i < wpList.Count - 1; i++) {
+                    drawWLine(wpList[i], wpList[i + 1]);
+                }
+            } else {
+                List<PointD> pointList = wpList.ConvertAll(p => cnvWorld2Screen(p));
+                drawPolyline(pointList);
             }
-            drawPolygon(pointList);
         }
 
-
         /// <summary>
-        /// ポリゴンの描画
+        /// ポリゴンの描画(閉領域)
         /// </summary>
         /// <param name="wpList">点座標リスト</param>
-        public void drawWPolygon(List<PointD> wpList)
+        /// <param name="fill">塗り潰しの可否</param>
+        public void drawWPolygon(List<PointD> wpList, bool fill = true)
         {
             List<PointD> pointList = new List<PointD>();
-            foreach (PointD p in wpList) {
-                pointList.Add(cnvWorld2Screen(p));
+            if (!fill) {
+                //  塗り潰しをしない場合ポリラインで表示
+                pointList.AddRange(wpList);
+                pointList.Add(wpList[0]);
+                drawWPolyline(pointList);
+                return;
+            }
+            if (mClipping) {
+                if (!mWorld.insideChk(wpList)) {
+                    pointList = mWorld.intersection(wpList);
+                    if (pointList.Count == 0 && mWorld.polygonInsideChk(wpList)) {
+                        //  Boxがポリゴン領域内(Boxの頂点リストに変換)
+                        pointList = mWorld.ToPointDList();
+                        pointList = pointList.ConvertAll(p => cnvWorld2Screen(p));
+                    } else {
+                        //  Boxとポリゴンが交点を持っている
+                        List<PointD> plist = mWorld.clipPolygonList(wpList);
+                        pointList = plist.ConvertAll(p => cnvWorld2Screen(p));
+                    }
+                } else {
+                    //  すべての座標がBox領域内でクリッピングなし
+                    pointList = wpList.ConvertAll(p => cnvWorld2Screen(p));
+                }
+            } else {
+                //  クリッピングなし
+                pointList = wpList.ConvertAll(p => cnvWorld2Screen(p));
             }
             drawPolygon(pointList);
         }
@@ -562,27 +600,11 @@ namespace CoreLib
         /// <summary>
         /// 文字列の描画
         /// </summary>
-        /// <param name="text">文字列</param>
-        /// <param name="p">文字位置(左上)</param>
-        /// <param name="rotate">回転角(rad)</param>
-        public void drawWText(string text, PointD p, double rotate = 0.0)
+        /// <param name="text">TextD</param>
+        public void drawWText(TextD text)
         {
-            drawWText(text, p.toPoint(), rotate);
-        }
-
-        /// <summary>
-        /// 文字列の描画
-        /// </summary>
-        /// <param name="text">文字列</param>
-        /// <param name="p">文字位置(左上)</param>
-        /// <param name="rotate">回転角(rad)</param>
-        public void drawWText(string text, Point p, double rotate = 0.0)
-        {
-            if (mClipping) {
-                if (!mWorld.insideChk(textBoxArea(text, p, rotate, HorizontalAlignment.Left, VerticalAlignment.Top)))
-                    return;
-            }
-            drawText(text, cnvWorld2ScreenX(p.X), cnvWorld2ScreenY(p.Y), rotate);
+            mTextSize = Math.Abs(world2screenYlength(text.mTextSize));
+            drawWText(text.mText, text.mPos, text.mTextSize, text.mRotate, text.mHa, text.mVa);
         }
 
         /// <summary>
@@ -590,39 +612,33 @@ namespace CoreLib
         /// </summary>
         /// <param name="text">文字列</param>
         /// <param name="p">文字位置</param>
+        /// <param name="textSize">文字サイズ</param>
         /// <param name="rotate">回転角(rad)</param>
         /// <param name="ha">水平方向アライメント</param>
         /// <param name="va">垂直方向アライメント</param>
-        public void drawWText(string text, PointD p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
+        public void drawWText(string text, PointD p, double textSize = 0, double rotate = 0, 
+            HorizontalAlignment ha = HorizontalAlignment.Left, VerticalAlignment va = VerticalAlignment.Top)
         {
-            drawWText(text, p.toPoint(), rotate, ha, va);
-        }
-
-        /// <summary>
-        /// 文字列の描画
-        /// </summary>
-        /// <param name="text">文字列</param>
-        /// <param name="p">文字位置</param>
-        /// <param name="rotate">回転角(rad)</param>
-        /// <param name="ha">水平方向アライメント</param>
-        /// <param name="va">垂直方向アライメント</param>
-        public void drawWText(string text, Point p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
-        {
+            if (textSize != 0)
+                setWorldTextSize(textSize);
             if (mClipping) {
-                if (!mWorld.insideChk(textBoxArea(text, p, rotate, ha, va)))
+                if (mWorld.outsideChk(new Box(textBoxArea(text, p, rotate, ha, va))))
                     return;
             }
             if (!mTextOverWrite) {
                 //  文字列の領域をRectangleで白で塗潰す
-                Point op = getTextOrg(text, cnvWorld2Screen(p), rotate, ha, va);
-                Size size = measureWText(text);
-                op = transformPoint(cnvScreen2World(op), size, rotate);
-                Brush col = mBrush;             //  要素の色
+                List<PointD> plist = textBoxArea(text, p, rotate, ha, va);
+                Brush tmpFillColor = mFillColor;
+                Brush tmpColor = mBrush;             //  要素の色
                 mFillColor = Brushes.White;
                 mBrush = Brushes.White;
-                drawWRectangle(new Rect(op, size), rotate);
-                mBrush = col;
+                drawWPolygon(textBoxArea(text, new PointD(p), rotate, ha, va));
+                mBrush = tmpColor;
+                mFillColor = tmpFillColor;
             }
+            if (!mInvert)
+                rotate *= -1;
+            //mTextColor = mBrush;
             drawText(text, cnvWorld2Screen(p), rotate, ha, va);
         }
 
@@ -637,74 +653,31 @@ namespace CoreLib
         /// <param name="ha">水平方向アライメント</param>
         /// <param name="va">垂直方向アライメント</param>
         /// <returns>Box領域</returns>
-        private Box textBoxArea(string text, Point p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
+        private List<PointD> textBoxArea(string text, PointD p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
         {
-            return textBoxArea(text, new PointD(p), rotate, ha, va);
-        }
-
-        /// <summary>
-        /// テキスト領域を求める
-        /// </summary>
-        /// <param name="text">文字列</param>
-        /// <param name="p">原点</param>
-        /// <param name="rotate">回転角(rad)</param>
-        /// <param name="ha">水平方向アライメント</param>
-        /// <param name="va">垂直方向アライメント</param>
-        /// <returns>Box領域</returns>
-        private Box textBoxArea(string text, PointD p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
-        {
-            PointD op = cnvWorld2Screen(p);
-            if (ha != HorizontalAlignment.Left && va != VerticalAlignment.Top)
-                op = getTextOrg(text, cnvWorld2Screen(p), rotate, ha, va);
+            PointD op = p.toCopy();
+            PointD cp = p.toCopy();
+            //  文字列のサイズを求める
             Size size = measureWText(text);
-            Box b = new Box(cnvScreen2World(op), size);
-            b.rotateArea(op, rotate);
-            return b;
-        }
-
-        /// <summary>
-        /// 文字列の回転(左上原点)に合わせてRectangleを回転(中心原点)させるための原点を求める
-        /// RectAngleを左上起点に回転させるための原点移動
-        /// (Rectangleの回転は中心を原点として回る)
-        /// </summary>
-        /// <param name="po">回転原点(左上)</param>
-        /// <param name="size">Rectangleの大きさ</param>
-        /// <param name="rotate">回転角度</param>
-        /// <returns>補正した起点</returns>
-        private Point transformPoint(Point po, Size size, double rotate)
-        {
-            Point cp = new Point(po.X + size.Width / 2.0, po.Y - size.Height / 2.0);
-            cp = rotatePoint(cp, po, -rotate);
-            Point tp = new Point(cp.X - size.Width / 2.0, cp.Y - size.Height / 2.0);
-            return tp;
-        }
-
-        /// <summary>
-        /// 回転中心を指定して回転
-        /// </summary>
-        /// <param name="po">対象座標</param>
-        /// <param name="ctr">回転の中心座標</param>
-        /// <param name="rotate">回転角度(rad)</param>
-        /// <returns>回転後の座標</returns>
-        private Point rotatePoint(Point po, Point ctr, double rotate)
-        {
-            Point p = new Point(po.X - ctr.X, po.Y - ctr.Y);
-            p = rotateOrg(p, rotate);
-            return new Point(p.X + ctr.X, p.Y + ctr.Y);
-        }
-
-        /// <summary>
-        /// 原点を中心に回転
-        /// </summary>
-        /// <param name="po">対象座標</param>
-        /// <param name="rotate">回転角度(rad)</param>
-        /// <returns>回転後の座標</returns>
-        private Point rotateOrg(Point po, double rotate)
-        {
-            Point p = new Point();
-            p.X = po.X * Math.Cos(rotate) - po.Y * Math.Sin(rotate);
-            p.Y = po.X * Math.Sin(rotate) + po.Y * Math.Cos(rotate);
-            return p;
+            size.Width += size.Height * 0.1;
+            size.Height *= 1.1;                         //  ベースラインを調整
+            //  文字の起点(左上)を求める
+            double dx = 0;
+            double dy = 0;
+            //  アライメントの調整
+            if (ha == HorizontalAlignment.Center)
+                dx = size.Width / 2;
+            else if (ha == HorizontalAlignment.Right)
+                dx = size.Width;
+            if (va == VerticalAlignment.Center)
+                dy = size.Height / 2;
+            else if (va == VerticalAlignment.Bottom)
+                dy = size.Height;
+            op.offset(-dx, dy);
+            op.rotate(cp, rotate);
+            //  文字領域を回転に合わせてBoxを拡張する
+            Box b = new Box(op, size);
+            return b.getRoate(op, rotate);
         }
 
         /// <summary>
