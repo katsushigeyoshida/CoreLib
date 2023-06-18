@@ -1,14 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace CoreLib
 {
+    /// SurfacePrimitive    プリミティブデータの種別
+    ///     SurfacePrimitive(Point3D[] p, bool ccw = false, Brush color = null) コンストラクタ
+    ///     SurfacePrimitive(List<Point3D> p, bool ccw = false, Brush color = null) コンストラクタ
+    ///     void convMatrix(double[,] matrix)   座標変換の実行
+    ///     void convMatrix(List<double[,]> matrixList) 座標変換の実行
+    /// PartsPrimitive      部品データクラス
+    ///     PartsPrimitive()    コンストラクタ
+    ///     void clearMatrix()  座標変換マトリックスリストのクリア
+    ///     void setScaleMatrix(Point3D scale)  スケール変換マトリックスの登録
+    ///     void setTranlateMatrix(Point3D vec) 移動マトリックスの登録
+    ///     void setRotateXMatrix(double th)    X軸回転マトリックスの登録
+    ///     void setRotateYMatrix(double th)    Y軸回転マトリックスの登録
+    ///     void setRotateZMatrix(double th)    Z軸回転マトリックスの登録
+    ///     void clear()    サーフェスデータリストのクリア
+    ///     void convCoords()   座標変換
+    ///     void setDrawData(Y3DDraw ydraw) サーフェスリストにデータを登録
+    ///     void setVertex(List<Point3D> ps, PRIMITIVETYPE primitive, List<Brush> colors)   3D座標の設定(サーフェスデータの登録)
+    /// Y3DGraphics 3Dグラフィックライブラリ
+    ///     Y3DGraphics(Y3DDraw y3ddraw)                    コンストラクタ
+    ///     Y3DGraphics(Y3DDraw y3ddraw, Size viewSize)     コンストラクタ
+    ///     Y3DGraphics(Y3DDraw y3ddraw, double viewWidth, double viewHeight)   コンストラクタ
+    ///     Y3DGraphics(Y3DDraw y3ddraw, Size viewSize, Box world, double perspectibeLength = 10)   コンストラクタ
+    ///     void setWorldWindow(Box world)      World領域の設定
+    ///     void setPerspectiveLength(double perspectibeLength) 投影距離(PerspectivLength)の設定
+    ///     void setLight(Point3D light)        ライトの位置設定
+    ///     void dataClear()                    部品データリストとサーフェスリストをクリア
+    ///     void add(PartsPrimitive parts)      部品データの登録
+    ///     void setDrawData()                  座標変換したデータをサーフェスリストに登録
+    ///     void draw()                         サーフェスリストの表示
+
     /// <summary>
     /// プリミティブデータの種別
     /// </summary>
-    public enum PRIMITIVE {
+    public enum PRIMITIVETYPE {
         LINES, TRIANGLES, QUADS, POLYGON, TRIANGLE_STRIP, QUAD_STRIP, TRIANGLE_FAN, PARTS 
     };
 
@@ -17,10 +49,9 @@ namespace CoreLib
     /// </summary>
     public class SurfacePrimitive
     {
-        public List<Point3D> mCoords = new List<Point3D>();    //  三角形の座標
-        public List<Point3D> mOutCoords = new List<Point3D>();
-        public Brush mColor = Brushes.Blue;                    //  三角形の色
-        private YLib ylib = new YLib();
+        public List<Point3D> mCoords = new List<Point3D>();     //  元の座標
+        public List<Point3D> mOutCoords = new List<Point3D>();  //  変換後の座標
+        public Brush mColor = Brushes.Blue;                     //  色データ
 
         /// <summary>
         /// コンストラクタ
@@ -62,7 +93,8 @@ namespace CoreLib
             mOutCoords = new List<Point3D>();
             for (int i = 0; i < mCoords.Count; i++) {
                 Point3D p = mCoords[i].toCopy();
-                p = p.matrix(matrix);
+                //p = p.toMatrix(matrix);
+                p.matrix(matrix);
                 mOutCoords.Add(p);
             }
         }
@@ -77,7 +109,8 @@ namespace CoreLib
             for (int i = 0; i < mCoords.Count; i++) {
                 Point3D p = mCoords[i].toCopy();
                 for (int j = 0; j < matrixList.Count; j++) { 
-                    p = p.matrix(matrixList[j]);
+                    //p = p.toMatrix(matrixList[j]);
+                    p.matrix(matrixList[j]);
                 }
                 mOutCoords.Add(p);
             }
@@ -219,12 +252,12 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 3D座標の設定(サーフェスデータの登録))
+        /// 3D座標の設定(サーフェスデータの登録)
         /// </summary>
         /// <param name="ps">3D座標リスト</param>
         /// <param name="primitive">プリミティブの種別</param>
         /// <param name="colors">カラーリスト</param>
-        public void setVertex(List<Point3D> ps, PRIMITIVE primitive, List<Brush> colors)
+        public void setVertex(List<Point3D> ps, PRIMITIVETYPE primitive, List<Brush> colors)
         {
             int count = 0;
             int colorCount = 0;
@@ -232,29 +265,29 @@ namespace CoreLib
             Point3D orgp = new Point3D();
             for (int i = 0; i < ps.Count; i++) {
                 buf.Add(ps[i].toCopy());
-                if (primitive == PRIMITIVE.LINES) {
+                if (primitive == PRIMITIVETYPE.LINES) {
                     if (buf.Count == 2) {
                         mDataList.Add(new SurfacePrimitive(buf, false, colors[colorCount++ % colors.Count]));
                         buf = new List<Point3D>();
                         count = -1;
                     }
-                } else if (primitive == PRIMITIVE.TRIANGLES) {
+                } else if (primitive == PRIMITIVETYPE.TRIANGLES) {
                     //  三角形
                     if (buf.Count == 3) {
                         mDataList.Add(new SurfacePrimitive(buf, false, colors[colorCount++ % colors.Count]));
                         buf = new List<Point3D>();
                         count = -1;
                     }
-                } else if (primitive == PRIMITIVE.QUADS) {
+                } else if (primitive == PRIMITIVETYPE.QUADS) {
                     //  四角形
                     if (buf.Count == 4) {
                         mDataList.Add(new SurfacePrimitive(buf, false, colors[colorCount++ % colors.Count]));
                         buf = new List<Point3D>();
                         count = -1;
                     }
-                } else if (primitive == PRIMITIVE.POLYGON) {
+                } else if (primitive == PRIMITIVETYPE.POLYGON) {
                     //  ポリゴン
-                } else if (primitive == PRIMITIVE.TRIANGLE_STRIP) {
+                } else if (primitive == PRIMITIVETYPE.TRIANGLE_STRIP) {
                     //  三角形の帯
                     if (1 < count) {
                         bool ccw = mDataList.Count % 2 == 0;
@@ -263,7 +296,7 @@ namespace CoreLib
                         count = -1;
                         i -= 2;
                     }
-                } else if (primitive== PRIMITIVE.QUAD_STRIP) {
+                } else if (primitive== PRIMITIVETYPE.QUAD_STRIP) {
                     //  四角形の帯
                     if (count == 2) {
                         buf[count] = ps[i + 1].toCopy();
@@ -274,7 +307,7 @@ namespace CoreLib
                         count = -1;
                         i -= 3;
                     }
-                } else if (primitive == PRIMITIVE.TRIANGLE_FAN) {
+                } else if (primitive == PRIMITIVETYPE.TRIANGLE_FAN) {
                     //  三角形の扇
                     if (i == 0) {
                         orgp = ps[i].toCopy();
@@ -285,12 +318,12 @@ namespace CoreLib
                         buf.Add(orgp);
                         i -= 1;
                     }
-                } else if (primitive == PRIMITIVE.PARTS) {
+                } else if (primitive == PRIMITIVETYPE.PARTS) {
 
                 }
                 count++;
             }
-            if (primitive == PRIMITIVE.POLYGON) {
+            if (primitive == PRIMITIVETYPE.POLYGON) {
                 mDataList.Add(new SurfacePrimitive(buf, false, colors[colorCount++ % colors.Count]));
             }
         }
@@ -299,27 +332,114 @@ namespace CoreLib
     /// <summary>
     /// 3Dグラフィックライブラリ
     /// </summary>
-    public class Y3DGraphics : Y3DDraw
+    public class Y3DGraphics
     {
         public List<PartsPrimitive> mDataList = new List<PartsPrimitive>();
         private YLib ylib = new YLib();
+        public Y3DDraw m3DDraw;
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="c">キャンバス</param>
-        public Y3DGraphics(Canvas c) : base(c)
+        /// <param name="canvas">Canvas</param>
+        public Y3DGraphics(Canvas canvas)
         {
+            m3DDraw = new Y3DDraw(canvas);
         }
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="c">キャンバス</param>
-        /// <param name="viewWidth">Viewの幅</param>
-        /// <param name="viewHeight">Viewの高さ</param>
-        public Y3DGraphics(Canvas c, double viewWidth, double viewHeight) : base(c, viewWidth, viewHeight)
+        /// <param name="canvas">Canvas</param>
+        /// <param name="viewSize">Viewの大きさ</param>
+        public Y3DGraphics(Canvas canvas, Size viewSize)
         {
+            m3DDraw = new Y3DDraw(canvas);
+            m3DDraw.setViewSize(viewSize.Width, viewSize.Height);
+            m3DDraw.mAspectFix = true;
+            m3DDraw.mClipping = true;
+            m3DDraw.clear3DMatrix();
+            m3DDraw.mPerspectivLength = 10;
+            m3DDraw.mLight = new Point3D(1, 1, 1);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="canvas">Canvas</param>
+        /// <param name="viewSize">Viewのサイズ</param>
+        /// <param name="worldSize">Worldの大きさ</param>
+        public Y3DGraphics(Canvas canvas, Size viewSize, double worldSize, double perspectibeLength = 10)
+        {
+            m3DDraw = new Y3DDraw(canvas);
+            m3DDraw.setViewSize(viewSize.Width, viewSize.Height);
+            m3DDraw.mAspectFix = true;
+            m3DDraw.mClipping = true;
+            m3DDraw.setWorldWindow(-worldSize * 1.1, worldSize * 1.1, worldSize * 1.1, -worldSize * 1.1);
+            m3DDraw.clear3DMatrix();
+            m3DDraw.mPerspectivLength = perspectibeLength;
+            m3DDraw.mLight = new Point3D(1, 1, 1);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="canvas">Canvas</param>
+        /// <param name="viewSize">Viewのサイズ</param>
+        /// <param name="world">Worldの大きさ</param>
+        public Y3DGraphics(Canvas canvas, Size viewSize, Box world, double perspectibeLength = 10)
+        {
+            m3DDraw = new Y3DDraw(canvas);
+            m3DDraw.setViewSize(viewSize.Width, viewSize.Height);
+            m3DDraw.mAspectFix = true;
+            m3DDraw.mClipping = true;
+            m3DDraw.setWorldWindow(world);
+            m3DDraw.clear3DMatrix();
+            m3DDraw.mPerspectivLength = perspectibeLength;
+            m3DDraw.mLight = new Point3D(1, 1, 1);
+        }
+
+        /// <summary>
+        /// Viewサイズの再設定(Worldも再計算)
+        /// </summary>
+        /// <param name="viewSize"></param>
+        public void setViewSize(Size viewSize)
+        {
+            m3DDraw.setViewSize(viewSize.Width, viewSize.Height);
+            m3DDraw.setWorldWindow();
+        }
+
+        public void setViewSize(Size viewSize, Box worldSize)
+        {
+            m3DDraw.setViewSize(viewSize.Width, viewSize.Height);
+            m3DDraw.setWorldWindow(worldSize);
+        }
+
+        /// <summary>
+        /// World領域の設定
+        /// </summary>
+        /// <param name="world">Worldの大きさ</param>
+        public void setWorldWindow(Box world)
+        {
+            m3DDraw.setWorldWindow(world);
+        }
+
+        /// <summary>
+        /// 投影距離(PerspectivLength)の設定
+        /// </summary>
+        /// <param name="perspectibeLength">距離</param>
+        public void setPerspectiveLength(double perspectibeLength)
+        {
+            m3DDraw.mPerspectivLength = perspectibeLength;
+        }
+
+        /// <summary>
+        /// ライトの位置設定
+        /// </summary>
+        /// <param name="light">座標</param>
+        public void setLight(Point3D light)
+        {
+            m3DDraw.mLight = light;
         }
 
         /// <summary>
@@ -328,7 +448,7 @@ namespace CoreLib
         public void dataClear()
         {
             mDataList.Clear();
-            clearSurfaceList();
+            m3DDraw.clearSurfaceList();
         }
 
         /// <summary>
@@ -345,12 +465,12 @@ namespace CoreLib
         /// </summary>
         public void setDrawData()
         {
-            clearSurfaceList();
-            clear3DMatrix();
+            m3DDraw.clearSurfaceList();
+            m3DDraw.clear3DMatrix();
 
             foreach (var part in mDataList) {
                 part.convCoords();
-                part.setDrawData(this);
+                part.setDrawData(m3DDraw);
             }
         }
 
@@ -359,7 +479,7 @@ namespace CoreLib
         /// </summary>
         public void draw()
         {
-            drawSurfaceList();
+            m3DDraw.drawSurfaceList();
         }
     }
 
