@@ -2,10 +2,19 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
+    <Compile Update="ColorDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="FullView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="InputBox.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="InputBox2.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="MenuDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="SelectMenu.xaml.cs">
@@ -13,10 +22,19 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="ColorDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="FullView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="InputBox.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="InputBox2.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="MenuDialog.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="SelectMenu.xaml">
