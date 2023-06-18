@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Windows;
 
 namespace CoreLib
@@ -19,7 +20,7 @@ namespace CoreLib
     /// double length(PointD p)
     /// PointD vector(PointD p)
     /// void fromPoler(double r, double th)
-    /// void Offset(double dx, double dy)
+    /// void offset(double dx, double dy)
     /// void transform(double dx, double dy)
     /// void transform(PointD vp)
     /// void rotate(double ang)
@@ -78,6 +79,16 @@ namespace CoreLib
         public override string ToString()
         {
             return "(" + x + "," + y + ")";
+        }
+
+        /// <summary>
+        /// 書式付き文字列変換
+        /// </summary>
+        /// <param name="form"></param>
+        /// <returns></returns>
+        public string ToString(string form)
+        {
+            return "(" + x.ToString(form) + "," + y.ToString(form) + ")";
         }
 
         /// <summary>
@@ -195,6 +206,14 @@ namespace CoreLib
             return new PointD(p.x - x, p.y - y);
         }
 
+        /// <summary>
+        /// ベクトルを反転させる
+        /// </summary>
+        /// <returns>反転したベクトル</returns>
+        public PointD inverse()
+        {
+            return new PointD(-x, -y);
+        }
 
         /// <summary>
         /// 自ベクトルと指定ベクトルの内積(合成ベクトルの長さ)
@@ -217,6 +236,30 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 数値を切り捨てて丸める
+        /// </summary>
+        /// <param name="f">丸めの単位</param>
+        public void floor(double f)
+        {
+            if (0 < f) {
+                x = Math.Floor(x / f) * f;
+                y = Math.Floor(y / f) * f;
+            }
+        }
+
+        /// <summary>
+        /// 数値を四捨五入で丸める
+        /// </summary>
+        /// <param name="f">丸めの単位</param>
+        public void round(double f)
+        {
+            if (0 < f) {
+                x = Math.Round(x / f) * f;
+                y = Math.Round(y / f) * f;
+            }
+        }
+
+        /// <summary>
         /// 極座標からの取り込み
         /// </summary>
         /// <param name="r">長さ</param>
@@ -232,7 +275,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="dx">X方向の移動距離</param>
         /// <param name="dy">Y方向の移動距離</param>
-        public void Offset(double dx, double dy)
+        public void offset(double dx, double dy)
         {
             x += dx;
             y += dy;
@@ -242,7 +285,7 @@ namespace CoreLib
         /// 指定の量だけ移動
         /// </summary>
         /// <param name="offset">移動量</param>
-        public void Offset(PointD offset)
+        public void offset(PointD offset)
         {
             x += offset.x;
             y += offset.y;
@@ -286,12 +329,23 @@ namespace CoreLib
         /// </summary>
         /// <param name="cp">中心点(PointD)</param>
         /// <param name="ang">角度(rad)</param>
-        public void rotatePoint(PointD cp, double ang)
+        public void rotate(PointD cp, double ang)
         {
             double dx = x - cp.x;
             double dy = y - cp.y;
             x = dx * Math.Cos(ang) - dy * Math.Sin(ang) + cp.x;
             y = dx * Math.Sin(ang) + dy * Math.Cos(ang) + cp.y;
+        }
+
+        /// <summary>
+        /// 指定点を中心に回転(回転角はcpとupでの角度)
+        /// </summary>
+        /// <param name="cp">中心点</param>
+        /// <param name="up">回転した点</param>
+        public void rotate(PointD cp, PointD up)
+        {
+            double ang = up.angle(cp);
+            rotate(cp, ang);
         }
 
         /// <summary>
@@ -309,7 +363,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="cp">原点(PointD)</param>
         /// <param name="scale">拡大率</param>
-        public void scalePoint(PointD cp, double scale)
+        public void scale(PointD cp, double scale)
         {
             double dx = (x - cp.x) * scale;
             double dy = (y - cp.y) * scale;
@@ -328,6 +382,83 @@ namespace CoreLib
                 return false;
             else
                 return true;
+        }
+
+        /// <summary>
+        /// 2つのベクトルの加算
+        /// </summary>
+        /// <param name="v1">ベクトル</param>
+        /// <param name="v2">ベクトル</param>
+        /// <returns>ベクトル</returns>
+        public static PointD operator +(PointD v1, PointD v2)
+        {
+            return new PointD(v1.x + v2.x, v1.y + v2.y);
+        }
+
+        /// <summary>
+        /// ベクトルv1からベクトルv2を減算
+        /// </summary>
+        /// <param name="v1">ベクトル</param>
+        /// <param name="v2">ベクトル</param>
+        /// <returns>ベクトル</returns>
+        public static PointD operator -(PointD v1, PointD v2)
+        {
+            return new PointD(v1.x - v2.x, v1.y - v2.y);
+        }
+
+        /// <summary>
+        /// ベクトルv1をスカラー値mで乗算
+        /// </summary>
+        /// <param name="v1">^ベクトル</param>
+        /// <param name="m">スカラー値</param>
+        /// <returns>ベクトル</returns>
+        public static PointD operator *(PointD v1, double m)
+        {
+            return new PointD(v1.x * m, v1.y * m);
+        }
+
+        /// <summary>
+        /// 2 つのベクトルの要素の各ペアを乗算した値を値とするベクトルを返し
+        /// </summary>
+        /// <param name="v1">ベクトル</param>
+        /// <param name="v2">ベクトル</param>
+        /// <returns>ベクトル</returns>
+        public static double operator *(PointD v1, PointD v2)
+        {
+            return v1.x * v2.x + v1.y * v2.y;
+        }
+
+        /// <summary>
+        /// ベクトルをスカラー値で除算
+        /// </summary>
+        /// <param name="v1">ベクトル</param>
+        /// <param name="m">スカラー値</param>
+        /// <returns>ベクトル</returns>
+        public static PointD operator /(PointD v1, double m)
+        {
+            return new PointD(v1.x / m, v1.y / m);
+        }
+
+        /// <summary>
+        /// 最初のベクトルを 2 番目のベクトルで除算
+        /// </summary>
+        /// <param name="v1">ベクトル</param>
+        /// <param name="v2">ベクトル</param>
+        /// <returns>ベクトル</returns>
+        public static PointD operator /(PointD v1, PointD v2)
+        {
+            return new PointD(v1.x / v2.x, v1.y / v2.y);
+        }
+
+        /// <summary>
+        /// 2点間の距離
+        /// </summary>
+        /// <param name="p1">座標店</param>
+        /// <param name="p2">座標点</param>
+        /// <returns>距離</returns>
+        public static double distance(PointD p1, PointD p2)
+        {
+            return Math.Sqrt(Math.Pow(p1.x - p2.x, 2) + Math.Pow(p1.y - p2.y, 2));
         }
     }
 }
