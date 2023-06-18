@@ -9,6 +9,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Media;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -19,89 +20,118 @@ namespace CoreLib
     /// 汎用ライブラリ
     /// 
     /// ---  API関数  ------
-    /// int GetWindowRect(IntPtr hWnd, out iRect rect)
-    /// IntPtr GetForegroundWindow()
-    /// short GetKeyState(int nVirtkey)
-    /// bool IsClickDownLeft()
-    /// bool IsClickDownRight()
+    /// int GetWindowRect(IntPtr hWnd, out iRect rect)  ウインドウの外側のサイズを取得
+    /// IntPtr GetForegroundWindow()                    フォアグラウンドウィンドウ(ActiveWindow)の取得
+    /// short GetKeyState(int nVirtkey)                 クリックされているか判定用
+    /// bool IsClickDownLeft()                          マウス左ボタン(0x01)(VK_LBUTTON)の状態
+    /// bool IsClickDownRight()                         マウス右ボタン(0x02)(VK_RBUTTON)の状態
     /// 
     /// ---  システム関連  ------
-    ///  void DoEvents()
-    ///  string getAppFolderPath()
-    ///  string getAppName()
-    ///  void fileExecute(string path)
-    ///  static void Swap<T>(ref T lhs, ref T rhs)
+    ///  void DoEvents()                                コントロールを明示的に更新するコード
+    ///  string getAppFolderPath()                      実行ファイルのフォルダを取得(アプリケーションが存在するのディレクトリ)
+    ///  string getAppName()                            実行プログラム名をフルパスで取得
+    ///  void fileExecute(string path)                  ファイルを実行する
+    ///  void openUrl(string url)                       URLを標準ブラウザで開く
+    ///  static void Swap<T>(ref T lhs, ref T rhs)      ジェネリックによるswap関数
     ///  
+    /// ---  ストップウォッチ  ---
+    /// void stopWatchStartNew()                    ストップウォッチ機能初期化・計測開始
+    /// TimeSpan stopWatchLapTime()                 ストップウォッチ機能ラップ時間取得
+    /// TimeSpan stopWatchRestart()                 ストップウォッチ機能計測時間の取得と再スタート
+    /// TimeSpan stopWatchStop()                    ストップウォッチ機能計測時間の取得と終了
+    /// TimeSpan stopWatchTotalTime()               ストップウォッチ機能累積時間の取得
+    /// 
     ///  ---  ネットワーク関連  ---
-    ///  bool webFileDownload(string url, string filePath)
-    ///  string getWebText(string url)
-    ///  string getWebText(string url, int encordType = 0)
+    ///  bool webFileDownload(string url, string filePath)          Web上のファイルをダウンロードする
+    ///  string getWebText(string url)                               URLのWebデータの読込
+    ///  string getWebText(string url, int encordType = 0)          エンコードタイプを指定してURLのWebデータの読込
     ///  
     ///  ---  文字列処理関連  ----
-    ///  bool wcMatch(string srcstr, string pattern)
-    ///  int indexOf(string text, string val, int count = 1)
-    ///  int lastIndexOf(string text, string val, int count = 1)
-    ///  stripBrackets(string text, char sb = '[', char eb = ']')
-    ///  string trimControllCode(string buf)
-    ///  bool IsNumberString(string num, bool allNum = false)
-    ///  bool boolParse(string str, bool val = true)
-    ///  int intParse(string str, int val = 0)
-    ///  double doubleParse(string str, double val = 0.0)
-    ///  int string2int(string num)
-    ///  double string2double(string num)
-    ///  List<string> string2StringNumbers(string num)
-    ///  string string2StringNum(string num)
-    ///  string[] seperateString(string str)
+    ///  bool wcMatch(string srcstr, string pattern)                ワイルドカードによる文字検索
+    ///  int indexOf(string text, string val, int count = 1)        文字列を前から指定位置を検索
+    ///  int lastIndexOf(string text, string val, int count = 1)    文字列を後から指定位置を検索
+    ///  string stripBrackets(string text, char sb = '[', char eb = ']')    文字列から括弧で囲まれた領域を取り除く
+    ///   List<string> extractBrackets(string text, char sb = '{', char eb = '}', bool withBracket = false) 括弧で囲まれた文字列を抽出
+    ///  string trimControllCode(string buf)                        文字列内のコントロールコードを除去
+    ///  bool IsNumberString(string num, bool allNum = false)       数値文字列かを判定
+    ///  bool boolParse(string str, bool val = true)                文字列を論理値に変換
+    ///  int intParse(string str, int val = 0)                      文字列を整数に変換
+    ///  double doubleParse(string str, double val = 0.0)           文字列を実数に変換
+    ///  int string2int(string num)                                 文字列の先頭が数値の場合、数値に変換
+    ///  double string2double(string num)                           文字列の先頭が数値の場合、数値に変換
+    ///  List<string> string2StringNumbers(string num)              文字列の中から複数の数値文字列を抽出
+    ///  string string2StringNum(string num)                        文字列から数値に関係ない文字を除去し、実数に変換できる文字列にする
+    ///  string strZne2Han(string zenStr)                           文字列内の全角英数字を半角に変換
+    ///  string strNumZne2Han(string zenStr)                        文字列内の全角数値を半角に変換
+    ///  string strControlCodeCnv(string str)                       文字列の中の改行コード、','、'"'を'\'付きコードに置き換える
+    ///  string strControlCodeRev(string str)                       文字列の中の'\'付きコードを通常のコードに戻す
+    ///  string[] seperateString(string str)                        文字列をカンマセパレータで分解して配列に格納
+    ///  List<string> getPattern(string html, string pattern, string group) 正規表現を使ったHTMLデータからパターン抽出
+    ///  List<string[]> getPattern(string html, string pattern)     正規表現を使ったHTMLからのパターン抽出
+    ///  List<string[]> getPattern2(string html, string pattern)    正規表現を使ったHTMLからのパターン抽出
     ///  
     ///  ---  ファイル・ディレクトリ関連  ------
-    ///  bool makeDir(string path)
-    ///  string fileOpenSelectDlg(string title, string initDir, List<string[]> filters)
-    ///  string fileSaveSelectDlg(string title, string initDir, List<string[]> filters)
-    ///  string[] getFiles(string path)
-    ///  List<string[]> loadCsvData(string filePath, string[] title, bool firstTitle = false)
-    ///  List<string[]> loadCsvData(string filePath, bool tabSep = false)
-    ///  void saveCsvData(string path, string[] format, List<string[]> data)
-    ///  void saveCsvData(string path, List<string[]> csvData)
-    ///  List<string[]> loadJsonData(string filePath)
-    ///  string loadTextFile(string path)
-    ///  saveTextFile(string path, string buffer)
-    ///  byte[] loadBinData(string path, int size = 0)
-    ///  void saveBinData(string path, byte[] buffer)
-    ///  bool gzipDecompress(string ipath, string opath)
+    ///  bool makeDir(string path)                                  ファイルパスからディレクトリを作成
+    ///  string fileOpenSelectDlg(string title, string initDir, List<string[]> filters) ファイル読込選択ダイヤログ表示
+    ///  string fileSaveSelectDlg(string title, string initDir, List<string[]> filters) ファイル保存選択ダイヤログ表示
+    ///  string[] getFiles(string path)                             指定されたパスからファイルリストを作成
+    ///  List<string[]> loadCsvData(string filePath, string[] title, bool firstTitle = false)   CSV形式のファイルを読み込みList<String[]>形式で出力する
+    ///  List<string[]> loadCsvData(string filePath, bool tabSep = false)       CSV形式のファイルを読み込む
+    ///  void saveCsvData(string path, string[] format, List<string[]> data)    タイトルをつけてCSV形式でListデータをファイルに保存
+    ///  void saveCsvData(string path, List<string[]> csvData)      データをCSV形式でファイルに書き込む
+    ///  List<string[]> loadJsonData(string filePath)               JSON形式のファイルを読み込む
+    ///  string loadTextFile(string path)                           テキストファイルの読込
+    ///  void saveTextFile(string path, string buffer)              テキストファイルの保存
+    ///  byte[] loadBinData(string path, int size = 0)              バイナリファイルの読込
+    ///  void saveBinData(string path, byte[] buffer)               バイナリデータをファイルに書き込む
+    ///  bool gzipDecompress(string ipath, string opath)            gzipファイルを解凍する
     ///  
     ///  --- データ処理関係  ------
-    ///  List<string[]> splitJson(string jsonData, string baseTitle = "")
-    ///  string getJsonDataString(string jsonData)
+    ///  List<string[]> splitJson(string jsonData, string baseTitle = "")   JSON形式の文字列から[名前:値]の対データをリストデータとして取得する
+    ///  string getJsonDataString(string jsonData)                          JSON形式の文字列から{}内の文字列を取得する
     ///  
     ///  ---  日付・時間関連  ------
-    ///  double getJD(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)
-    ///  int julianDay(int y, int m, int d)
-    ///  double getMJD(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)
-    ///  (int year, int month, int day) JulianDay2Date(double jd)
-    ///  (int hour, int min, int sec) JulianDay2Time(double jd)
-    ///  double getGreenwichSiderealTime(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)
-    ///  double getLocalSiderealTime(double dSiderealTime, double dLongitude)
+    ///  int date2JulianDay(int year, int month, int day)                   歴日からユリウス日に変換
+    ///  double getJD(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)   ユリウス日(紀元前4713年(-4712年)1月1日が0日)の取得
+    ///  int julianDay(int y, int m, int d)                                 天文年鑑の数式でユリウス日を求める
+    ///  double getMJD(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)  準ユリウス日(1582年10月15日が0日)の取得
+    ///  (int year, int month, int day) JulianDay2Date(double jd)           ユリウス日から西暦(年月日)を求める
+    ///  (int hour, int min, int sec) JulianDay2Time(double jd)             ユリウス日から時間(時分秒)の取得
+    ///  string JulianDay2DateYear(double jd, int type = 0)                 ユリウス日から歴日文字列に変換
+    ///  double getGreenwichSiderealTime(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)    恒星時(Wikipedia https://ja.wikipedia.org/wiki/恒星時)
+    ///  double getLocalSiderealTime(double dSiderealTime, double dLongitude)   地方恒星時の取得
     ///  
     ///  ---  グラフィック処理関連  ------
-    ///  Point rotateOrg(Point po, double rotate)
-    ///  Point rotatePoint(Point ctr, Point po, double rotate)
-    ///  double angleOrg(Point po)
-    ///  double anglePoint(Point ctr, Point po)
-    ///  int angleQuadrant(double ang)
-    ///  List<Point> circlePeakPoint(Point c, double r)
-    ///  List<PointD> arcPeakPoint(PointD c, double r, double sa, double ea)
-    ///  List<Point> arcPeakPoint(Point c, double r, double sa, double ea)
-    ///  List<PointD> pointSort(List<PointD> plist)
-    ///  List<Point> pointSort(List<Point> plist)
-    ///  List<PointD> pointListSqueeze(List<PointD> plist)
-    ///  List<PointD> devideArcList(PointD c, double r, double sa, double ea, int div = 32)
-    ///  List<PointD> divideCircleList(PointD c, double r, int div = 32)
-    ///  List<Point> divideCircleList(Point c, double r, int div = 32)
-    ///  Point averagePoint(List<Point> pList)
-    ///  Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe)
-    ///  Bitmap getActiveWindowCapture()
-    ///  BitmapSource bitmap2BitmapSource(Bitmap bitmap)
-    ///  void SaveBitmapSourceToFile(BitmapSource bitmapSource, string filePath)
+    ///  string getColorName(Brush color)                                   Brush を色名に変換
+    ///  Brush getColor(string color)                                       色名を Brush値に変換
+    ///  Point rotateOrg(Point po, double rotate)                           原点を中心に回転
+    ///  Point rotatePoint(Point ctr, Point po, double rotate)              回転中心を指定して回転
+    ///  double angleOrg(Point po)                                          原点に対する座標点の水平線との角度(rad)
+    ///  double anglePoint(Point ctr, Point po)                             中心座標を指定して回転角度(rad)
+    ///  int angleQuadrant(double ang)                                      角度の象限を求める(0-3)
+    ///  List<Point> circlePeakPoint(Point c, double r)                     円の4頂点?を求める
+    ///  List<PointD> arcPeakPoint(PointD c, double r, double sa, double ea)円弧の頂点リストを求める
+    ///  List<Point> arcPeakPoint(Point c, double r, double sa, double ea)  円弧の頂点リストを求める
+    ///  List<PointD> pointSort(List<PointD> plist)                         点リストを中心点の角度でソート
+    ///  List<Point> pointSort(List<Point> plist)                           点リストを中心点の角度でソート
+    ///  List<PointD> pointListSqueeze(List<PointD> plist)                  点座標リストで重複点を削除
+    ///  List<PointD> devideArcList(PointD c, double r, double sa, double ea, int div = 32) 円弧を分割した点座標リストを作成
+    ///  List<PointD> divideCircleList(PointD c, double r, int div = 32)    円を分割した点座標リストを作成
+    ///  List<Point> divideCircleList(Point c, double r, int div = 32)      円を分割した点座標リストを作成
+    ///  Point averagePoint(List<Point> pList)                              一種の中心点(点リストの平均位置)
+    ///  Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe) 画面の指定領域をキャプチャする
+    ///  Bitmap getActiveWindowCapture()                                    アクティブウィンドウの画面をキャプチャする
+    ///  BitmapImage cnvBitmap2BitmapImage(Bitmap bitmap, ImageFormat imageFormat)  BitmapをBitmapImageに変換
+    ///  Bitmap cnvBitmapImage2Bitmap(BitmapImage bitmapImage)              BitmapImageをBitmapに変換
+    ///  Bitmap cnvBitmapSource2Bitmap(BitmapSource bitmapSource)           BitmapSourceをBitmapに変換
+    ///  BitmapSource bitmap2BitmapSource(Bitmap bitmap)                    BitMap からBitmapSourceに変換
+    ///  Bitmap trimingBitmap(Bitmap bitmap, Point sp, Point ep)            Bitmapデータをトリミングする
+    ///  int setCanvasBitmapImage(Canvas canvas, BitmapImage bitmapImage, double ox, double oy, double width, double height)    BitmapImageをCanvasに登録する
+    ///  Bitmap verticalCombineImage(System.Drawing.Bitmap[] src)           画像を縦方向に連結
+    ///  Bitmap horizontalCombineImage(System.Drawing.Bitmap[] src)         画像の水平方向に連結
+    ///  void SaveBitmapSourceToFile(BitmapSource bitmapSource, string filePath)    画像データをファイルに保存
+    ///  Media.Color Draw2MediaColor(Drawing.Color color)                   Drawing.Color から Media.Color に変換
+    ///  Drawing.Color Media2DrawColor(Windows.Media.Color color)           Media.Color から Drawing.Color に変換
     ///  
     ///  ---  数値処理関連  ------
     ///  double mod(double a, double b)
@@ -139,6 +169,155 @@ namespace CoreLib
     /// </summary>
     public class YLib
     {
+        public record ColorTitle(string colorTitle, System.Windows.Media.Brush brush);
+        //  140色の色パターン
+        public List<ColorTitle> mColorList = new List<ColorTitle>() {
+            new ColorTitle("AliceBlue", System.Windows.Media.Brushes.AliceBlue),
+            new ColorTitle("AntiqueWhite", System.Windows.Media.Brushes.AntiqueWhite),
+            new ColorTitle("Aqua", System.Windows.Media.Brushes.Aqua),
+            new ColorTitle("Aquamarine", System.Windows.Media.Brushes.Aquamarine),
+            new ColorTitle("Azure", System.Windows.Media.Brushes.Azure),
+            new ColorTitle("Beige", System.Windows.Media.Brushes.Beige),
+            new ColorTitle("Bisque", System.Windows.Media.Brushes.Bisque),
+            new ColorTitle("Black", System.Windows.Media.Brushes.Black),
+            new ColorTitle("BlanchedAlmond", System.Windows.Media.Brushes.BlanchedAlmond),
+            new ColorTitle("Blue", System.Windows.Media.Brushes.Blue),
+            new ColorTitle("BlueViolet", System.Windows.Media.Brushes.BlueViolet),
+            new ColorTitle("Brown", System.Windows.Media.Brushes.Brown),
+            new ColorTitle("BurlyWood", System.Windows.Media.Brushes.BurlyWood),
+            new ColorTitle("CadetBlue", System.Windows.Media.Brushes.CadetBlue),
+            new ColorTitle("Chartreuse", System.Windows.Media.Brushes.Chartreuse),
+            new ColorTitle("Chocolate", System.Windows.Media.Brushes.Chocolate),
+            new ColorTitle("Coral", System.Windows.Media.Brushes.Coral),
+            new ColorTitle("CornflowerBlue", System.Windows.Media.Brushes.CornflowerBlue),
+            new ColorTitle("Cornsilk", System.Windows.Media.Brushes.Cornsilk),
+            new ColorTitle("Crimson", System.Windows.Media.Brushes.Crimson),
+            new ColorTitle("Cyan", System.Windows.Media.Brushes.Cyan),
+            new ColorTitle("DarkBlue", System.Windows.Media.Brushes.DarkBlue),
+            new ColorTitle("DarkCyan", System.Windows.Media.Brushes.DarkCyan),
+            new ColorTitle("DarkGoldenrod", System.Windows.Media.Brushes.DarkGoldenrod),
+            new ColorTitle("DarkGray", System.Windows.Media.Brushes.DarkGray),
+            new ColorTitle("DarkGreen", System.Windows.Media.Brushes.DarkGreen),
+            new ColorTitle("DarkKhaki", System.Windows.Media.Brushes.DarkKhaki),
+            new ColorTitle("DarkMagenta", System.Windows.Media.Brushes.DarkMagenta),
+            new ColorTitle("DarkOliveGreen", System.Windows.Media.Brushes.DarkOliveGreen),
+            new ColorTitle("DarkOrange", System.Windows.Media.Brushes.DarkOrange),
+            new ColorTitle("DarkOrchid", System.Windows.Media.Brushes.DarkOrchid),
+            new ColorTitle("DarkRed", System.Windows.Media.Brushes.DarkRed),
+            new ColorTitle("DarkSalmon", System.Windows.Media.Brushes.DarkSalmon),
+            new ColorTitle("DarkSeaGreen", System.Windows.Media.Brushes.DarkSeaGreen),
+            new ColorTitle("DarkSlateBlue", System.Windows.Media.Brushes.DarkSlateBlue),
+            new ColorTitle("DarkSlateGray", System.Windows.Media.Brushes.DarkSlateGray),
+            new ColorTitle("DarkTurquoise", System.Windows.Media.Brushes.DarkTurquoise),
+            new ColorTitle("DarkViolet", System.Windows.Media.Brushes.DarkViolet),
+            new ColorTitle("DeepPink", System.Windows.Media.Brushes.DeepPink),
+            new ColorTitle("DeepSkyBlue", System.Windows.Media.Brushes.DeepSkyBlue),
+            new ColorTitle("DimGray", System.Windows.Media.Brushes.DimGray),
+            new ColorTitle("DodgerBlue", System.Windows.Media.Brushes.DodgerBlue),
+            new ColorTitle("Firebrick", System.Windows.Media.Brushes.Firebrick),
+            new ColorTitle("FloralWhite", System.Windows.Media.Brushes.FloralWhite),
+            new ColorTitle("ForestGreen", System.Windows.Media.Brushes.ForestGreen),
+            new ColorTitle("Fuchsia", System.Windows.Media.Brushes.Fuchsia),
+            new ColorTitle("Gainsboro", System.Windows.Media.Brushes.Gainsboro),
+            new ColorTitle("GhostWhite", System.Windows.Media.Brushes.GhostWhite),
+            new ColorTitle("Gold", System.Windows.Media.Brushes.Gold),
+            new ColorTitle("Goldenrod", System.Windows.Media.Brushes.Goldenrod),
+            new ColorTitle("Gray", System.Windows.Media.Brushes.Gray),
+            new ColorTitle("Green", System.Windows.Media.Brushes.Green),
+            new ColorTitle("GreenYellow", System.Windows.Media.Brushes.GreenYellow),
+            new ColorTitle("Honeydew", System.Windows.Media.Brushes.Honeydew),
+            new ColorTitle("HotPink", System.Windows.Media.Brushes.HotPink),
+            new ColorTitle("IndianRed", System.Windows.Media.Brushes.IndianRed),
+            new ColorTitle("Indigo", System.Windows.Media.Brushes.Indigo),
+            new ColorTitle("Ivory", System.Windows.Media.Brushes.Ivory),
+            new ColorTitle("Khaki", System.Windows.Media.Brushes.Khaki),
+            new ColorTitle("Lavender", System.Windows.Media.Brushes.Lavender),
+            new ColorTitle("LavenderBlush", System.Windows.Media.Brushes.LavenderBlush),
+            new ColorTitle("LawnGreen", System.Windows.Media.Brushes.LawnGreen),
+            new ColorTitle("LemonChiffon", System.Windows.Media.Brushes.LemonChiffon),
+            new ColorTitle("LightBlue", System.Windows.Media.Brushes.LightBlue),
+            new ColorTitle("LightCoral", System.Windows.Media.Brushes.LightCoral),
+            new ColorTitle("LightCyan", System.Windows.Media.Brushes.LightCyan),
+            new ColorTitle("LightGoldenrodYellow", System.Windows.Media.Brushes.LightGoldenrodYellow),
+            new ColorTitle("LightGray", System.Windows.Media.Brushes.LightGray),
+            new ColorTitle("LightGreen", System.Windows.Media.Brushes.LightGreen),
+            new ColorTitle("LightPink", System.Windows.Media.Brushes.LightPink),
+            new ColorTitle("LightSalmon", System.Windows.Media.Brushes.LightSalmon),
+            new ColorTitle("LightSeaGreen", System.Windows.Media.Brushes.LightSeaGreen),
+            new ColorTitle("LightSkyBlue", System.Windows.Media.Brushes.LightSkyBlue),
+            new ColorTitle("LightSlateGray", System.Windows.Media.Brushes.LightSlateGray),
+            new ColorTitle("LightSteelBlue", System.Windows.Media.Brushes.LightSteelBlue),
+            new ColorTitle("LightYellow", System.Windows.Media.Brushes.LightYellow),
+            new ColorTitle("Lime", System.Windows.Media.Brushes.Lime),
+            new ColorTitle("LimeGreen", System.Windows.Media.Brushes.LimeGreen),
+            new ColorTitle("Linen", System.Windows.Media.Brushes.Linen),
+            new ColorTitle("Magenta", System.Windows.Media.Brushes.Magenta),
+            new ColorTitle("Maroon", System.Windows.Media.Brushes.Maroon),
+            new ColorTitle("MediumAquamarine", System.Windows.Media.Brushes.MediumAquamarine),
+            new ColorTitle("MediumBlue", System.Windows.Media.Brushes.MediumBlue),
+            new ColorTitle("MediumOrchid", System.Windows.Media.Brushes.MediumOrchid),
+            new ColorTitle("MediumPurple", System.Windows.Media.Brushes.MediumPurple),
+            new ColorTitle("MediumSeaGreen", System.Windows.Media.Brushes.MediumSeaGreen),
+            new ColorTitle("MediumSlateBlue", System.Windows.Media.Brushes.MediumSlateBlue),
+            new ColorTitle("MediumSpringGreen", System.Windows.Media.Brushes.MediumSpringGreen),
+            new ColorTitle("MediumTurquoise", System.Windows.Media.Brushes.MediumTurquoise),
+            new ColorTitle("MediumVioletRed", System.Windows.Media.Brushes.MediumVioletRed),
+            new ColorTitle("MidnightBlue", System.Windows.Media.Brushes.MidnightBlue),
+            new ColorTitle("MintCream", System.Windows.Media.Brushes.MintCream),
+            new ColorTitle("MistyRose", System.Windows.Media.Brushes.MistyRose),
+            new ColorTitle("Moccasin", System.Windows.Media.Brushes.Moccasin),
+            new ColorTitle("NavajoWhite", System.Windows.Media.Brushes.NavajoWhite),
+            new ColorTitle("Navy", System.Windows.Media.Brushes.Navy),
+            new ColorTitle("OldLace", System.Windows.Media.Brushes.OldLace),
+            new ColorTitle("Olive", System.Windows.Media.Brushes.Olive),
+            new ColorTitle("OliveDrab", System.Windows.Media.Brushes.OliveDrab),
+            new ColorTitle("OliveDrab", System.Windows.Media.Brushes.Orange),
+            new ColorTitle("OrangeRed", System.Windows.Media.Brushes.OrangeRed),
+            new ColorTitle("Orchid", System.Windows.Media.Brushes.Orchid),
+            new ColorTitle("PaleGoldenrod", System.Windows.Media.Brushes.PaleGoldenrod),
+            new ColorTitle("PaleGreen", System.Windows.Media.Brushes.PaleGreen),
+            new ColorTitle("PaleTurquoise", System.Windows.Media.Brushes.PaleTurquoise),
+            new ColorTitle("PaleVioletRed", System.Windows.Media.Brushes.PaleVioletRed),
+            new ColorTitle("PapayaWhip", System.Windows.Media.Brushes.PapayaWhip),
+            new ColorTitle("PeachPuff", System.Windows.Media.Brushes.PeachPuff),
+            new ColorTitle("Peru", System.Windows.Media.Brushes.Peru),
+            new ColorTitle("Pink", System.Windows.Media.Brushes.Pink),
+            new ColorTitle("Plum", System.Windows.Media.Brushes.Plum),
+            new ColorTitle("PowderBlue", System.Windows.Media.Brushes.PowderBlue),
+            new ColorTitle("Purple", System.Windows.Media.Brushes.Purple),
+            new ColorTitle("Red", System.Windows.Media.Brushes.Red),
+            new ColorTitle("RosyBrown", System.Windows.Media.Brushes.RosyBrown),
+            new ColorTitle("RoyalBlue", System.Windows.Media.Brushes.RoyalBlue),
+            new ColorTitle("SaddleBrown", System.Windows.Media.Brushes.SaddleBrown),
+            new ColorTitle("Salmon", System.Windows.Media.Brushes.Salmon),
+            new ColorTitle("SandyBrown", System.Windows.Media.Brushes.SandyBrown),
+            new ColorTitle("SeaGreen", System.Windows.Media.Brushes.SeaGreen),
+            new ColorTitle("SeaShell", System.Windows.Media.Brushes.SeaShell),
+            new ColorTitle("Sienna", System.Windows.Media.Brushes.Sienna),
+            new ColorTitle("Silver", System.Windows.Media.Brushes.Silver),
+            new ColorTitle("SkyBlue", System.Windows.Media.Brushes.SkyBlue),
+            new ColorTitle("SlateBlue", System.Windows.Media.Brushes.SlateBlue),
+            new ColorTitle("SlateGray", System.Windows.Media.Brushes.SlateGray),
+            new ColorTitle("Snow", System.Windows.Media.Brushes.Snow),
+            new ColorTitle("SpringGreen", System.Windows.Media.Brushes.SpringGreen),
+            new ColorTitle("SteelBlue", System.Windows.Media.Brushes.SteelBlue),
+            new ColorTitle("Tan", System.Windows.Media.Brushes.Tan),
+            new ColorTitle("Teal", System.Windows.Media.Brushes.Teal),
+            new ColorTitle("Thistle", System.Windows.Media.Brushes.Thistle),
+            new ColorTitle("Tomato", System.Windows.Media.Brushes.Tomato),
+            new ColorTitle("Transparent", System.Windows.Media.Brushes.Transparent),
+            new ColorTitle("Turquoise", System.Windows.Media.Brushes.Turquoise),
+            new ColorTitle("Violet", System.Windows.Media.Brushes.Violet),
+            new ColorTitle("Wheat", System.Windows.Media.Brushes.Wheat),
+            new ColorTitle("White", System.Windows.Media.Brushes.White),
+            new ColorTitle("WhiteSmoke", System.Windows.Media.Brushes.WhiteSmoke),
+            new ColorTitle("Yellow", System.Windows.Media.Brushes.Yellow),
+            new ColorTitle("YellowGreen", System.Windows.Media.Brushes.YellowGreen),
+        };
+
+        System.Diagnostics.Stopwatch mSw;       //  ストップウォッチクラス
+        private TimeSpan mStopWatchTotalTime;   //  mSwの経過時間
+
         private Encoding[] mEncoding;
         public int mEncordingType = 0;
 
@@ -171,6 +350,7 @@ namespace CoreLib
             public int right;
             public int bottom;
         }
+
         //  ウインドウの外側のサイズを取得
         //  hWnd ; ウィンドウ・ハンドル
         //  rect : Rect構造体
@@ -181,10 +361,12 @@ namespace CoreLib
         //  Return : ウィンドウ・ハンドル
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
+
         //  クリックされているか判定用
         //  nVirtkey : 状態を知りたいキーコード
         [DllImport("user32.dll")]
         private static extern short GetKeyState(int nVirtkey);
+
         //クリック判定
         //  マウス左ボタン(0x01)(VK_LBUTTON)の状態
         //  押されていたらマイナス値(-127)、なかったら0
@@ -194,10 +376,19 @@ namespace CoreLib
         }
 
         //  マウス右ボタン(0x02)(VK_RBUTTON)の状態
-        //  押されていたらマイナス値(-127)、なかったら0
+        //  押されていたらマイナス値(-127)、なかったら
         public bool IsClickDownRight()
         {
             return GetKeyState(0x02) < 0;
+        }
+
+        //  マウスやキーボードの状態取得
+        //  nVirtkey : 状態を知りたいキーコード
+        //  仮想キー コード VK_LBUTTON,VK_RBUTTON,VK_CANCEL,VK_BACK,VK_TAB,VK_RETURN,VK_SHIFT,VK_CONTROL,VK_MENU(ALT)...
+        //  https://learn.microsoft.com/ja-jp/windows/win32/inputdev/virtual-key-codes
+        public bool isGetKeyState(int nVirtKey)
+        {
+            return GetKeyState(nVirtKey) < 0;
         }
 
         //  ---  システム関連  ------
@@ -303,6 +494,64 @@ namespace CoreLib
             temp = lhs;
             lhs = rhs;
             rhs = temp;
+        }
+
+        // ---  ストップウォッチ  ---
+
+        /// <summary>
+        /// ストップウォッチ機能初期化・計測開始
+        /// </summary>
+        public void stopWatchStartNew()
+        {
+            mSw = System.Diagnostics.Stopwatch.StartNew();
+            mStopWatchTotalTime = new TimeSpan();
+        }
+
+        /// <summary>
+        /// ストップウォッチ機能ラップ時間取得
+        /// </summary>
+        /// <returns>計測時間</returns>
+        public TimeSpan stopWatchLapTime()
+        {
+            mSw.Stop();
+            TimeSpan lap = mSw.Elapsed;
+            mSw.Start();
+            return lap;
+        }
+
+        /// <summary>
+        /// ストップウォッチ機能計測時間の取得と再スタート
+        /// 累積時間には追加
+        /// </summary>
+        /// <returns>計測時間</returns>
+        public TimeSpan stopWatchRestart()
+        {
+            mSw.Stop();
+            TimeSpan lap = mSw.Elapsed;
+            mStopWatchTotalTime += lap;
+            mSw.Restart();
+            return lap;
+        }
+
+        /// <summary>
+        /// ストップウォッチ機能計測時間の取得と終了
+        /// </summary>
+        /// <returns>計測時間</returns>
+        public TimeSpan stopWatchStop()
+        {
+            mSw.Stop();
+            TimeSpan lap = mSw.Elapsed;
+            mStopWatchTotalTime += lap;
+            return lap;
+        }
+
+        /// <summary>
+        /// ストップウォッチ機能累積時間の取得
+        /// </summary>
+        /// <returns>計測時間</returns>
+        public TimeSpan stopWatchTotalTime()
+        {
+            return mStopWatchTotalTime;
         }
 
         //  ---  ネットワーク関連  ---
@@ -481,7 +730,48 @@ namespace CoreLib
             return text;
         }
 
-
+        /// <summary>
+        /// 括弧で囲まれた文字列を抽出する(ディフォルトは'{','}')
+        /// 抽出した文字列に括弧は含まれない
+        /// </summary>
+        /// <param name="text">文字列</param>
+        /// <param name="sb">開始括弧</param>
+        /// <param name="eb">終了括弧</param>
+        /// <returns>括弧内文字列</returns>
+        public List<string> extractBrackets(string text, char sb = '{', char eb = '}', bool withBracket = false)
+        {
+            List<string> extractText = new List<string>();
+            int bOffset = withBracket ? 1 : 0;
+            int pos = 0;
+            int sp = text.IndexOf(sb);
+            int ep = text.IndexOf(eb);
+            if ((0 <= sp && 0 <= ep && ep < sp) || (sp < 0 && 0 <= ep)) {
+                string data = text.Substring(0, ep + bOffset);
+                if (0 < data.Length)
+                    extractText.Add(data);
+                pos = ep + 1;
+            }
+            while (pos < text.Length) {
+                int st = text.IndexOf(sb, pos);
+                string data = "";
+                if (pos <= st) {
+                    int ct = text.IndexOf(eb, st);
+                    if (0 <= ct) {
+                        data = text.Substring(st + 1 - bOffset, ct - st - 1 + 2 * bOffset);
+                        pos = ct + 1;
+                    } else {
+                        data = text.Substring(st + 1 - bOffset);
+                        pos = text.Length;
+                    }
+                } else {
+                    pos = text.Length;
+                }
+                // string data = data.Trim(trimChar);
+                if (0 < data.Length)
+                    extractText.Add(data);
+            }
+            return extractText;
+        }
         /// <summary>
         /// 文字列内のコントロールコードを除去する
         /// 0x20 <= (半角文字) <0xf0 and 0x100<= (全角文字)を通過させる
@@ -1145,22 +1435,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// テキストファイルの保存
-        /// </summary>
-        /// <param name="filePath">ファイルパス</param>
-        /// <param name="buffer">ファイルデータ</param>
-        public void saveTextFile(string path, string buffer)
-        {
-            string folder = Path.GetDirectoryName(path);
-            if (0 < folder.Length && !Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            StreamWriter sw = new StreamWriter(path, false, mEncoding[mEncordingType]);
-            sw.Write(buffer);
-            sw.Close();
-        }
-
-        /// <summary>
         /// JSON形式のファイルを読み込む
         /// </summary>
         /// <param name="filePath">ファイルパス</param>
@@ -1225,6 +1499,22 @@ namespace CoreLib
                 sr.Close();
             }
             return buffer;
+        }
+
+        /// <summary>
+        /// テキストファイルの保存
+        /// </summary>
+        /// <param name="filePath">ファイルパス</param>
+        /// <param name="buffer">ファイルデータ</param>
+        public void saveTextFile(string path, string buffer)
+        {
+            string folder = Path.GetDirectoryName(path);
+            if (0 < folder.Length && !Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            StreamWriter sw = new StreamWriter(path, false, mEncoding[mEncordingType]);
+            sw.Write(buffer);
+            sw.Close();
         }
 
         /// <summary>
@@ -1601,6 +1891,28 @@ namespace CoreLib
 
 
         /// <summary>
+        /// Brush を色名に変換
+        /// </summary>
+        /// <param name="color">Brush値</param>
+        /// <returns>色名</returns>
+        public string getColorName(System.Windows.Media.Brush color)
+        {
+            int index = mColorList.FindIndex(x => x.brush == color);
+            return mColorList[index < 0 ? 0 : index].colorTitle;
+        }
+
+        /// <summary>
+        /// 色名を Brush値に変換
+        /// </summary>
+        /// <param name="color">色名</param>
+        /// <returns>Brush値</returns>
+        public System.Windows.Media.Brush getColor(string color)
+        {
+            int index = mColorList.FindIndex(x => x.colorTitle == color);
+            return mColorList[index < 0 ? 0 : index].brush;
+        }
+
+        /// <summary>
         /// 原点を中心に回転
         /// </summary>
         /// <param name="po">点座標</param>
@@ -1797,11 +2109,11 @@ namespace CoreLib
                 ea += Math.PI * 2.0;
             for (double ang = sa; ang < ea; ang += da) {
                 PointD pa = new PointD(c.x + r, c.y);
-                pa.rotatePoint(c, ang);
+                pa.rotate(c, ang);
                 plist.Add(pa);
             }
             PointD p = new PointD(c.x + r, c.y);
-            p.rotatePoint(c, ea);
+            p.rotate(c, ea);
             plist.Add(p);
             return plist;
         }
@@ -1845,7 +2157,7 @@ namespace CoreLib
 
 
         /// <summary>
-        /// 一種の中心点(点リストの平均)
+        /// 一種の中心点(点リストの平均位置)
         /// </summary>
         /// <param name="pList">点リスト</param>
         /// <returns>点座標</returns>
@@ -1902,6 +2214,80 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 全画面をキャプチャする
+        /// </summary>
+        /// <returns>Bitmapデータ</returns>
+        //public System.Drawing.Bitmap getFullScreenCapture()
+        //{
+        //    System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(
+        //        System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width,
+        //        System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height);
+        //    System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(bitmap);
+        //    graphics.CopyFromScreen(new System.Drawing.Point(0, 0), new System.Drawing.Point(0, 0), bitmap.Size);
+        //    graphics.Dispose();
+        //    return bitmap;
+        //}
+
+        /// <summary>
+        /// BitmapをBitmapImageに変換
+        /// </summary>
+        /// <param name="bitmap">Bitmap</param>
+        /// <param name="imageFormat">ImageFormat(Png/Jpegなど)</param>
+        /// <returns>BitmapImage</returns>
+        public BitmapImage cnvBitmap2BitmapImage(System.Drawing.Bitmap bitmap)
+        {
+            using (MemoryStream memory = new MemoryStream()) {
+                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                memory.Position = 0;
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = memory;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+                memory.Close();
+                return bitmapImage;
+            }
+        }
+
+        /// <summary>
+        /// BitmapImageをBitmapに変換
+        /// 参考: https://code-examples.net/ja/q/62f185
+        /// </summary>
+        /// <param name="bitmapImage">BitmapImage</param>
+        /// <returns>Bitmap</returns>
+        public System.Drawing.Bitmap cnvBitmapImage2Bitmap(BitmapImage bitmapImage)
+        {
+            return new System.Drawing.Bitmap(bitmapImage.StreamSource);
+        }
+
+        /// <summary>
+        /// BitmapSourceをBitmapに変換
+        /// 参考: https://qiita.com/YSRKEN/items/a24bf2173f0129a5825c
+        /// </summary>
+        /// <param name="bitmapSource">BitmapSourceデータ</param>
+        /// <returns>Bitmapデータ</returns>
+        public System.Drawing.Bitmap cnvBitmapSource2Bitmap(BitmapSource bitmapSource)
+        {
+            var bitmap = new System.Drawing.Bitmap(
+                bitmapSource.PixelWidth, bitmapSource.PixelHeight,
+                System.Drawing.Imaging.PixelFormat.Format32bppPArgb
+            );
+            var bitmapData = bitmap.LockBits(
+                new System.Drawing.Rectangle(System.Drawing.Point.Empty, bitmap.Size),
+                System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                System.Drawing.Imaging.PixelFormat.Format32bppPArgb
+            );
+            bitmapSource.CopyPixels(
+                System.Windows.Int32Rect.Empty,
+                bitmapData.Scan0,
+                bitmapData.Height * bitmapData.Stride,
+                bitmapData.Stride
+            );
+            bitmap.UnlockBits(bitmapData);
+            return bitmap;
+        }
+
+        /// <summary>
         /// BitMap からBitmapSourceに変換
         /// https://qiita.com/YSRKEN/items/a24bf2173f0129a5825c
         /// </summary>
@@ -1918,13 +2304,153 @@ namespace CoreLib
                 // MemoryStreamからBitmapFrameを作成
                 // (BitmapFrameはBitmapSourceを継承しているのでそのまま渡せばOK)
                 System.Windows.Media.Imaging.BitmapSource bitmapSource =
-                    System.Windows.Media.Imaging.BitmapFrame.Create(
+                        System.Windows.Media.Imaging.BitmapFrame.Create(
                         ms,
                         System.Windows.Media.Imaging.BitmapCreateOptions.None,
                         System.Windows.Media.Imaging.BitmapCacheOption.OnLoad
                     );
                 return bitmapSource;
             }
+        }
+
+        /// <summary>
+        /// BitmapSourceからBitmapImageに変換(動作未確認)
+        /// https://stackoverflow.com/questions/5338253/bitmapsource-to-bitmapimage
+        /// </summary>
+        /// <param name="bitmapSource"></param>
+        /// <returns></returns>
+        public BitmapImage bitmapSource2BitmapImage(BitmapSource bitmapSource)
+        {
+            JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+            MemoryStream memoryStream = new MemoryStream();
+            BitmapImage bImg = new BitmapImage();
+
+            encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+            encoder.Save(memoryStream);
+
+            memoryStream.Position = 0;
+            bImg.BeginInit();
+            bImg.StreamSource = memoryStream;
+            bImg.EndInit();
+
+            memoryStream.Close();
+
+            return bImg;
+        }
+
+        /// <summary>
+        /// Bitmapデータをトリミングする
+        /// </summary>
+        /// <param name="bitmap">Bitmapデータ</param>
+        /// <param name="sp">領域の始点</param>
+        /// <param name="ep">領域の終点</param>
+        /// <returns>切り取ったBitmapデータ</returns>
+        public System.Drawing.Bitmap trimingBitmap(System.Drawing.Bitmap bitmap, System.Windows.Point sp, System.Windows.Point ep)
+        {
+            System.Windows.Rect rect = new System.Windows.Rect(sp, ep);
+            //  画像をトリミングする
+            System.Drawing.Rectangle rectAngle = new System.Drawing.Rectangle((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
+            System.Drawing.Bitmap resultImg = bitmap.Clone(rectAngle, bitmap.PixelFormat);
+            bitmap.Dispose();
+            return resultImg;
+        }
+
+        /// <summary>
+        /// BitmapImageをCanvasに登録する
+        /// </summary>
+        /// <param name="canvas">Canvas</param>
+        /// <param name="bitmapImage">BitmapImage</param>
+        /// <param name="ox">原点(左上)</param>
+        /// <param name="oy">原点(左上)</param>
+        /// <param name="width">イメージの幅</param>
+        /// <param name="height">イメージの高さ</param>
+        /// <returns>登録位置</returns>
+        public int setCanvasBitmapImage(System.Windows.Controls.Canvas canvas, BitmapImage bitmapImage, double ox, double oy, double width, double height)
+        {
+            System.Windows.Controls.Image img = new System.Windows.Controls.Image();
+            img.Source = bitmapImage;
+            img.Width = width;
+            img.Height = height;
+            img.Margin = new System.Windows.Thickness(ox, oy, 0, 0);
+            return canvas.Children.Add(img);
+        }
+
+        /// <summary>
+        /// 画像を縦方向に連結
+        /// https://imagingsolution.net/program/csharp/image_combine/
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
+        public System.Drawing.Bitmap verticalCombineImage(System.Drawing.Bitmap[] src)
+        {
+            int dstWidth = 0;
+            int dstHeight = 0;
+            System.Drawing.Imaging.PixelFormat dstPixelFormat = System.Drawing.Imaging.PixelFormat.Format8bppIndexed;   //  256色
+            for (int i = 0; i < src.Length; i++) {
+                //  サイズの拡張
+                if (dstWidth < src[i].Width)
+                    dstWidth = src[i].Width;
+                dstHeight += src[i].Height;
+                //  最大ビット数の検索
+                if (System.Drawing.Bitmap.GetPixelFormatSize(dstPixelFormat) <
+                    System.Drawing.Bitmap.GetPixelFormatSize(src[i].PixelFormat)) {
+                    dstPixelFormat = src[i].PixelFormat;
+                }
+            }
+
+            var dst = new System.Drawing.Bitmap(dstWidth, dstHeight, dstPixelFormat);
+            var dstRect = new System.Drawing.Rectangle();
+
+            using (var g = System.Drawing.Graphics.FromImage(dst)) {
+                for (int i = 0; i < src.Length; i++) {
+                    dstRect.Width = src[i].Width;
+                    dstRect.Height = src[i].Height;
+                    //  描画
+                    g.DrawImage(src[i], dstRect, 0, 0, src[i].Width, src[i].Height, System.Drawing.GraphicsUnit.Pixel);
+                    //  次の描画先
+                    dstRect.Y = dstRect.Bottom;
+                }
+            }
+            return dst;
+        }
+
+        /// <summary>
+        /// 画像の水平方向に連結
+        /// https://imagingsolution.net/program/csharp/image_combine/
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
+        public System.Drawing.Bitmap horizontalCombineImage(System.Drawing.Bitmap[] src)
+        {
+            int dstWidth = 0;
+            int dstHeight = 0;
+            System.Drawing.Imaging.PixelFormat dstPixelFormat = System.Drawing.Imaging.PixelFormat.Format8bppIndexed;   //  256色
+            for (int i = 0; i < src.Length; i++) {
+                //  サイズの拡張
+                if (dstHeight < src[i].Height)
+                    dstHeight = src[i].Height;
+                dstWidth += src[i].Width;
+                //  最大ビット数の検索
+                if (System.Drawing.Bitmap.GetPixelFormatSize(dstPixelFormat) <
+                    System.Drawing.Bitmap.GetPixelFormatSize(src[i].PixelFormat)) {
+                    dstPixelFormat = src[i].PixelFormat;
+                }
+            }
+
+            var dst = new System.Drawing.Bitmap(dstWidth, dstHeight, dstPixelFormat);
+            var dstRect = new System.Drawing.Rectangle();
+
+            using (var g = System.Drawing.Graphics.FromImage(dst)) {
+                for (int i = 0; i < src.Length; i++) {
+                    dstRect.Width = src[i].Width;
+                    dstRect.Height = src[i].Height;
+                    //  描画
+                    g.DrawImage(src[i], dstRect, 0, 0, src[i].Width, src[i].Height, System.Drawing.GraphicsUnit.Pixel);
+                    //  次の描画先
+                    dstRect.X = dstRect.Right;
+                }
+            }
+            return dst;
         }
 
         /// <summary>
@@ -1949,8 +2475,65 @@ namespace CoreLib
             }
         }
 
+        /// <summary>
+        /// Canvas を BitmapSourceに変換する
+        /// </summary>
+        /// <param name="canvas">Canvas</param>
+        /// <returns>BitmapSource</returns>
+        public BitmapSource canvas2Bitmap(System.Windows.Controls.Canvas canvas)
+        {
+            //  Canvasの位置
+            Thickness margin = canvas.Margin;
+            System.Windows.Point offset = new System.Windows.Point(margin.Left, margin.Top);
+            // Window Objectの起点から画像を取得
+            var renderBitmap = new RenderTargetBitmap(
+                (int)(canvas.ActualWidth + offset.X),       // 画像の幅
+                (int)(canvas.ActualHeight + offset.Y),      // 画像の高さ
+                96.0d,                 // 横96.0DPI
+                96.0d,                 // 縦96.0DPI
+                PixelFormats.Pbgra32); // 32bit(RGBA各8bit)
+            renderBitmap.Render(canvas);
+            //  Canvasの領域をトリミングする
+            System.Drawing.Bitmap bitmap = cnvBitmapSource2Bitmap(renderBitmap);
+            bitmap = trimingBitmap(bitmap, offset,
+                new System.Windows.Point(canvas.ActualWidth + offset.X, canvas.ActualHeight + offset.Y));
+            return bitmap2BitmapSource(bitmap);
+        }
+
+        /// <summary>
+        /// Drawing.Color から Media.Color に変換
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public System.Windows.Media.Color Draw2MediaColor(System.Drawing.Color color)
+        {
+            return System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
+        }
+
+        /// <summary>
+        /// Media.Color から Drawing.Colorに変換
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public System.Drawing.Color Media2DrawColor(System.Windows.Media.Color color)
+        {
+            return System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+        }
 
         //  ---  数値処理関連  ------
+
+        /// <summary>
+        /// 2点間の距離
+        /// </summary>
+        /// <param name="ps">始点</param>
+        /// <param name="pe">終点</param>
+        /// <returns>距離</returns>
+        public double distance(System.Windows.Point ps, System.Windows.Point pe)
+        {
+            double dx = ps.X - pe.X;
+            double dy = ps.Y - pe.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
 
         /// <summary>
         /// 剰余関数 (負数の剰余を正数で返す)
@@ -2146,6 +2729,93 @@ namespace CoreLib
 
         //  ---  座標変換関連  ------
 
+        /// <summary>
+        /// 移動量を3D変換マトリックス(4x4)に設定
+        /// </summary>
+        /// <param name="dx">X軸方向の移動量</param>
+        /// <param name="dy">Y軸方向の移動量</param>
+        /// <param name="dz">Z軸方向の移動量</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] translate3DMatrix(double dx, double dy, double dz)
+        {
+            double[,] mp = new double[4, 4];
+            mp[0, 0] = 1;
+            mp[1, 1] = 1;
+            mp[2, 2] = 1;
+            mp[3, 0] = dx;
+            mp[3, 1] = dy;
+            mp[3, 2] = dz;
+            mp[3, 3] = 1;
+            return mp;
+        }
+
+        /// <summary>
+        /// X軸回転を3D変換マトリックス(4x4)に設定
+        /// </summary>
+        /// <param name="th">回転角(rad)</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] rotateX3DMatrix(double th)
+        {
+            double[,] mp = new double[4, 4];
+            mp[0, 0] = 1.0;
+            mp[1, 1] = Math.Cos(th);
+            mp[1, 2] = Math.Sin(th);
+            mp[2, 1] = -Math.Sin(th);
+            mp[2, 2] = Math.Cos(th);
+            mp[3, 3] = 1.0;
+            return mp;
+        }
+
+        /// <summary>
+        /// Y軸回転を3D変換マトリックス(4x4)に設定
+        /// </summary>
+        /// <param name="th">回転角(rad)</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] rotateY3DMatrix(double th)
+        {
+            double[,] mp = new double[4, 4];
+            mp[0, 0] = Math.Cos(th);
+            mp[0, 2] = -Math.Sin(th);
+            mp[1, 1] = 1.0;
+            mp[2, 0] = Math.Sin(th);
+            mp[2, 2] = Math.Cos(th);
+            mp[3, 3] = 1.0;
+            return mp;
+        }
+
+        /// <summary>
+        /// Z軸回転を3D変換マトリックス(4x4)に設定
+        /// </summary>
+        /// <param name="th">回転角(rad)</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] rotateZ3DMatrix(double th)
+        {
+            double[,] mp = new double[4, 4];
+            mp[0, 0] = Math.Cos(th);
+            mp[0, 1] = Math.Sin(th);
+            mp[1, 0] = -Math.Sin(th);
+            mp[1, 1] = Math.Cos(th);
+            mp[2, 2] = 1.0;
+            mp[3, 3] = 1.0;
+            return mp;
+        }
+
+        /// <summary>
+        ///  拡大縮小のスケール値を3D変換マトリックス(4x4)に設定
+        /// </summary>
+        /// <param name="sx">X方向縮尺</param>
+        /// <param name="sy">Y方向縮尺</param>
+        /// <param name="sz">Z方向縮尺</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] scale3DMatrix(double sx, double sy, double sz)
+        {
+            double[,] mp = new double[4, 4];
+            mp[0, 0] = sx;
+            mp[1, 1] = sy;
+            mp[2, 2] = sz;
+            mp[3, 3] = 1.0;
+            return mp;
+        }
 
         //  ---  単位変換関連  ------
 
