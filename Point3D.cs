@@ -245,7 +245,8 @@ namespace CoreLib
             mp[3, 1] = dy;
             mp[3, 2] = dz;
             mp[3, 3] = 1;
-            setPoint3D(matrix(mp));
+            //setPoint3D(toMatrix(mp));
+            matrix(mp);
         }
 
         /// <summary>
@@ -261,7 +262,8 @@ namespace CoreLib
             mp[2, 1] = -Math.Sin(th);
             mp[2, 2] = Math.Cos(th);
             mp[3, 3] = 1.0;
-            setPoint3D(matrix(mp));
+            //setPoint3D(toMatrix(mp));
+            matrix(mp);
         }
 
 
@@ -278,7 +280,8 @@ namespace CoreLib
             mp[2, 0] = Math.Sin(th);
             mp[2, 2] = Math.Cos(th);
             mp[3, 3] = 1.0;
-            setPoint3D(matrix(mp));
+            //setPoint3D(toMatrix(mp));
+            matrix(mp);
         }
 
 
@@ -295,7 +298,8 @@ namespace CoreLib
             mp[1, 1] = Math.Cos(th);
             mp[2, 2] = 1.0;
             mp[3, 3] = 1.0;
-            setPoint3D(matrix(mp));
+            //setPoint3D(toMatrix(mp));
+            matrix(mp);
         }
 
         /// <summary>
@@ -311,7 +315,8 @@ namespace CoreLib
             mp[1, 1] = sy;
             mp[2, 2] = sz;
             mp[3, 3] = 1.0;
-            setPoint3D(matrix(mp));
+            //setPoint3D(toMatrix(mp));
+            matrix(mp);
         }
 
         /// <summary>
@@ -319,13 +324,27 @@ namespace CoreLib
         /// </summary>
         /// <param name="mp"></param>
         /// <returns></returns>
-        public Point3D matrix(double[,] mp)
+        public Point3D toMatrix(double[,] mp)
         {
             Point3D p = new Point3D();
             p.x = mp[0, 0] * x + mp[0, 1] * y + mp[0, 2] * z + mp[3, 0];
             p.y = mp[1, 0] * x + mp[1, 1] * y + mp[1, 2] * z + mp[3, 1];
             p.z = mp[2, 0] * x + mp[2, 1] * y + mp[2, 2] * z + mp[3, 2];
             return p;
+        }
+
+        /// <summary>
+        /// アフィン変換のマトリックス計算
+        /// </summary>
+        /// <param name="mp">変換マトリックス</param>
+        public void matrix(double[,] mp)
+        {
+            double tx = mp[0, 0] * x + mp[0, 1] * y + mp[0, 2] * z + mp[3, 0];
+            double ty = mp[1, 0] * x + mp[1, 1] * y + mp[1, 2] * z + mp[3, 1];
+            double tz = mp[2, 0] * x + mp[2, 1] * y + mp[2, 2] * z + mp[3, 2];
+            x = tx;
+            y = ty;
+            z = tz;
         }
     }
 }
