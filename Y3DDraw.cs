@@ -9,34 +9,43 @@ using System.Windows.Media;
 namespace CoreLib
 {
     /// ---  三次元変換表示
-    ///  void draw3DWLine(Point3D sp, Point3D ep)
-    ///  void draw3DWCircle(Point3D cp, double r)
-    ///  void draw3DWPolygon(List<Point3D> wpList)
-    ///  Point3D dispConv(Point3D p)
-    ///  List<Point3D> dispConv(List<Point3D> plist)
-    ///  Point3D perspective(Point3D p)
-    ///  bool shading(List<Point3D> plist)
+    ///  void draw3DWLine(Point3D sp, Point3D ep)       3次元座標での線分の描画
+    ///  void draw3DWCircle(Point3D cp, double r)       3次元座標で円を描画
+    ///  void draw3DWPolygon(List<Point3D> wpList)      3次元座標でラインまたはポリゴンを面で描画
+    ///  Point3D dispConv(Point3D p)                    マトリックスによる座標変換
+    ///  List<Point3D> dispConv(List<Point3D> plist)    マトリックスによる座標変換
+    ///  Point3D perspective(Point3D p)                 透視変換
+    ///  bool shading(List<Point3D> plist)              隠面判定(外積)
     ///  ---  三次元変換マトリックスパラメータの設定
-    ///  void void clear3DMatrix()
-    ///  setTarnslate3DMatrix(double dx, double dy, double dz)
-    ///  void setRotateX3DMatrix(double th)
-    ///  void setRotateY3DMatrix(double th)
-    ///  void setRotateZ3DMatrix(double th)
-    ///  void setScale3DMatrix(double sx, double sy, double sz)
-    ///  double[,] get3DMatrix()
-    ///  void set3DMarix(double[,] mp)
-    ///  double[,] conv3DMatrix(Matrix4x4 m4)
+    ///  void void clear3DMatrix()                      座標変換パラメートの初期化
+    ///  setTarnslate3DMatrix(double dx, double dy, double dz)  平行移動パラメータ設定
+    ///  void setRotateX3DMatrix(double th)             X軸回転パラメータ設定
+    ///  void setRotateY3DMatrix(double th)             Y軸回転パラメータ設定
+    ///  void setRotateZ3DMatrix(double th)             Z軸回転パラメータ設定
+    ///  void setScale3DMatrix(double sx, double sy, double sz) 3次元縮尺パラメータ設定
+    ///  void addTarnslate3DMatrix(double dx, double dy, double dz) 平行移動パラメータ追加設定
+    ///  void addRotateX3DMatrix(double th)             X軸回転パラメータ追加設定
+    ///  void addRotateY3DMatrix(double th)             Y軸回転パラメータ追加設定
+    ///  void addRotateZ3DMatrix(double th)             Z軸回転パラメータ追加設定
+    ///  void addScale3DMatrix(double sx, double sy, double sz) 3次元縮尺パラメータ追加設定
+    ///  double[,] translate3DMatrix(double dx, double dy, double dz)   移動量を3D変換マトリックス(4x4)に設定
+    ///  double[,] rotateX3DMatrix(double th)           X軸回転を3D変換マトリックス(4x4)に設定
+    ///  double[,] rotateY3DMatrix(double th)           Y軸回転を3D変換マトリックス(4x4)に設定
+    ///  double[,] rotateZ3DMatrix(double th)           Z軸回転を3D変換マトリックス(4x4)に設定
+    ///  double[,] scale3DMatrix(double sx, double sy, double sz)   拡大縮小のスケール値を3D変換マトリックス(4x4)に設定
+    ///  double[,] get3DMatrix()                        3D変換マトリックスを取得
+    ///  void set3DMarix(double[,] mp)                  3D変換マトリックスを取得
+    ///  double[,] conv3DMatrix(Matrix4x4 m4)           Matrix4x4をYWorldDrawの3Dマトリックスに変換
     ///  --  マウス処理
-    ///  void initPosition(float xrotate, float yrotate, float zrotate)
-    ///  void initMove(float x, float y, float z)
-    ///  void mouseMoveStart(bool isRotate, Point pos)
-    ///  void mouseMoveEnd()
-    ///  bool mouseMove(Point pos)
+    ///  void mouseMoveStart(bool isRotate, Point pos)  マウスによる座標変換の開始
+    ///  void mouseMoveEnd()                            マウスによる座標変換の終了
+    ///  bool mouseMove(Point pos)                      マウスの位置移動
     ///  --- 3次元サーフェス表示処理
-    ///  void clearSurfaceList()
-    ///  void addSurfaceList(List<Point3D> coordList, Brush fillColor)
-    ///  void dispConvSurfaceList()
-    ///  void drawSurfaceList()
+    ///  void clearSurfaceList()                        サーフェスデータをクリア
+    ///  void addSurfaceList(List<Point3D> coordList, Brush fillColor)  サーフェスデータの追加
+    ///  void dispConvSurfaceList()                     サーフェスの座標リストを表示座標変換する
+    ///  void drawSurfaceList()                         サーフェスデータの表示(Z方向にソート)
+    ///  
     ///  ---  サーフェスデータクラス
     /// class Surface
     ///     Surface(List<Point3D> coordList, Brush fillColor)
@@ -52,9 +61,8 @@ namespace CoreLib
         public double mPerspectivLength = 0.0;          //  視点からスクリーン(z = 0)までの距離
         public Point3D mLight = new Point3D();          //  3Dの光源ベクトル
         //  マウス処理
-        private Vector2 mCurrentPos;                    //  現在位置(スクリーン座標)
-        private Vector2 mPreviousPos;                   //  開始位置
-        private Matrix4x4 mRotate;                      //  回転マトリックス
+        private PointD mCurrentPos;                     //  現在位置(スクリーン座標)
+        private PointD mPreviousPos;                    //  開始位置
         private bool mIsRotate = false;                 //  回転
         private bool mIsTranslate = false;              //  移動
         //  サーフェスデータリスト
@@ -96,22 +104,25 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 3次元座標でポリゴンを描画
+        /// 3次元座標でラインまたはポリゴンを面で描画
         /// </summary>
         /// <param name="wpList">3D座標リスト</param>
         public void draw3DWPolygon(List<Point3D> wpList)
         {
             if (wpList.Count < 2)
                 return;
-            List<Point3D> p3List = new List<Point3D>();
-            //  投影変換
-            for (int i = 0; i < wpList.Count; i++) {
-                p3List.Add(perspective(wpList[i]));
-            }
+
             if (wpList.Count == 2) {
-                //  線分表示
+                //  線分表示(投影変換込み)
+                mBrush = mFillColor;
                 draw3DWLine(wpList[0], wpList[1]);
                 return;
+            }
+
+            //  投影変換
+            List<Point3D> p3List = new List<Point3D>();
+            for (int i = 0; i < wpList.Count; i++) {
+                p3List.Add(perspective(wpList[i]));
             }
             //  陰面判定
             if (!shading(p3List))
@@ -126,6 +137,7 @@ namespace CoreLib
                 byte b = (byte)((double)brush.Color.B * light);
                 mFillColor = new SolidColorBrush(Color.FromRgb(r, g, b));
             }
+            mBrush = mFillColor;
 
             List<PointD> pList = new List<PointD>();
             //  2次元変換
@@ -142,7 +154,7 @@ namespace CoreLib
         /// <returns></returns>
         public Point3D dispConv(Point3D p)
         {
-            return p.matrix(mMatrix);
+            return p.toMatrix(mMatrix);
         }
 
         /// <summary>
@@ -154,7 +166,7 @@ namespace CoreLib
         {
             List<Point3D> olist = new List<Point3D>();
             for (int i = 0; i < plist.Count; i++)
-                olist.Add(plist[i].matrix(mMatrix));
+                olist.Add(plist[i].toMatrix(mMatrix));
             return olist;
         }
 
@@ -176,7 +188,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 隠面判定
+        /// 隠面判定(外積)
         /// </summary>
         /// <param name="plist">3D座標リスト</param>
         /// <returns>隠面判定(隠面=false)</returns>
@@ -441,34 +453,6 @@ namespace CoreLib
         //  --  マウス処理
 
         /// <summary>
-        /// 初期値を設定
-        /// </summary>
-        /// <param name="xrotate">X軸回転角(rad)</param>
-        /// <param name="yrotate">Y軸回転角(rad)</param>
-        /// <param name="zrotate">Z軸回転角(rad)</param>
-        public void initPosition(float xrotate, float yrotate, float zrotate)
-        {
-            mIsRotate = false;
-            mIsTranslate = false;
-            mCurrentPos = Vector2.Zero;
-            mPreviousPos = Vector2.Zero;
-            //  XYZ軸を中心に回転
-            Quaternion after = new Quaternion(xrotate, yrotate, zrotate, 0);
-            mRotate = Matrix4x4.CreateFromQuaternion(after);
-        }
-
-        /// <summary>
-        /// 移動位置の初期値設定
-        /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="z"></param>
-        public void initMove(float x, float y, float z)
-        {
-            mRotate = Matrix4x4.CreateTranslation(x, y, z);
-        }
-
-        /// <summary>
         /// マウスによる座標変換の開始
         /// </summary>
         /// <param name="isRotate">回転/移動</param>
@@ -477,7 +461,7 @@ namespace CoreLib
         {
             mIsRotate = isRotate;
             mIsTranslate = !isRotate;
-            mCurrentPos = new Vector2((float)pos.X, (float)pos.Y);
+            mCurrentPos = new PointD(pos);
         }
 
         /// <summary>
@@ -487,7 +471,7 @@ namespace CoreLib
         {
             mIsRotate = false;
             mIsTranslate = false;
-            mPreviousPos = Vector2.Zero;
+            mPreviousPos = new PointD();
         }
 
         /// <summary>
@@ -500,28 +484,29 @@ namespace CoreLib
             if (mIsRotate) {
                 //  回転処理
                 mPreviousPos = mCurrentPos;
-                mCurrentPos = new Vector2((float)pos.X, (float)pos.Y);
-                Vector2 delta = mPreviousPos - mCurrentPos;
-                if (delta.Length() <= 1f)
+                mCurrentPos = new PointD(pos);
+                PointD delta = mPreviousPos - mCurrentPos;
+                if (delta.length() <= 1.0)
                     return false;
                 delta /= (float)Math.Sqrt(mView.Width * mView.Width + mView.Height * mView.Height);
-                float length = delta.Length();
+                double length = delta.length();
                 if (0 < length) {
-                    float rad = length * (float)Math.PI;
-                    float theta = (float)Math.Sin(rad) / length;
-                    Quaternion after = new Quaternion(delta.Y * theta, delta.X * theta, 0.0f, (float)Math.Cos(rad));
-                    mRotate = Matrix4x4.CreateFromQuaternion(after);
-                    mMatrix = conv3DMatrix(mRotate);
+                    double rad = length * Math.PI;
+                    double theta = (float)Math.Sin(rad) / length;
+                    Shigensu rotate = new Shigensu(delta.y * theta, delta.x * theta, 0.0f, Math.Cos(rad));
+                    mMatrix = rotate.rotateMatrix();
+                    //Quaternion rotate = new Quaternion((float)(delta.y * theta), (float)(delta.x * theta), 0.0f, (float)Math.Cos(rad));
+                    //mMatrix = conv3DMatrix(Matrix4x4.CreateFromQuaternion(rotate));
                 }
             } else if (mIsTranslate) {
                 //  移動処理
                 mPreviousPos = mCurrentPos;
-                mCurrentPos = new Vector2((float)pos.X, (float)pos.Y);
-                Vector2 delta = mCurrentPos - mPreviousPos;
-                if (delta.Length() <= 1f)
+                mCurrentPos = new PointD(pos);
+                PointD delta = mCurrentPos - mPreviousPos;
+                if (delta.length() <= 1.0)
                     return false;
-                mRotate = Matrix4x4.CreateTranslation(delta.X * 4f / (float)mView.Width, -delta.Y * 4f / (float)mView.Height, 0f);
-                mMatrix = conv3DMatrix(mRotate);
+                delta *= mWorld.Width / mView.Width;
+                mMatrix = translate3DMatrix(delta.x , -delta.y, 0);
             } else {
                 //  変換マトリックスをクリア
                 mMatrix = ylib.unitMatrix(4);
@@ -556,15 +541,16 @@ namespace CoreLib
         /// </summary>
         private void dispConvSurfaceList()
         {
-            List<Surface> outList = new List<Surface>();
             for (int i = 0; i < mSurfaceList.Count; i++) {
-                outList.Add(new Surface(dispConv(mSurfaceList[i].mCoordList), mSurfaceList[i].mFillColor));
+                for (int j = 0; j < mSurfaceList[i].mCoordList.Count; j++) {
+                    mSurfaceList[i].mCoordList[j].matrix(mMatrix);
+                }
+                mSurfaceList[i].mZOrder = mSurfaceList[i].mCoordList.Average(p => p.z);
             }
-            mSurfaceList = outList;
         }
 
         /// <summary>
-        /// サーフェスデータの表示
+        /// サーフェスデータの表示(Z方向にソート)
         /// </summary>
         public void drawSurfaceList()
         {
@@ -577,29 +563,30 @@ namespace CoreLib
                 draw3DWPolygon(mSurfaceList[i].mCoordList);
             }
         }
+    }
 
-        //  ---  サーフェスデータクラス
+    //  ---  サーフェスデータクラス
+
+    /// <summary>
+    /// サーフェスデータクラス
+    /// LineまたはPolygonデータ
+    /// </summary>
+    public class Surface
+    {
+        public List<Point3D> mCoordList;        //  座標リスト
+        public double mZOrder = 0.0;            //  Z座標の平均値
+        public Brush mFillColor = Brushes.Blue; //  サーフェスの色
 
         /// <summary>
-        /// サーフェスデータクラス
+        /// コンストラクタ
         /// </summary>
-        class Surface
+        /// <param name="coordList">3D座標リスト</param>
+        /// <param name="fillColor">色</param>
+        public Surface(List<Point3D> coordList, Brush fillColor)
         {
-            public List<Point3D> mCoordList;        //  座標リスト
-            public double mZOrder = 0.0;            //  Z座標の平均値
-            public Brush mFillColor = Brushes.Blue; //  サーフェスの色
-
-            /// <summary>
-            /// コンストラクタ
-            /// </summary>
-            /// <param name="coordList">3D座標リスト</param>
-            /// <param name="fillColor">色</param>
-            public Surface(List<Point3D> coordList, Brush fillColor)
-            {
-                mCoordList = coordList;
-                mZOrder = mCoordList.Average(p => p.z);
-                mFillColor = fillColor;
-            }
+            mCoordList = coordList;
+            mZOrder = mCoordList.Average(p => p.z);
+            mFillColor = fillColor;
         }
     }
 }
