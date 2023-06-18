@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Shapes;
 
 namespace CoreLib
 {
@@ -17,47 +16,66 @@ namespace CoreLib
     ///     Width,Height
     ///     Location,Size,
     /// コンストラクタ
-    ///     Box(Size size)
-    ///     Box(Rect rect)
-    ///     Box(Point ps, Point pe)
-    ///     Box(PointD ps, PointD pe)
-    ///     Box(Point ps, Size size)
-    ///     Box(PointD ps, Size size)
-    ///     Box(PointD ps, Vector vector)
-    ///     Box(PointD c, double r, bool inBox = false)
-    ///     Box(PointD c, double r, double sa, double ea)
+    ///     Box(PointD p)
+    ///     Box(LineD l)
+    ///     Box(Size size)                                  コンストラクタ(Sizeから)
+    ///     Box(Rect rect)                                  コンストラクタ (Rectから)
+    ///     Box(Box box)
+    ///     Box(PointD ps, PointD pe)                       コンストラクタ(2点から)
+    ///     Box(PointD ps, Size size)                       コンストラクタ(SizeからBox)
+    ///     Box(PointD ps, Vector vector)                   コンストラクタ(ベクトルからBox)
+    ///     Box(PointD ps, double size)                     コンストラクタ(中心座標と大きさ)
+    ///     Box(PointD c, double r, bool inBox = false)     コンストラクタ(円の外接Box)
+    ///     Box(ArcD arc)                                   コンストラクタ(円弧の外接Box)
+    ///     Box(PointD c, double r, double sa, double ea)   コンストラクタ(円弧の外接Box)
     ///     Box(double left, double top, double right, double bottom)
+    ///     Box(double size)                                コンストラクタ(正方形、原点中心)
+    ///     Box(List<PointD> plist)                         座標列からBoxを作成
     ///     
+    ///     void normalize()                    正規化 (Left < Right, Bottom < Top)
+    ///     Box toCopy()                        コピーを作る
     ///     override string ToString()
-    ///     List<PointD> ToPointList()
-    ///     List<LineD> ToLineList()
-    ///     Rect ToRect()
-    ///     void zoom(Point cp, double zoom)
-    ///     void zoom(PointD cp, double zoom)
-    ///     void zoom(double zoom)
-    ///     void offset(PointD dp)
-    ///     void offset(double dx, double dy)
-    ///     Point getOffset(PointD p)
-    ///     void setCenter(PointD ctr)
-    ///     PointD getCenter()
-    ///     void rotateArea(PointD org, double rotate)
-    ///     bool insideChk(double x, double y)
-    ///     bool insideChk(PointD p)
-    ///     bool insideChk(Line l)
-    ///     bool insideChk(LineD l)
-    ///     bool insideChk(Rect r)
-    ///     bool insideChk(Box b)
-    ///     bool insideChk(Point c, double r)
-    ///     bool insideChk(Point c, double r, double sa, double ea)
-    ///     bool circleInsideChk(Point c, double r)
-    ///     List<Point> intersectLine(LineD l)
-    ///     List<Point> intersectCircle(Point c, double r)
-    ///     List<Point> intersectArc(Point c, double r, double sa, double ea)
-    ///     List<Point> intersectPolygon(List<Point> polygon)
-    ///     List<Point> clipCircle2PolygonList(Point c, double r, int div = 32)
-    ///     List<Point> clipPolygon2PolygonList(List<Point> polygon)
-    ///     List<Point> innerPolygonList(List<Point> polygon)
-    ///     isInnerPolygon(List<Point> polygon, Point p)
+    ///     string ToString(string form)        書式指定で文字列に変換
+    ///     List<PointD> ToPointDList()         頂点リストに変換
+    ///     List<LineD> ToLineDList()           LineDのリストに変換
+    ///     Rect ToRect()                       RECTに変換
+    ///     void zoom(PointD cp, double zoom)   指定した座標を中心にスケーリング
+    ///     void zoom(double zoom)              領域を中心からスケーリング
+    ///     void offset(PointD dp)              指定した距離を移動
+    ///     void offset(double dx, double dy)   指定した距離を移動
+    ///     PointD getOffset(PointD p)          指定した点とのオフセット量を求める
+    ///     void setCenter(PointD ctr)          指定点を領域の中心に移動
+    ///     PointD getCenter()                  中心座標を求める
+    ///     List<PointD> getRoate(PointD org, double rotate)    回転したできた領域の座標リスト
+    ///     void rotateArea(PointD org, double rotate)  回転したできた領域をBoxに設定
+    ///     List<PointD> getRotateBox(PointD org, double rotate)    指定点を中心に回転させたBoxの頂点リスト
+    ///     bool outsideChk(Box b)              Boxの外側判定(要素同士がお互いに外側、重なりもなし)
+    ///     bool insideChk(double x, double y)  座標の内外判定
+    ///     bool insideChk(PointD p)            Pointの内外判定
+    ///     bool insideChk(LineD l)             LineDデータの内外判定
+    ///     bool insideChk(Rect r)              Rectデータの内外判定
+    ///     bool insideChk(Box b)               Boxデータの内外判定
+    ///     bool insideChk(PointD c, double r)  円データの内外判定
+    ///     bool insideChk(ArcD arc)            円弧データの内外判定
+    ///     bool insideChk(PointD c, double r, double sa, double ea)    円弧データの内外判定
+    ///     bool insideChk(List<PointD> plist)  座標リストの座標がすべて内側か
+    ///     bool circleInsideChk(PointD c, double r)    円の内側に入っているか
+    ///     bool polygonInsideChk(List<PointD> polygon) ポリゴン内にBoxの頂点が入っているの判定
+    ///     List<PointD> intersection(LineD l) 線分との交点を求める
+    ///     List<PointD> intersection(Box b)    Boxとの交点を求める
+    ///     List<PointD> intersection(Point c, double r) 円との交点を求める
+    ///     List<PointD> intersection(ArcD arc) 円弧との交点リストを求める
+    ///     List<PointD> intersection(PoinDt c, double r, double sa, double ea) 円との交点を求める
+    ///     List<PointD> intersection(List<PointD> polyline, bool close = false, bool abort = false)    ポリラインとの交点リストを求める
+    ///     List<LineD> clipPolyline2LineList(List<PointD> polyline)    ポリラインのクリッピングを線分リストに変換
+    ///     List<PointD> clipCircle2PolygonList(Point c, double r, int div = 32) 円と重ね合わせた時の重なる領域の点座標リスト
+    ///     List<PointD> clipPolygonList(List<Point> polygon)    ポリゴンをクリッピングしたポリゴン座標点リストを求める
+    ///     List<PointD> innerPolygonList(List<Point> polygon)   ポリゴン内に存在する頂点リスト     [うまくいかない]
+    ///     bool isInnerPolygon(List<Point> polygon, Point p)   点座標がポリゴン内かの内外判定
+    ///     void extension(PointD p)            領域を拡張
+    ///     void extension(LineD l)             領域を拡張
+    ///     void extension(List<PointD> plist)  領域を拡張する
+    ///     void extension(Box b)               領域を拡張
     /// 
     /// </summary>
     /// 
@@ -76,11 +94,19 @@ namespace CoreLib
             get {
                 return new PointD(Left, Top);
             }
+            set {
+                Left = value.x;
+                Top = value.y;
+            }
         }
         public PointD BottomRight
         {
             get {
                 return new PointD(Right, Bottom);
+            }
+            set {
+                Right = value.x;
+                Bottom = value.y;
             }
         }
         public PointD TopRight
@@ -88,11 +114,19 @@ namespace CoreLib
             get {
                 return new PointD(Right, Top);
             }
+            set {
+                Right = value.x;
+                Top = value.y;
+            }
         }
         public PointD BottomLeft
         {
             get {
                 return new PointD(Left, Bottom);
+            }
+            set {
+                Left = value.x;
+                Bottom = value.y;
             }
         }
         public double Width
@@ -137,17 +171,42 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="size">サイズ(Size)</param>
-        public Box(Size size)
+        /// <param name="p"></param>
+        public Box(PointD p)
         {
-            Left = 0;
-            Top = 0;
-            Right = Left + size.Width;
-            Bottom = Top + size.Height;
+            Left   = p.x;
+            Right  = p.x;
+            Top    = p.y;
+            Bottom = p.y;
         }
 
         /// <summary>
         /// コンストラクタ
+        /// </summary>
+        /// <param name="l"></param>
+        public Box(LineD l)
+        {
+            Left   = l.ps.x;
+            Right  = l.ps.x;
+            Top    = l.ps.y;
+            Bottom = l.ps.y;
+            extension(l.pe);
+        }
+
+        /// <summary>
+        /// コンストラクタ(Sizeから)
+        /// </summary>
+        /// <param name="size">サイズ(Size)</param>
+        public Box(Size size)
+        {
+            Left   = 0;
+            Top    = 0;
+            Right  = Left + size.Width;
+            Bottom = Top + size.Height;
+        }
+
+        /// <summary>
+        /// コンストラクタ (Rectから)
         /// </summary>
         /// <param name="rect">Rect</param>
         public Box(Rect rect)
@@ -159,20 +218,19 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// コンストラクタ
+        /// コンストラクタ (Boxから)
         /// </summary>
-        /// <param name="ps">始点座標</param>
-        /// <param name="pe">終点座標</param>
-        public Box(Point ps, Point pe)
+        /// <param name="box">Box</param>
+        public Box(Box box)
         {
-            Left  = ps.X;
-            Top   = ps.Y;
-            Right  = pe.X;
-            Bottom = pe.Y;
+            Left   = box.Left;
+            Top    = box.Top;
+            Right  = box.Right;
+            Bottom = box.Bottom;
         }
 
         /// <summary>
-        /// コンストラクタ
+        /// コンストラクタ(2点から)
         /// </summary>
         /// <param name="ps">始点座標</param>
         /// <param name="pe">終点座標</param>
@@ -182,19 +240,6 @@ namespace CoreLib
             Top    = ps.y;
             Right  = pe.x;
             Bottom = pe.y;
-        }
-
-        /// <summary>
-        /// コンストラクタ(SizeからBox)
-        /// </summary>
-        /// <param name="ps">始点座標</param>
-        /// <param name="size">サイズ(Size)</param>
-        public Box(Point ps, Size size)
-        {
-            Left   = ps.X;
-            Top    = ps.Y;
-            Right  = Left + size.Width;
-            Bottom = Top - size.Height;
         }
 
         /// <summary>
@@ -215,19 +260,6 @@ namespace CoreLib
         /// </summary>
         /// <param name="ps">左上座標</param>
         /// <param name="vector">ベクトル</param>
-        public Box(Point ps, Vector vector)
-        {
-            Left   = ps.X;
-            Top    = ps.Y;
-            Right  = Left + vector.X;
-            Bottom = Top + vector.Y;
-        }
-
-        /// <summary>
-        /// コンストラクタ(ベクトルからBox)
-        /// </summary>
-        /// <param name="ps">左上座標</param>
-        /// <param name="vector">ベクトル</param>
         public Box(PointD ps, Vector vector)
         {
             Left   = ps.x;
@@ -237,21 +269,17 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// コンストラクタ(円の外接Box)
+        /// コンストラクタ(中心座標と大きさ) 
         /// </summary>
-        /// <param name="c">円の中心</param>
-        /// <param name="r">半径</param>
-        /// <param name="inBox">内接/外接</param>
-        public Box(Point c, double r, bool inBox = false)
+        /// <param name="ps">中心座標</param>
+        /// <param name="size">四角の大きさ</param>
+        public Box(PointD ps, double size)
         {
-            if (inBox) {
-                //  内接の場合(四角の内側))
-                r /= Math.Sqrt(2);
-            }
-            Left   = c.X - r;
-            Top    = c.Y + r;
-            Right  = c.X + r;
-            Bottom = c.Y - r;
+            size /= 2;
+            Left   = ps.x - size;
+            Top    = ps.y + size;
+            Right  = ps.x + size;
+            Bottom = ps.y - size;
         }
 
         /// <summary>
@@ -274,25 +302,14 @@ namespace CoreLib
 
         /// <summary>
         /// コンストラクタ(円弧の外接Box)
-        /// 開始角と終了角は反時計回りに設定
         /// </summary>
-        /// <param name="c">中心点</param>
-        /// <param name="r">半径</param>
-        /// <param name="sa">開始角(rad)</param>
-        /// <param name="ea">終了角(rad)</param>
-        public Box(Point c, double r, double sa, double ea)
+        /// <param name="arc">ArcD</param>
+        public Box(ArcD arc)
         {
-            List<Point> plist = ylib.arcPeakPoint(c, r, sa, ea);
-            Left   = plist[0].X;
-            Top    = plist[0].Y;
-            Right  = plist[0].X;
-            Bottom = plist[0].Y;
-            foreach (Point p in plist) {
-                Left   = Math.Min(Left, p.X);
-                Top    = Math.Max(Top, p.Y);
-                Right  = Math.Max(Right, p.X);
-                Bottom = Math.Min(Bottom, p.Y);
-            }
+            List<PointD> points = arc.toPeakList();
+            Left = Right = points[0].x;
+            Top = Bottom = points[0].y;
+            extension(points);
         }
 
         /// <summary>
@@ -305,17 +322,11 @@ namespace CoreLib
         /// <param name="ea">終了角(rad)</param>
         public Box(PointD c, double r, double sa, double ea)
         {
-            List<PointD> plist = ylib.arcPeakPoint(c, r, sa, ea);
-            Left   = plist[0].x;
-            Top    = plist[0].y;
-            Right  = plist[0].x;
-            Bottom = plist[0].y;
-            foreach (PointD p in plist) {
-                Left   = Math.Min(Left, p.x);
-                Top    = Math.Max(Top, p.y);
-                Right  = Math.Max(Right, p.x);
-                Bottom = Math.Min(Bottom, p.y);
-            }
+            ArcD arc = new ArcD(c, r, sa, ea);
+            List<PointD> points = arc.toPeakList();
+            Left = Right = points[0].x;
+            Top = Bottom = points[0].y;
+            extension(points);
         }
 
         /// <summary>
@@ -334,6 +345,53 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ(正方形)
+        /// </summary>
+        /// <param name="size">一辺の長さ</param>
+        public Box(double size)
+        {
+            Left   = -size / 2;
+            Top    =  size / 2;
+            Right  =  size / 2;
+            Bottom = -size / 2;
+        }
+
+        /// <summary>
+        /// 座標列からBoxを作成
+        /// </summary>
+        /// <param name="plist"></param>
+        public Box(List<PointD> plist)
+        {
+            Right  = Left = plist[0].x;
+            Bottom = Top  = plist[0].y;
+            for (int i = 1; i < plist.Count; i++) {
+                extension(plist[i]);
+            }
+        }
+
+        /// <summary>
+        /// 正規化 (Left < Right, Bottom < Top)
+        /// </summary>
+        public void normalize()
+        {
+            if (Left > Right) {
+                double tmp = Left; Left = Right; Right = tmp;
+            }
+            if (Top < Bottom) {
+                double tmp = Top; Top = Bottom; Bottom = tmp;
+            }
+        }
+
+        /// <summary>
+        /// コピーを作る
+        /// </summary>
+        /// <returns></returns>
+        public Box toCopy()
+        {
+            return new Box(Left, Top, Right, Bottom);
+        }
+
+        /// <summary>
         /// 文字列に変換
         /// </summary>
         /// <returns></returns>
@@ -343,30 +401,33 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 頂点リストに変換
+        /// 書式指定で文字列に変換
+        /// "000" → [001], "000" → [-001], "X4" → [000C], "0.0" → [12.0], "f5" → [35.12346]
         /// </summary>
-        /// <returns>Pointリスト</returns>
-        public List<Point> ToPointList()
+        /// <param name="form">書式</param>
+        /// <returns></returns>
+        public string ToString(string form)
         {
-            List<Point> pList = new List<Point>();
-            pList.Add(TopRight.toPoint());
-            pList.Add(TopLeft.toPoint());
-            pList.Add(BottomLeft.toPoint());
-            pList.Add(BottomRight.toPoint());
-            return pList;
+            return Left.ToString(form) + " " + Top.ToString(form) + " " + Right.ToString(form) + " " + Bottom.ToString(form);
         }
 
         /// <summary>
-        /// 頂点リストに変換
+        /// 頂点リストに変換(TopLeftから時計回り)
         /// </summary>
+        /// <param name="rotate">回転角</param>
         /// <returns>Pointリスト</returns>
-        public List<PointD> ToPointDList()
+        public List<PointD> ToPointDList(double rotate = 0)
         {
             List<PointD> pList = new List<PointD>();
-            pList.Add(TopRight);
             pList.Add(TopLeft);
-            pList.Add(BottomLeft);
+            pList.Add(TopRight);
             pList.Add(BottomRight);
+            pList.Add(BottomLeft);
+            if (rotate != 0) {
+                PointD ctr = getCenter();
+                for (int i = 0; i < pList.Count; i++)
+                    pList[i].rotate(ctr, rotate);
+            }
             return pList;
         }
 
@@ -377,10 +438,10 @@ namespace CoreLib
         public List<LineD> ToLineDList()
         {
             List<LineD> lines = new List<LineD>();
-            lines.Add(new LineD(TopLeft, TopRight));
-            lines.Add(new LineD(BottomLeft, BottomRight));
             lines.Add(new LineD(TopLeft, BottomLeft));
+            lines.Add(new LineD(BottomLeft, BottomRight));
             lines.Add(new LineD(BottomRight, TopRight));
+            lines.Add(new LineD(TopRight, TopLeft ));
             return lines;
         }
 
@@ -395,23 +456,17 @@ namespace CoreLib
 
         /// <summary>
         /// 指定した座標を中心にしてスケーリングする
+        /// inverseを指定した場合中心点で反転した位置を基準に拡大縮小する
         /// </summary>
         /// <param name="cp">座標</param>
         /// <param name="zoom">スケール</param>
-        public void zoom(Point cp, double zoom)
-        {
-            this.zoom(new PointD(cp), zoom);
-        }
-
-        /// <summary>
-        /// 指定した座標を中心にしてスケーリングする
-        /// </summary>
-        /// <param name="cp">座標</param>
-        /// <param name="zoom">スケール</param>
-        public void zoom(PointD p, double zoom)
+        /// <param name="inverse">反転</param>
+        public void zoom(PointD p, double zoom, bool inverse = false)
         {
             this.zoom(zoom);
             PointD v = p.vector(this.getCenter());
+            if (inverse)
+                v = v.inverse();
             v.scale(zoom - 1.0);
             this.offset(v);
         }
@@ -422,8 +477,8 @@ namespace CoreLib
         /// <param name="zoom">スケール</param>
         public void zoom(double zoom)
         {
-            double dx = (Width * zoom - Width) / 2.0;
-            double dy = (Height * zoom - Height) / 2.0;
+            double dx = (Width / zoom - Width) / 2.0;
+            double dy = (Height / zoom - Height) / 2.0;
             Left   -= Left < Right ? dx : -dx;
             Top    += Top > Bottom ? dy : -dy;
             Right  += Left < Right ? dx : -dx;
@@ -482,6 +537,21 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 回転したできた領域の座標リスト
+        /// </summary>
+        /// <param name="org"></param>
+        /// <param name="rotate"></param>
+        /// <returns></returns>
+        public List<PointD> getRoate(PointD org, double rotate)
+        {
+            List<PointD> plist = ToPointDList();
+            for (int i = 0; i < plist.Count; i++) {
+                plist[i].rotate(org, rotate);
+            }
+            return plist;
+        }
+
+        /// <summary>
         /// 回転したできた領域をBoxに設定
         /// </summary>
         /// <param name="org">回転原点</param>
@@ -490,7 +560,7 @@ namespace CoreLib
         {
             List<PointD> plist = ToPointDList();
             for (int i = 0; i< plist.Count; i++) {
-                plist[i].rotatePoint(org, rotate);
+                plist[i].rotate(org, rotate);
                 //plist[i] = ylib.rotatePoint(org, plist[i], rotate);
             }
             Left   = plist[0].x;
@@ -506,6 +576,53 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定点を中心に回転させたBoxの頂点リスト
+        /// </summary>
+        /// <param name="org">回転中心点</param>
+        /// <param name="rotate">回転角(rad)</param>
+        /// <returns>頂点リスト</returns>
+        public List<PointD> getRotateBox(PointD org, double rotate)
+        {
+            List<PointD> plist = ToPointDList();
+            for (int i = 0; i < plist.Count; i++) {
+                plist[i].rotate(org, rotate);
+            }
+            return plist;
+        }
+
+        /// <summary>
+        /// Boxの外側判定(要素同士がお互いに外側、重なりもなし)
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public bool outsideChk(Box b)
+        {
+            if (Left < Right) {
+                if (Right < b.Left && Right < b.Right)
+                    return true;
+                if (b.Left < Left && b.Right < Left)
+                    return true;
+            } else {
+                if (Left < b.Left && Left < b.Right)
+                    return true;
+                if (b.Left < Right && b.Right < Right)
+                    return true;
+            }
+            if (Bottom < Top) {
+                if (Top < b.Top && Top < b.Bottom)
+                    return true;
+                if (b.Top < Bottom && b.Bottom < Bottom)
+                    return true;
+            } else {
+                if (Bottom < b.Top && Bottom < b.Bottom)
+                    return true;
+                if (b.Top < Top && b.Bottom < Top)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// 座標の内外判定
         /// </summary>
         /// <param name="x">X座標</param>
@@ -514,17 +631,6 @@ namespace CoreLib
         public bool insideChk(double x, double y)
         {
             return insideChk(new PointD(x, y));
-        }
-
-
-        /// <summary>
-        /// Pointの内外判定
-        /// </summary>
-        /// <param name="p">点座標</param>
-        /// <returns>内側(境界含む)true</returns>
-        public bool insideChk(Point p)
-        {
-            return insideChk(new PointD(p));
         }
 
         /// <summary>
@@ -552,20 +658,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// Lineデータの内外判定
-        /// すべて内側に入っている
-        /// </summary>
-        /// <param name="l">線分座標</param>
-        /// <returns>内側(境界含む)true</returns>
-        public bool insideChk(Line l)
-        {
-            if (insideChk(l.X1, l.Y1) && insideChk(l.X2, l.Y2))
-                return true;
-            else
-                return false;
-        }
-
-        /// <summary>
         /// LineDデータの内外判定
         /// すべて内側に入っている
         /// </summary>
@@ -586,7 +678,7 @@ namespace CoreLib
         /// <returns>内側(境界含む)true</returns>
         public bool insideChk(Rect r)
         {
-            if (insideChk(r.TopLeft) && insideChk(r.BottomRight))
+            if (insideChk(new PointD(r.TopLeft)) && insideChk(new PointD(r.BottomRight)))
                 return true;
             else
                 return false;
@@ -620,6 +712,17 @@ namespace CoreLib
 
         /// <summary>
         /// 円弧データの内外判定
+        /// </summary>
+        /// <param name="arc">円弧データ</param>
+        /// <returns>内側</returns>
+        public bool insideChk(ArcD arc)
+        {
+            Box b = new Box(arc);
+            return insideChk(b);
+        }
+
+        /// <summary>
+        /// 円弧データの内外判定
         /// すべてが四角の中に入っている
         /// </summary>
         /// <param name="c">円の中心座標</param>
@@ -631,6 +734,19 @@ namespace CoreLib
         {
             Box b = new Box(c, r, sa, ea);
             return insideChk(b);
+        }
+
+        /// <summary>
+        /// 座標リストの座標がすべて内側か
+        /// </summary>
+        /// <param name="plist"></param>
+        /// <returns></returns>
+        public bool insideChk(List<PointD> plist)
+        {
+            foreach (PointD p in plist) {
+                if (!insideChk(p)) return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -652,20 +768,58 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ポリゴン内にBoxの頂点が入っているの判定
+        /// </summary>
+        /// <param name="polygon"></param>
+        /// <returns></returns>
+        public bool polygonInsideChk(List<PointD> polygon)
+        {
+            List<PointD> hlist = new List<PointD>();
+            List<PointD> plist = ToPointDList();
+            for (int i = 0; i < plist.Count; i++) {
+                if (isInnerPolygon(polygon, plist[i]))
+                    hlist.Add(plist[i]);
+            }
+            return hlist.Count == 4;
+        }
+
+        /// <summary>
         /// 線分との交点を求める
         /// </summary>
         /// <param name="l">線分</param>
         /// <returns>点座標リスト</returns>
-        public List<PointD> intersectLine(LineD l)
+        public List<PointD> intersection(LineD l)
         {
             List<PointD> pointList = new List<PointD>();
             List<LineD> lines = ToLineDList();
             foreach (LineD line in lines) {
                 PointD p = line.intersection(l);
-                if (p.x != double.NaN && l.lineOnPoint(p))
+                if (p.x != double.NaN && line.onPoint(p) && l.onPoint(p))
                     pointList.Add(p);
             }
             return pointList;
+        }
+
+        /// <summary>
+        /// Boxとの交点を求める
+        /// </summary>
+        /// <param name="b">Box</param>
+        /// <returns>座標リスト</returns>
+        public List<PointD> intersection(Box b)
+        {
+            List<PointD> plist = new List<PointD>();
+            List<LineD> lines = ToLineDList();
+            List<LineD> blines = b.ToLineDList();
+            foreach (LineD line in lines) {
+                for (int j = 0; j < blines.Count; j++) {
+                    PointD p = blines[j].intersection(line);
+                    if (!double.IsNaN(p.x) && !double.IsNaN(p.y)) {
+                        if (blines[j].onPoint(p) && line.onPoint(p))
+                            plist.Add(p);
+                    }
+                }
+            }
+            return plist;
         }
 
         /// <summary>
@@ -674,7 +828,7 @@ namespace CoreLib
         /// <param name="c">円の中心</param>
         /// <param name="r">円の半径</param>
         /// <returns>交点座標リスト</returns>
-        public List<PointD> intersectCircle(PointD c, double r)
+        public List<PointD> intersection(PointD c, double r)
         {
             List<PointD> pointList = new List<PointD>();
             List<LineD> lines = ToLineDList();
@@ -689,16 +843,34 @@ namespace CoreLib
         /// <summary>
         /// 円弧との交点リストを求める
         /// </summary>
+        /// <param name="arc">円弧データ</param>
+        /// <returns></returns>
+        public List<PointD> intersection(ArcD arc)
+        {
+            List<PointD> pointList = new List<PointD>();
+            List<LineD> boxLine = ToLineDList();                           //  Boxの線分リスト
+            foreach (LineD line in boxLine) {
+                List<PointD> plist = arc.intersection(line);    //  円弧との交点リスト
+                if (0 < plist.Count)
+                    pointList.AddRange(plist);
+            }
+            return pointList;
+            //return intersection(arc.mCp, arc.mR, arc.mSa, arc.mEa);
+        }
+
+        /// <summary>
+        /// 円弧との交点リストを求める
+        /// </summary>
         /// <param name="c">円の中心</param>
         /// <param name="r">円の半径</param>
         /// <param name="sa">開始角(rad)</param>
         /// <param name="ea">終了角(rad)</param>
         /// <returns>交点座標点リスト</returns>
-        public List<PointD> intersectArc(PointD c, double r, double sa, double ea)
+        public List<PointD> intersection(PointD c, double r, double sa, double ea)
         {
             List<PointD> pointList = new List<PointD>();
-            List<LineD> lines = ToLineDList();                           //  Boxの線分リスト
-            foreach (LineD line in lines) {
+            List<LineD> boxLine = ToLineDList();                           //  Boxの線分リスト
+            foreach (LineD line in boxLine) {
                 List<PointD> plist = line.intersection(c, r, sa, ea);    //  円弧との交点リスト
                 if (0 < plist.Count)
                     pointList.AddRange(plist);
@@ -707,31 +879,71 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// ポリゴンの座標点リストから交点リストを求める
+        /// ポリラインとの交点リストを求める
         /// </summary>
-        /// <param name="polygon">ポリゴン座標点リスト</param>
+        /// <param name="polyline">ポリライン</param>
         /// <returns>交点リスト</returns>
-        public List<PointD> intersectPolygon(List<PointD> polygon)
+        public List<PointD> intersection(List<PointD> polyline, bool close = false, bool abort = false)
         {
             List<PointD> plist = new List<PointD>();
             List<LineD> ll = ToLineDList();
-            for (int i = 0; i < polygon.Count; i++) {
+            for (int i = 0; i < polyline.Count; i++) {
+                if (!close && i == polyline.Count - 1)
+                    break;
                 LineD l;
-                if (i == polygon.Count - 1) {
-                    l = new LineD(polygon[i], polygon[0]);
+                if (i == polyline.Count - 1) {
+                    l = new LineD(polyline[i], polyline[0]);
                 } else {
-                    l = new LineD(polygon[i], polygon[i + 1]);
+                    l = new LineD(polyline[i], polyline[i + 1]);
                 }
                 for (int j = 0; j < ll.Count; j++) {
                     PointD p = ll[j].intersection(l);
                     if (!double.IsNaN(p.x) && !double.IsNaN(p.y)) {
-                        if (ll[j].lineOnPoint(p) && l.lineOnPoint(p))
+                        if (ll[j].onPoint(p) && l.onPoint(p)) {
                             plist.Add(p);
+                            if (abort)
+                                return plist;
+                        }
                     }
                 }
             }
             return plist;
         }
+
+        /// <summary>
+        /// ポリラインのクリッピングを線分リストに変換
+        /// </summary>
+        /// <param name="polyline">ポリライン点リスト</param>
+        /// <returns>線分リスト</returns>
+        public List<LineD> clipPolyline2LineList(List<PointD> polyline)
+        {
+            List<LineD> llist = new List<LineD>();
+            List<LineD> ll = ToLineDList();
+            for (int i = 0; i < polyline.Count - 1; i++) {
+                LineD l = new LineD(polyline[i], polyline[i + 1]);
+                if (insideChk(l)) {
+                    llist.Add(l);
+                } else {
+                    List<PointD> plist = new List<PointD>();
+                    if (insideChk(l.ps))
+                        plist.Add(l.ps);
+                    for (int j = 0; j < ll.Count; j++) {
+                        PointD p = ll[j].intersection(l);
+                        if (!double.IsNaN(p.x) && !double.IsNaN(p.y)) {
+                            if (ll[j].onPoint(p) && l.onPoint(p))
+                                plist.Add(p);
+                        }
+                    }
+                    if (insideChk(l.pe))
+                        plist.Add(l.pe);
+                    if (plist.Count == 2)
+                        llist.Add(new LineD(plist[0], plist[1]));
+                }
+            }
+            return llist;
+
+        }
+
 
         /// <summary>
         /// 円と重ね合わせた時の重なる領域の点座標リスト(BOX & 円の領域)
@@ -741,7 +953,7 @@ namespace CoreLib
         /// <returns>点座標リスト</returns>
         public List<PointD> clipCircle2PolygonList(PointD c, double r, int div = 32)
         {
-            List<PointD> plist = intersectCircle(c, r);      //  BOXと円の交点リスト
+            List<PointD> plist = intersection(c, r);      //  BOXと円の交点リスト
             List<PointD> blist = ToPointDList();              //  BOXの頂点リスト
             //  円の範囲内の点座標
             foreach (PointD p in blist) {                    //  交点とBOX頂点とのマージ
@@ -765,9 +977,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="polygon">ポリゴン</param>
         /// <returns>クリッピングしたポリゴン</returns>
-        public List<PointD> clipPolygon2PolygonList(List<PointD> polygon)
+        public List<PointD> clipPolygonList(List<PointD> polygon)
         {
-            List<PointD> plist = intersectPolygon(polygon);  //  ポリゴンとBoxの交点リスト
+            List<PointD> plist = intersection(polygon, true);  //  ポリゴンとBoxの交点リスト
             plist.AddRange(polygon);
             plist.AddRange(innerPolygonList(polygon));      //  ポリゴン内にあるBoxの頂点リスト追加
             plist = ylib.pointSort(plist);
@@ -794,7 +1006,6 @@ namespace CoreLib
             polygon = ylib.pointSort(polygon);
             for (int i = 0; i < plist.Count; i++) {
                 if (isInnerPolygon(polygon, plist[i]))
-                //if (ylib.isInnerPolygon(polygon, plist[i]))
                     hlist.Add(plist[i]);
             }
             return hlist;
@@ -831,6 +1042,58 @@ namespace CoreLib
                     return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 領域を拡張する
+        /// </summary>
+        /// <param name="p">点座標</param>
+        public void extension(PointD p)
+        {
+            if (Left < Right) {
+                Left = Math.Min(Left, p.x);
+                Right = Math.Max(Right, p.x);
+            } else {
+                Left = Math.Max(Left, p.x);
+                Right = Math.Min(Right, p.x);
+            }
+            if (Bottom < Top) {
+                Bottom = Math.Min(Bottom, p.y);
+                Top = Math.Max(Top, p.y);
+            } else {
+                Bottom = Math.Max(Bottom, p.y);
+                Top = Math.Min(Top, p.y);
+            }
+        }
+
+        /// <summary>
+        /// 領域を拡張する
+        /// </summary>
+        /// <param name="l">線分</param>
+        public void extension(LineD l)
+        {
+            extension(l.ps);
+            extension(l.pe);
+        }
+
+        /// <summary>
+        /// 領域を拡張する
+        /// </summary>
+        /// <param name="plist"></param>
+        public void extension(List<PointD> plist)
+        {
+            foreach (var p in plist)
+                extension(p);
+        }
+
+        /// <summary>
+        /// 領域を拡張する
+        /// </summary>
+        /// <param name="b">BOX</param>
+        public void extension(Box b)
+        {
+            extension(b.TopLeft);
+            extension(b.BottomRight);
         }
     }
 }
