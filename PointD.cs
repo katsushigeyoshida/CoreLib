@@ -12,21 +12,48 @@ namespace CoreLib
     /// PointD(Point p)
     /// 
     /// override string ToString()
-    /// Point toPoint()
-    /// PointD toCopy()
-    /// double angle()
-    /// double angle(PointD p)
-    /// double length()
-    /// double length(PointD p)
-    /// PointD vector(PointD p)
-    /// void fromPoler(double r, double th)
-    /// void offset(double dx, double dy)
-    /// void transform(double dx, double dy)
-    /// void transform(PointD vp)
-    /// void rotate(double ang)
-    /// void rotatePoint(PointD cp, double ang)
-    /// void scale(double scale)
-    /// void scalePoint(PointD cp, double scale)
+    /// string ToString(string form)                書式付き文字列変換
+    /// void clear()                                値を0クリアする
+    /// bool isEmpty()                              値が空(0,0)かどうかを確認
+    /// bool isNaN()                                x,yのどちらかに非数があるかを確認
+    /// void setNaN()                               値に非数を設定する
+    /// void invert()                               符号を反転する
+    /// Point toPoint()                             Pointクラスに変換
+    /// PointD toCopy()                             PointDへコピー
+    /// double angle()                              原点に対する角度(rad)
+    /// double angle(PointD p)                      指定点を原点とした角度(rad)
+    /// double length()                             原点からの距離
+    /// double length(PointD p)                     指定点との距離
+    /// void setLength(double l)                    原点からのベクトルの長さを設定する
+    /// PointD vector(PointD p)                     指定点に対するベクトル値
+    /// PointD inverse()                            ベクトルを反転させる
+    /// double innerProduct(PointD p)               自ベクトルと指定ベクトルの内積(合成ベクトルの長さ)
+    /// double crossProduct(PointD p)               ベクトルと指定ベクトルの外積(ベクトルの平行判定 0の時平行、点が線上かの判定)
+    /// void floor(double f)                        数値を切り捨てて丸める
+    /// void round(double f)                        数値を四捨五入で丸める
+    /// void fromPoler(double r, double th)         極座標からの取り込み
+    /// void offset(double dx, double dy)           指定の量だけ移動
+    /// void offset(PointD offset)                  指定の量だけ移動
+    /// void transform(double dx, double dy)        点位置の移動
+    /// void transform(PointD vp)                   点位置の移動(ベクトル値で移動)
+    /// void rotate(double ang)                     原点を中心に回転
+    /// void rotate(PointD cp, double ang)          中心点を指定して回転
+    /// void rotate(PointD cp, PointD up)           指定点を中心に回転(回転角はcpとupでの角度)
+    /// void mirror(PointD p)                       指定点でミラーする
+    /// void mirror(PointD sp, PointD ep)           指定線分に対してミラーする
+    /// void scale(double scale)                    原点を中心に拡大縮小
+    /// void scale(PointD cp, double scale)         原点を指定して拡大縮小
+    /// bool isInside(Rect r)                       四角形の内側かどうかを判定
+    /// ---  static  ---
+    /// PointD operator +(PointD v1, PointD v2)
+    /// PointD operator -(PointD v1, PointD v2)
+    /// PointD operator *(PointD v1, double m)
+    /// double operator *(PointD v1, PointD v2)
+    /// PointD operator /(PointD v1, double m)
+    /// PointD operator /(PointD v1, PointD v2)
+    /// 
+    /// double distance(PointD p1, PointD p2)       2点間の距離
+    /// 
     /// </summary>
     public class PointD
     {
@@ -197,6 +224,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 原点からのベクトルの長さを設定する
+        /// </summary>
+        /// <param name="l">長さ</param>
+        public void setLength(double l)
+        {
+            double len = length();
+            x *= l / len;
+            y *= l / len;
+        }
+
+        /// <summary>
         /// 指定点に対するベクトル値
         /// </summary>
         /// <param name="p">PointD</param>
@@ -296,7 +334,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="dx">X方向の移動距離</param>
         /// <param name="dy">Y方向の移動距離</param>
-        public void transform(double dx, double dy)
+        public void translate(double dx, double dy)
         {
             x += dx;
             y += dy;
@@ -306,7 +344,7 @@ namespace CoreLib
         /// 点位置の移動(ベクトル値で移動)
         /// </summary>
         /// <param name="vp">ベクトル値(PointD)</param>
-        public void transform(PointD vp)
+        public void translate(PointD vp)
         {
             x += vp.x;
             y += vp.y;
@@ -346,6 +384,31 @@ namespace CoreLib
         {
             double ang = up.angle(cp);
             rotate(cp, ang);
+        }
+
+        /// <summary>
+        /// 指定点でミラーする
+        /// </summary>
+        /// <param name="p"></param>
+        public void mirror(PointD p)
+        {
+            double dx = p.x - x;
+            double dy = p.y - y;
+            x = p.x + dx;
+            y = p.y + dy;
+        }
+
+        /// <summary>
+        /// 指定線分に対してミラーする
+        /// </summary>
+        /// <param name="sp">始点座標</param>
+        /// <param name="ep">始点座標</param>
+        public void mirror(PointD sp, PointD ep)
+        {
+            LineD l = new LineD(sp, ep);
+            PointD p = new PointD(x, y);
+            PointD cp = l.intersection(p);
+            mirror(cp);
         }
 
         /// <summary>

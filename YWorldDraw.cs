@@ -56,6 +56,7 @@ namespace CoreLib
     public class YWorldDraw : YDraw
     {
         public Box mWorld;                      //  ワールド座標
+        public Box mClipBox;                    //  クリッピング領域
         public bool mClipping = false;          //  クリッピングの有無
         public bool mInvert = false;            //  倒立
         public bool mAspectFix = true;          //  アスペクト比固定
@@ -103,6 +104,7 @@ namespace CoreLib
                 mWorld = new Box(mView);
             if (mAspectFix)
                 aspectFix();
+            mClipBox = mWorld.toCopy();
         }
 
         /// <summary>
@@ -115,10 +117,7 @@ namespace CoreLib
         public void setWorldWindow(double left, double top, double right, double bottom)
         {
             //  Rectにデータを入れるとleft<right, top<bottomの関係に補正される
-            mWorld = new Box(new PointD(left, top), new PointD(right, bottom));
-            mInvert = top < bottom;
-            if (mAspectFix)
-                aspectFix();
+            setWorldWindow(new Box(new PointD(left, top), new PointD(right, bottom)));
         }
 
         /// <summary>
@@ -128,10 +127,17 @@ namespace CoreLib
         public void setWorldWindow(Box area)
         {
             //  Rectにデータを入れるとleft<right, top<bottomの関係に補正される
-            mWorld = area;
+            mWorld = area.toCopy();
+            if (mWorld.Width == 0 && mWorld.Height ==0)
+                mWorld.Size = new Size(1,1);
+            if (mWorld.Width == 0)
+                mWorld.Width = mWorld.Height;
+            if (mWorld.Height == 0)
+                mWorld.Height = mWorld.Width;
             mInvert = mWorld.Top < mWorld.Bottom;   //  上下の向き
             if (mAspectFix)
                 aspectFix();
+            mClipBox = mWorld.toCopy();
         }
 
         /// <summary>
@@ -145,6 +151,30 @@ namespace CoreLib
             mInvert = mWorld.Top < mWorld.Bottom;   //  上下の向き
             if (mAspectFix)
                 aspectFix();
+            mClipBox = mWorld.toCopy();
+        }
+
+        /// <summary>
+        /// 指定した座標を中心にしてスケーリングする
+        /// inverseを指定した場合中心点で反転した位置を基準に拡大縮小する
+        /// </summary>
+        /// <param name="wp">スケーリングの中心座標</param>
+        /// <param name="zoom">倍率</param>
+        /// <param name="inverse">反転</param>
+        public void setWorldZoom(PointD wp, double zoom, bool inverse = false)
+        {
+            mWorld.zoom(wp, zoom, inverse);
+            mClipBox = mWorld.toCopy();
+        }
+
+        /// <summary>
+        /// 領域の中心からスケーリングする
+        /// </summary>
+        /// <param name="zoom">倍率</param>
+        public void setWorldZoom(double zoom)
+        {
+            mWorld.zoom(zoom);
+            mClipBox = mWorld.toCopy();
         }
 
         /// <summary>
@@ -321,12 +351,11 @@ namespace CoreLib
         /// <param name="size">サイズ(screensize)</param>
         public void drawWPoint(PointD p)
         {
-            PointD ps = cnvWorld2Screen(p);
             if (mClipping) {
-                if (!ps.isInside(mView))
+                if (!mClipBox.insideChk(p))
                     return;
             }
-            drawPoint(ps);
+            drawPoint(cnvWorld2Screen(p));
         }
 
         /// <summary>
@@ -335,7 +364,13 @@ namespace CoreLib
         /// <param name="l">線分データ</param>
         public void drawWLine(LineD l)
         {
-            drawWLine(l.ps, l.pe);
+            if (mClipping) {
+                List<LineD> lines = mClipBox.clipLineList(l);
+                for (int i = 0; i < lines.Count; i++)
+                    drawLine(cnvWorld2Screen(lines[i]));
+            } else {
+                drawLine(cnvWorld2Screen(l));
+            }
         }
 
         /// <summary>
@@ -345,16 +380,7 @@ namespace CoreLib
         /// <param name="pe">終点座標</param>
         public void drawWLine(PointD lps, PointD lpe)
         {
-            PointD ps = cnvWorld2Screen(lps);
-            PointD pe = cnvWorld2Screen(lpe);
-            if (mClipping) {
-                LineD l = new LineD(ps, pe);
-                LineD cl = l.clippingLine(mView);
-                if (cl != null)
-                    drawLine(cl);
-            } else {
-                drawLine(new LineD(ps, pe));
-            }
+            drawWLine(new LineD(lps, lpe));
         }
 
         /// <summary>
@@ -366,7 +392,7 @@ namespace CoreLib
         /// <param name="endAngle">終了角度(rad)</param>
         public void drawWArc(PointD center, double radius, double startAngle, double endAngle, bool close = true)
         {
-            drawWArc(new ArcD(center, radius, startAngle, endAngle));
+            drawWArc(new ArcD(center, radius, startAngle, endAngle), close);
         }
 
         /// <summary>
@@ -382,10 +408,10 @@ namespace CoreLib
                 //  円弧の描画
                 if (mClipping) {
                     //  クリッピングあり
-                    if (mWorld.insideChk(arc)) {
+                    if (mClipBox.insideChk(arc)) {
                         //  クリッピング処理なし
                         if (mLineType == 0)
-                            drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa);
+                            drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa, close);
                         else
                             drawArc(cnvWorld2Screen(arc));
                     } else {
@@ -395,31 +421,22 @@ namespace CoreLib
                             if (close) {
                                 int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
                                 List<PointD> plist = arc.toAnglePointList(Math.PI * 2 / div);
-                                plist = mWorld.clipPolygonList(plist);
+                                plist = mClipBox.clipPolygonList(plist);
                                 drawWPolygon(plist);
                             } else {
-                                List<PointD> plist = mWorld.intersection(arc);
-                                List<double> alist = new List<double>();
-                                foreach (PointD p in plist)
-                                    alist.Add(arc.getAngle(p));
-                                alist.Sort();
-                                PointD sp = arc.startPoint();
-                                if (mWorld.insideChk(sp) && !alist.Contains(arc.mSa))
-                                    alist.Insert(0, arc.mSa);
-                                PointD ep = arc.endPoint();
-                                if (mWorld.insideChk(ep) && !alist.Contains(arc.mEa))
-                                    alist.Add(arc.mEa);
-                                for (int i = 0; i < alist.Count - 1; i += 2) {
-                                    ArcD subArc = arc.toCopy();
-                                    subArc.mSa = alist[i];
-                                    subArc.mEa = alist[i + 1];
-                                    drawArc(cnvWorld2Screen(subArc));
+                                Brush tmpFillColor = mFillColor;
+                                if (!close)
+                                    mFillColor = null;
+                                List<ArcD> alist = mClipBox.clipArcList(arc);
+                                for (int i = 0; i < alist.Count; i++) {
+                                    drawArc(cnvWorld2Screen(alist[i]));
                                 }
+                                mFillColor = tmpFillColor;
                             }
                         }
                     }
                 } else {
-                    drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa);
+                    drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa, close);
                 }
             }
         }
@@ -431,8 +448,11 @@ namespace CoreLib
         /// <param name="radius">半径</param>
         /// <param name="startAngle">開始角(rad)</param>
         /// <param name="endAngle">終了角(rad)</param>
-        private void drawWArcSub(PointD center, double radius, double startAngle, double endAngle)
+        private void drawWArcSub(PointD center, double radius, double startAngle, double endAngle, bool close = true)
         {
+            Brush tmpFillColor = mFillColor;
+            if (!close)
+                mFillColor = null;
             //  円の大きさ
             Size size = new Size(Math.Abs(world2screenXlength(radius)), Math.Abs(world2screenYlength(radius)));     //  X軸半径,Y軸半径
                                                                                                                     //  始点座標
@@ -446,6 +466,7 @@ namespace CoreLib
 
             bool isLarge = (endAngle - startAngle) > Math.PI ? true : false; //  180°を超える円弧化かを指定
             drawEllipse(cnvWorld2Screen(center), size, startPoint, endPoint, isLarge, SweepDirection.Counterclockwise, 0);
+            mFillColor = tmpFillColor;
         }
 
         /// <summary>
@@ -455,13 +476,16 @@ namespace CoreLib
         /// <param name="radius">半径</param>        
         public void drawWCircle(PointD ctr, double radius, bool close = true)
         {
+            Brush tmpFillColor = mFillColor;
+            if (!close)
+                mFillColor = null;
             if (mClipping) {
-                if (mWorld.insideChk(ctr, radius * 2)) {
+                if (mClipBox.insideChk(ctr, radius * 2)) {
                     drawCircle(cnvWorld2Screen(ctr), world2screenXlength(radius));
-                } else if (mWorld.circleInsideChk(ctr, radius)) {
+                } else if (mClipBox.circleInsideChk(ctr, radius)) {
                     // Boxが円の内側
                     if (close)          //  Boxないすべて塗潰し
-                        drawWRectangle(mWorld.ToRect());
+                        drawWRectangle(mClipBox.ToRect());
                 } else {
                     double sr = world2screenXlength(radius);
                     if (10 < sr) {
@@ -469,14 +493,12 @@ namespace CoreLib
                         if (close) {
                             int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
                             List<PointD> plist = arc.toPointList(div);
-                            plist = mWorld.clipPolygonList(plist);
+                            plist = mClipBox.clipPolygonList(plist);
                             drawWPolygon(plist);
                         } else {
-                            List<PointD> plist = mWorld.intersection(arc);
-                            for (int i = 0; i < plist.Count - 1; i += 2) {
-                                ArcD subArc = arc.toCopy();
-                                subArc.setPoint(plist[i], plist[i + 1]);
-                                drawArc(new ArcD(cnvWorld2Screen(subArc.mCp), world2screenXlength(subArc.mR), subArc.mSa, subArc.mEa));
+                            List<ArcD> alist = mClipBox.clipArcList(arc);
+                            for (int i = 0; i < alist.Count; i++) {
+                                drawArc(cnvWorld2Screen(alist[i]));
                             }
                         }
                     }
@@ -484,6 +506,7 @@ namespace CoreLib
             } else {
                 drawCircle(cnvWorld2Screen(ctr), world2screenXlength(radius));
             }
+            mFillColor = tmpFillColor;
         }
 
         /// <summary>
@@ -516,7 +539,7 @@ namespace CoreLib
         {
             if (mClipping) {
                 List<PointD> plist = toPointList(ps, pe, rotate);
-                plist = mWorld.clipPolygonList(plist);
+                plist = mClipBox.clipPolygonList(plist);
                 mClipping = false;
                 drawWPolygon(plist);
                 mClipping = true;
@@ -543,6 +566,16 @@ namespace CoreLib
             return plist;
         }
 
+
+        /// <summary>
+        /// ポリラインの描画
+        /// </summary>
+        /// <param name="wpList">ポリライン</param>
+        public void drawWPolyline(PolylineD polyline)
+        {
+            drawWPolyline(polyline.mPolyline);
+        }
+
         /// <summary>
         /// ポリラインの描画
         /// </summary>
@@ -562,6 +595,16 @@ namespace CoreLib
         /// <summary>
         /// ポリゴンの描画(閉領域)
         /// </summary>
+        /// <param name="polygon">ポリゴン</param>
+        /// <param name="fill">塗潰し</param>
+        public void drawWPolygon(PolygonD polygon, bool fill = true)
+        {
+            drawWPolygon(polygon.mPolygon, fill);
+        }
+
+        /// <summary>
+        /// ポリゴンの描画(閉領域)
+        /// </summary>
         /// <param name="wpList">点座標リスト</param>
         /// <param name="fill">塗り潰しの可否</param>
         public void drawWPolygon(List<PointD> wpList, bool fill = true)
@@ -575,15 +618,15 @@ namespace CoreLib
                 return;
             }
             if (mClipping) {
-                if (!mWorld.insideChk(wpList)) {
-                    pointList = mWorld.intersection(wpList);
-                    if (pointList.Count == 0 && mWorld.polygonInsideChk(wpList)) {
+                if (!mClipBox.insideChk(wpList)) {
+                    pointList = mClipBox.intersection(wpList);
+                    if (pointList.Count == 0 && mClipBox.polygonInsideChk(wpList)) {
                         //  Boxがポリゴン領域内(Boxの頂点リストに変換)
-                        pointList = mWorld.ToPointDList();
+                        pointList = mClipBox.ToPointDList();
                         pointList = pointList.ConvertAll(p => cnvWorld2Screen(p));
                     } else {
                         //  Boxとポリゴンが交点を持っている
-                        List<PointD> plist = mWorld.clipPolygonList(wpList);
+                        List<PointD> plist = mClipBox.clipPolygonList(wpList);
                         pointList = plist.ConvertAll(p => cnvWorld2Screen(p));
                     }
                 } else {
@@ -622,7 +665,7 @@ namespace CoreLib
             if (textSize != 0)
                 setWorldTextSize(textSize);
             if (mClipping) {
-                if (mWorld.outsideChk(new Box(textBoxArea(text, p, rotate, ha, va))))
+                if (mClipBox.outsideChk(new Box(textBoxArea(text, p, rotate, ha, va))))
                     return;
             }
             if (!mTextOverWrite) {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -117,9 +118,22 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定線分でミラーする
+        /// </summary>
+        /// <param name="sp">始点座標</param>
+        /// <param name="ep">終点座標</param>
+        public void mirror(PointD sp, PointD ep)
+        {
+            mPos.mirror(sp, ep);
+            mVa = mVa == VerticalAlignment.Top ? VerticalAlignment.Bottom : mVa == VerticalAlignment.Bottom ? VerticalAlignment.Top : VerticalAlignment.Center;
+            double ang = ep.angle(sp);
+            mRotate = ang - mRotate + ang;
+        }
+
+        /// <summary>
         /// 文字列の領域の頂点座標と中点座標を求める
         /// </summary>
-        /// <returns></returns>
+        /// <returns>点リスト</returns>
         public List<PointD> toPointList()
         {
             List<PointD> plist = new List<PointD> ();
@@ -133,6 +147,20 @@ namespace CoreLib
             l = new LineD(pplist[0], pplist[2]);
             plist.Add(l.centerPoint());
             return plist;
+        }
+
+        /// <summary>
+        /// 文字列の領域を示す線分を求める
+        /// </summary>
+        /// <returns>線分リスト</returns>
+        public List<LineD> toLineList()
+        {
+            List<LineD> llist = new();
+            List<PointD> plist = getArea();
+            for (int i = 0; i < plist.Count - 1; i++)
+                llist.Add(new LineD(plist[i], plist[i + 1]));
+            llist.Add(new LineD(plist[plist.Count - 1], plist[0]));
+            return llist;
         }
 
         /// <summary>
@@ -204,7 +232,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="p">指定座標</param>
         /// <returns>座標</returns>
-        public PointD nearPoints(PointD p)
+        public PointD nearPeakPoint(PointD p)
         {
             List<PointD> points = toPointList();
             double l = double.MaxValue;
@@ -218,6 +246,30 @@ namespace CoreLib
             }
             return np;
         }
+
+        /// <summary>
+        /// テキストの領域を示す線分上で最も近い点を求める
+        /// </summary>
+        /// <param name="pos">参照店</param>
+        /// <returns>座標</returns>
+        public PointD nearPoint(PointD pos)
+        {
+            LineD l = nearLine(pos);
+            return l.intersection(pos);
+        }
+
+
+        /// <summary>
+        /// テキストの領域を示す線分で最も近いものを求める
+        /// </summary>
+        /// <param name="pos">参照点</param>
+        /// <returns>線分</returns>
+        public LineD nearLine(PointD pos)
+        {
+            List<LineD> lines = toLineList();
+            return lines.MinBy(l => l.distance(pos));
+        }
+
 
         //  ---  文字列パラメータ処理
 

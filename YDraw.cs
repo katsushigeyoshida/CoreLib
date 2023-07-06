@@ -404,7 +404,7 @@ namespace CoreLib
         public void drawLine(LineD l)
         {
             if (0 < mLineType) {
-                List<PointD> plist = l.divdeePattern(mLinePattern[mLineType - 1]);
+                List<PointD> plist = l.dividePattern(mLinePattern[mLineType - 1]);
                 for (int i = 0; i < plist.Count - 1; i += 2)
                     drawLine(new LineD(plist[i].x, plist[i].y, plist[i+1].x, plist[i+1].y).toLine());
             } else {

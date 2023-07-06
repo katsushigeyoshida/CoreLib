@@ -418,6 +418,31 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// フルパスのディレクトリから最後のフォルダ名を取り出す
+        /// </summary>
+        /// <param name="folder">ディレクトリ</param>
+        /// <returns>抽出フォルダ名</returns>
+        public String getLastFolder(String folder)
+        {
+            return getLastFolder(folder, 1);
+        }
+
+        /// <summary>
+        /// フルパスのディレクトリから最後のフォルダ名を取り出す
+        /// </summary>
+        /// <param name="folder">ディレクトリ</param>
+        /// <param name="n">後ろから位置 n番目のフォルダ</param>
+        /// <returns>抽出フォルダ名</returns>
+        public String getLastFolder(String folder, int n)
+        {
+            String[] buf = folder.Split('\\');
+            if (0 < buf.Length)
+                return buf[buf.Length - n];
+            else
+                return "";
+        }
+
+        /// <summary>
         /// 実行ファイルのフォルダを取得(アプリケーションが存在するのディレクトリ)
         /// </summary>
         /// <returns>ディレクトリ</returns>
@@ -1220,6 +1245,27 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// フォルダの選択ダイヤログの表示
+        /// </summary>
+        /// <param name="title">タイトル</param>
+        /// <param name="initFolder">初期ディレクトリ</param>
+        /// <returns>フォルダパス</returns>
+        public string folderSelect(string title, string initFolder)
+        {
+            var dlg = new CommonOpenFileDialog {
+                Title = title,
+                IsFolderPicker = true,
+                InitialDirectory = initFolder,
+                DefaultDirectory = initFolder,
+            };
+            if (dlg.ShowDialog() == CommonFileDialogResult.Ok) {
+                return dlg.FileName;
+            } else {
+                return "";
+            }
+        }
+
+        /// <summary>
         /// ファイル読込選択ダイヤログ表示
         /// フィルタ例  ("CSVファイル", "*.csv;*.csv")("すべてのファイル", "*.*")
         /// Nuget で WindowsAPICodePack をインストール
@@ -1274,6 +1320,55 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ディレクトリをコピー
+        /// srcDir以下のファイルとディレクトリをdestDir以下にコピーする
+        /// </summary>
+        /// <param name="srcDir">コピー元ディレクトリ</param>
+        /// <param name="destDir">コピー先ディレクトリ</param>
+        public void copyDrectory(string srcDir, string destDir)
+        {
+            if (!Directory.Exists(destDir)) {
+                Directory.CreateDirectory(destDir);
+            }
+            File.SetAttributes(destDir, File.GetAttributes(srcDir));
+            if (!destDir.EndsWith(Path.DirectorySeparatorChar.ToString())) {
+                destDir = destDir + Path.DirectorySeparatorChar;
+            }
+
+            string[] files = Directory.GetFiles(srcDir);
+            foreach (string file in files) {
+                File.Copy(file, destDir + Path.GetFileName(file), true);
+            }
+
+            string[] dirs = Directory.GetDirectories(srcDir);
+            foreach (string dir in dirs) {
+                copyDrectory(dir, destDir + Path.GetFileName(dir));
+            }
+        }
+
+        /// <summary>
+        /// ファイルのコピー
+        /// copyType: 0:update, 1:date | size, 2:force, 3:new
+        /// </summary>
+        /// <param name="srcFile"></param>
+        /// <param name="destFile"></param>
+        /// <param name="copyType"></param>
+        public void fileCopy(string srcFile, string destFile, int copyType)
+        {
+            FileInfo sf = new FileInfo(srcFile);
+            FileInfo df = new FileInfo(destFile);
+            if (df.Exists && df.IsReadOnly)
+                df.IsReadOnly = false;
+            if ((copyType == 0 && sf.LastWriteTime > df.LastWriteTime) ||
+                (copyType == 1 && (sf.LastWriteTime != df.LastWriteTime || sf.Length != df.Length)) ||
+                (copyType == 2) ||
+                (copyType == 3 && !df.Exists)
+                ) {
+                File.Copy(srcFile, destFile, true);
+            }
+        }
+
+        /// <summary>
         /// 指定されたパスからファイルリストを作成
         /// 指定されたpathからフォルダ名とワイルドカードのファイル名に分けて
         /// ファイルリストを取得する
@@ -1290,6 +1385,88 @@ namespace CoreLib
             } catch (Exception e) {
                 return null;
             }
+        }
+
+
+        /// <summary>
+        /// 指定されたパスからディレクトリリストを作成
+        /// </summary>
+        /// <param name="path">パス名</param>
+        /// <returns>ディレクトリリスト</returns>
+        public List<string> getDirectories(string path)
+        {
+            List<string> dirList = new List<string>();
+            try {
+                DirectoryInfo di = new DirectoryInfo(path);
+                foreach (DirectoryInfo dir in di.GetDirectories()) {
+                    dirList.Add(dir.FullName);
+                }
+                return dirList;
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// フォルダとファイルの一覧を取得
+        /// </summary>
+        /// <param name="folder">フォルダ</param>
+        /// <param name="fileName">ファイル名(*.ext)</param>
+        /// <returns></returns>
+        public List<string> getFilesDirectories(string folder, string fileName)
+        {
+            List<string> fileDirList = new List<string>();
+            try {
+                DirectoryInfo di = new DirectoryInfo(folder);
+                foreach (DirectoryInfo dir in di.GetDirectories()) {
+                    fileDirList.Add(dir.FullName);
+                }
+                string[] files = Directory.GetFiles(folder, fileName);
+                foreach (var file in files) {
+                    fileDirList.Add(file);
+                }
+                return fileDirList;
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ファイル情報検索(サブディレクトリを含む)
+        /// </summary>
+        /// <param name="folder">検索フォルダ</param>
+        /// <returns>ファイルリスト</returns>
+        public List<FileInfo> getDirectoriesInfo(string folder, string fileName = "*")
+        {
+            List<FileInfo> fileList = new List<FileInfo>();
+            try {
+                DirectoryInfo di = new DirectoryInfo(folder);
+                foreach (DirectoryInfo dir in di.GetDirectories()) {
+                    List<FileInfo> filesInfo = getDirectoriesInfo(dir.FullName, fileName);
+                    if (filesInfo != null) {
+                        fileList.AddRange(filesInfo);
+                    }
+                }
+                string[] files = Directory.GetFiles(folder, fileName);
+                foreach (var file in files) {
+                    FileInfo fi = new FileInfo(file);
+                    if (fi != null)
+                        fileList.Add(fi);
+                }
+                return fileList;
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ドライブの一覧を取得する
+        /// </summary>
+        /// <returns></returns>
+        public List<string> getDrives()
+        {
+            string[] drives = Directory.GetLogicalDrives();
+            return drives.ToList();
         }
 
         /// <summary>

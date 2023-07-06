@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 
 namespace CoreLib
@@ -39,7 +40,7 @@ namespace CoreLib
     ///     List<PointD> ToPointDList()         頂点リストに変換
     ///     List<LineD> ToLineDList()           LineDのリストに変換
     ///     Rect ToRect()                       RECTに変換
-    ///     void zoom(PointD cp, double zoom)   指定した座標を中心にスケーリング
+    ///     void zoom(PointD cp, double zoom, bool inverse = false) 指定した座標を中心にスケーリング
     ///     void zoom(double zoom)              領域を中心からスケーリング
     ///     void offset(PointD dp)              指定した距離を移動
     ///     void offset(double dx, double dy)   指定した距離を移動
@@ -67,6 +68,8 @@ namespace CoreLib
     ///     List<PointD> intersection(ArcD arc) 円弧との交点リストを求める
     ///     List<PointD> intersection(PoinDt c, double r, double sa, double ea) 円との交点を求める
     ///     List<PointD> intersection(List<PointD> polyline, bool close = false, bool abort = false)    ポリラインとの交点リストを求める
+    ///     List<LineD> clipLineList(LineD line)    線分をクリッピングしてBox内の線分を求める
+    ///     List<ArcD> clipArcList(ArcD arc)    円弧をクリッピングしてBox内の円弧リストを求める
     ///     List<LineD> clipPolyline2LineList(List<PointD> polyline)    ポリラインのクリッピングを線分リストに変換
     ///     List<PointD> clipCircle2PolygonList(Point c, double r, int div = 32) 円と重ね合わせた時の重なる領域の点座標リスト
     ///     List<PointD> clipPolygonList(List<Point> polygon)    ポリゴンをクリッピングしたポリゴン座標点リストを求める
@@ -794,7 +797,7 @@ namespace CoreLib
             List<LineD> lines = ToLineDList();
             foreach (LineD line in lines) {
                 PointD p = line.intersection(l);
-                if (p.x != double.NaN && line.onPoint(p) && l.onPoint(p))
+                if (p != null && line.onPoint(p) && l.onPoint(p))
                     pointList.Add(p);
             }
             return pointList;
@@ -813,7 +816,7 @@ namespace CoreLib
             foreach (LineD line in lines) {
                 for (int j = 0; j < blines.Count; j++) {
                     PointD p = blines[j].intersection(line);
-                    if (!double.IsNaN(p.x) && !double.IsNaN(p.y)) {
+                    if (p != null) {
                         if (blines[j].onPoint(p) && line.onPoint(p))
                             plist.Add(p);
                     }
@@ -898,7 +901,7 @@ namespace CoreLib
                 }
                 for (int j = 0; j < ll.Count; j++) {
                     PointD p = ll[j].intersection(l);
-                    if (!double.IsNaN(p.x) && !double.IsNaN(p.y)) {
+                    if (p != null) {
                         if (ll[j].onPoint(p) && l.onPoint(p)) {
                             plist.Add(p);
                             if (abort)
@@ -908,6 +911,71 @@ namespace CoreLib
                 }
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 線分をクリッピングしてBox内の線分を求める
+        /// </summary>
+        /// <param name="line">線分</param>
+        /// <returns>線分リスト</returns>
+        public List<LineD> clipLineList(LineD line)
+        {
+            List<LineD> llist = new();
+            if (insideChk(line)) {
+                llist.Add(line);
+            } else {
+                List<PointD> plist = intersection(line);
+                if (0 < plist.Count) {
+                    plist.Add(line.ps);
+                    plist.Add(line.pe);
+                    List<PointD> lplist;
+                    double ang = line.angle();
+                    if ((Math.PI / 4 < ang && ang < Math.PI / 4 * 3) ||
+                        (-Math.PI / 4 * 3 < ang && ang < -Math.PI / 4)) {
+                        plist.Sort((a, b) => Math.Sign(a.y - b.y));
+                    } else {
+                        plist.Sort((a, b) => Math.Sign(a.x - b.x));
+                    }
+                    for (int i = 0; i < plist.Count - 1; i++) {
+                        LineD l = new LineD(plist[i], plist[i + 1]);
+                        if (0 < l.length() && insideChk(l.centerPoint()))
+                            llist.Add(l);
+                    }
+                }
+            }
+            return llist;
+        }
+
+        /// <summary>
+        /// 円弧をクリッピングしてBox内の円弧リストを求める
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <returns>円弧リスト</returns>
+        public List<ArcD> clipArcList(ArcD arc)
+        {
+            List<ArcD> alist = new();
+            if (insideChk(arc)) {
+                alist.Add(arc);
+            } else {
+                List<PointD> plist = intersection(arc);
+                if (0 < plist.Count) {
+                    List<double> angList = new();
+                    angList.Add(arc.mSa);
+                    angList.Add(arc.mEa);
+                    for (int i = 0; i < plist.Count; i++)
+                        angList.Add(arc.getAngle(plist[i]));
+                    angList.Sort();
+                    for (int i = 0; i < angList.Count - 1; i++) {
+                        ArcD a = arc.toCopy();
+                        a.mSa = angList[i];
+                        a.mEa = angList[i + 1];
+                        Box b = new Box(a);
+                        if (0 < a.mEa - a.mSa && insideChk(b.getCenter()))
+                            alist.Add(a);
+                    }
+                }
+            }
+            return alist;
         }
 
         /// <summary>
@@ -929,7 +997,7 @@ namespace CoreLib
                         plist.Add(l.ps);
                     for (int j = 0; j < ll.Count; j++) {
                         PointD p = ll[j].intersection(l);
-                        if (!double.IsNaN(p.x) && !double.IsNaN(p.y)) {
+                        if (p != null) {
                             if (ll[j].onPoint(p) && l.onPoint(p))
                                 plist.Add(p);
                         }

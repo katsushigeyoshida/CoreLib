@@ -21,7 +21,7 @@ namespace CoreLib
         public bool mOneClick = false;                      //  OneClickで選択
 
         public List<string> mMenuList;                      //  メニューリストデータ
-        public string mResultMenu;                          //  選択結果
+        public string mResultMenu = "";                     //  選択結果
 
         public MenuDialog()
         {

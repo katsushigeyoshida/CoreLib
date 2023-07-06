@@ -19,12 +19,21 @@ namespace CoreLib
     ///  ArcD toCopy()                                      コピーを作成
     ///  void rotate(double angle)                          円弧の回転
     ///  void rotate(PointD cp, double ang)                 指定点を中心に回転
+    ///  void rotate(PointD cp, PointD mp)                  指定点を中心に回転
+    ///  void mirror(PointD sp, PointD ep)                  指定成分でミラーする
+    ///  void trim(PointD sp, PointD ep)                    指定点でトリムする
+    ///  void trimNear(PointD tp, PointD pos)               ピックした位置に近い方を消すようにトリミング
+    ///  void trimFar(PointD tp, PointD pos)                ピックした位置に遠いを消すようにトリミング
+    ///  void stretch(PointD vec, PointD pos)               円弧を端点または半径をストレッチ
     ///  PointD startPoint()                                始点座標
     ///  PointD endPoint()                                  終点座標
-    ///  PointD getPoint(double ang)                        角度から円周上の座標を求める
+    ///  PointD middlePoint()                               中間点座標
+    ///  List<PointD> dividePoints(int divNo)               円弧を分割した座標点リスト
+    ///  PointD getPoint(double ang, bool clockwise = false)    角度から円周上の座標を求める
+    ///  void setPoint(PointD sp, PointD ep)                指定座標で始角と終角を設定
     ///  double getAngle(PointD p)                          指定座標と中心との角度を求める
     ///  List<PointD> toPeakList()                          円周上の端点リスト(端点+4分割点)
-    ///  List<PointD> toPointlist(int divideNo)             円弧の分割点リストを作成
+    ///  List<PointD> toPointlist(int divideNo, bool clockwise = false)     円弧の分割点リストを作成
     ///  List<PointD> toAnglePointList(double da, bool clockwise = false)   円弧の角度分割点リストを作成
     ///  PointD nearPoints(PointD p, int divideNo = 4)      円弧の分割点で最も近い点を求める
     ///  bool onPoint(PointD p)                             点が円弧上にあるかの判定
@@ -32,6 +41,9 @@ namespace CoreLib
     ///  List<PointD> interSection(PointD p, bool on = true)    点との交点リスト
     ///  PointD intersection(PointD p)                      垂点(円に対して)
     ///  List<PointD> intersection(LineD line, bool on = true)  線分との交点
+    ///  List<PointD> intersection(ArcD Arc, bool on = true)    円と円との交点を求める
+    ///  List<PointD> intersection(PolylineD polyline, bool on = true)  ポリラインとの交点を求める
+    ///  List<PointD> intersection(PolygonD polygon, bool on = true)    ポリゴンとの交点を求める
     /// 
     /// </summary>
 
@@ -221,6 +233,100 @@ namespace CoreLib
             rotate(cp, ang);
         }
 
+        /// <summary>
+        /// 指定成分でミラーする
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="ep"></param>
+        public void mirror(PointD sp, PointD ep)
+        {
+            PointD ps = startPoint();
+            PointD pe = endPoint();
+            mCp.mirror(sp, ep);
+            ps.mirror(sp, ep);
+            pe.mirror(sp, ep);
+            mSa = getAngle(pe);
+            mEa = getAngle(ps);
+            normalize();
+        }
+
+        /// <summary>
+        /// 指定点でトリムする
+        /// </summary>
+        /// <param name="sp">始点座標</param>
+        /// <param name="ep">終点座標</param>
+        public void trim(PointD sp, PointD ep)
+        {
+            mSa = getAngle(sp);
+            mEa = getAngle(ep);
+            normalize();
+        }
+
+        /// <summary>
+        /// ピックした位置に近い方を消すようにトリミングする
+        /// </summary>
+        /// <param name="tp">トリミング位置</param>
+        /// <param name="pos">ピック位置</param>
+        public void trimNear(PointD tp, PointD pos)
+        {
+            PointD sp = startPoint();
+            PointD ep = endPoint();
+            double sl = pos.length(sp);
+            double el = pos.length(ep);
+            if (sl < el) {
+                mSa = getAngle(pos);
+            } else {
+                mEa = getAngle(pos);
+            }
+            normalize();
+        }
+
+        /// <summary>
+        /// ピックした位置に遠いを消すようにトリミングする
+        /// </summary>
+        /// <param name="tp">トリミング位置</param>
+        /// <param name="pos">ピック位置</param>
+        public void trimFar(PointD tp, PointD pos)
+        {
+            PointD sp = startPoint();
+            PointD ep = endPoint();
+            double sl = pos.length(sp);
+            double el = pos.length(ep);
+            if (sl < el) {
+                mEa = getAngle(pos);
+            } else {
+                mSa = getAngle(pos);
+            }
+            normalize();
+        }
+
+        /// <summary>
+        /// 円弧を端点または半径をストレッチする
+        /// </summary>
+        /// <param name="vec">ストレッチの方向</param>
+        /// <param name="pos">ストレッチの基準点</param>
+        public void stretch(PointD vec, PointD pos)
+        {
+            PointD sp = startPoint();
+            PointD mp = middlePoint();
+            PointD ep = endPoint();
+            double sl = pos.length(sp);
+            double ml = pos.length(mp);
+            double el = pos.length(ep);
+            if (Math.PI * 2 <= mOpenAngle || (ml < sl && ml < el)) {
+                mp += vec;
+                mR = mp.length(mCp);
+            } else if (sl < el) {
+                sp += vec;
+                mSa = getAngle(sp);
+                normalize();
+            } else {
+                ep += vec;
+                mEa = getAngle(ep);
+                normalize();
+            }
+        }
+
 
         /// <summary>
         /// 始点座標
@@ -238,6 +344,34 @@ namespace CoreLib
         public PointD endPoint()
         {
             return getPoint(mEa);
+        }
+
+        /// <summary>
+        /// 中間点座標
+        /// </summary>
+        /// <returns>座標</returns>
+        public PointD middlePoint()
+        {
+            return getPoint((mSa + mEa) / 2);
+        }
+
+        /// <summary>
+        /// 円弧を分割した座標点リスト
+        /// </summary>
+        /// <param name="divNo">分割数</param>
+        /// <returns>座標点リスト</returns>
+        public List<PointD> dividePoints(int divNo)
+        {
+            List<PointD> points = new List<PointD>();
+            if (0 < divNo) {
+                double da = mOpenAngle / divNo;
+                double ang = mSa;
+                while (ang <= mEa + mEps) {
+                    points.Add(getPoint(ang));
+                    ang += da;
+                }
+            }
+            return points;
         }
 
         /// <summary>
@@ -433,7 +567,7 @@ namespace CoreLib
                 //  接点
                 if (!on || innerAngle(mp.angle(mCp)))
                     plist.Add(mp);
-            } else if (l == 0) {
+            } else if (l < mEps) {
                 double ang = line.angle();
                 PointD cp = getPoint(ang);
                 if (!on || (onPoint(cp) && line.onPoint(cp)))
@@ -459,5 +593,75 @@ namespace CoreLib
             return plist;
         }
 
+        /// <summary>
+        /// 円と円との交点を求める
+        /// </summary>
+        /// <param name="Arc">円弧</param>
+        /// <param name="on">円弧上の有無</param>
+        /// <returns></returns>
+        public List<PointD> intersection(ArcD Arc, bool on = true)
+        {
+            List<PointD> plist = new List<PointD>();
+            PointD ip;
+            double dis = mCp.length(Arc.mCp);
+            PointD vec = mCp.vector(Arc.mCp);
+            if (mR + Arc.mR < dis || Math.Abs(mR - Arc.mR) > dis) {
+                //  交点なし
+            } else if (mR + Arc.mR == dis || Math.Abs(mR - Arc.mR) == dis) {
+                //  接点
+                vec.setLength(mR);
+                ip = mCp + vec;
+                if (!on || (onPoint(ip) && Arc.onPoint(ip)))
+                    plist.Add(ip);
+            } else {
+                //  交点 余弦定理(cos(th) = (a^2+b^2-c^2) / 2ab)交点の角度を求める
+                //                  a = distance(cp1,cp2) b = r1 c = r2
+                double ang = Math.Acos((dis * dis + mR * mR - Arc.mR * Arc.mR) / (2 * dis * mR));
+                vec.rotate(ang);
+                vec.setLength(mR);
+                ip = mCp + vec;
+                if (!on || (onPoint(ip) && Arc.onPoint(ip)))
+                    plist.Add(ip);
+                vec.rotate(-ang * 2);
+                ip = mCp + vec;
+                if (!on || (onPoint(ip) && Arc.onPoint(ip)))
+                    plist.Add(ip);
+            }
+            return plist;
+        }
+
+        /// <summary>
+        /// ポリラインとの交点を求める
+        /// </summary>
+        /// <param name="polyline">ポリライン</param>
+        /// <param name="on">線上の有無</param>
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(PolylineD polyline, bool on = true)
+        {
+            List<PointD> plist = new List<PointD>();
+            PointD ip;
+            List<LineD> lines = polyline.toLineList();
+            foreach (var line in lines) {
+                plist.AddRange(intersection(line, on));
+            }
+            return plist;
+        }
+
+        /// <summary>
+        /// ポリゴンとの交点を求める
+        /// </summary>
+        /// <param name="polygon">ポリゴン</param>
+        /// <param name="on">線上の有無</param>
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(PolygonD polygon, bool on = true)
+        {
+            List<PointD> plist = new List<PointD>();
+            PointD ip;
+            List<LineD> lines = polygon.toLineList();
+            foreach (var line in lines) {
+                plist.AddRange(intersection(line, on));
+            }
+            return plist;
+        }
     }
 }

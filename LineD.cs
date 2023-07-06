@@ -14,28 +14,34 @@ namespace CoreLib
     ///  LineD(PointD ps, PointD pe)
     ///  LineD(Line l)
     ///  LineD(LineD l)
-    ///  LineD(Point ps, double r, double th)
+    ///  LineD(PointD ps, double r, double th)
     ///  
     ///  override string ToString()
+    ///  string ToString(string form)           データを書式付き文字列に変換
     ///  LineD toCopy()                         コピーを作成
     ///  Line toLine()                          Lineデータ(Winodws.Shapes)に変換
-    ///  List<PointD> toList()                  PointDのリストに変換
-    ///  List<Point> toPointList()              Pointのリストに変換
-    ///  PointD vector()                        ベクトル(増分データ)に変換
-    ///  void offset(PointD vec)                ベクトル分移動させる
-    ///  void offset(double l)                  指定した距離分だけ平行移動させる
+    ///  List<PointD> toPointList()             PointDのリストに変換
     ///  Rect toRect()                          Rectに変換
     ///  Box toBox()                            Boxに変換
+    ///  PointD vector()                        ベクトル(増分データ)に変換
+    ///  
+    ///  void offset(PointD vec)                ベクトル分移動させる
+    ///  void offset(double d)                  指定した距離分だけ平行移動させる
+    ///  void slide(double l)                   指定した距離分だけ同じ向きに平行移動させる
+    ///  PointD getVectorAngle(double ang, double l)    線分に対して角度と長さを指定したベクトルを求める
     ///  double length()                        線分の長さ
     ///  void setLength(double l)               線分の長さを再設定する
-    ///  List<PointD> divdeePattern(List<double> pattern)   指定したパターンに線分を分割し分割した座標リストを求めめる
+    ///  double distance(PointD p)              点と垂点との距離
+    ///   double distance(LineD l)              線分との距離(平行でない場合は始点との距離)
     ///  double angle()                         ベクトルとしての角度(-π ～ π)
     ///  double angle(LineD l)                  2線分の角度(0 ～ π)
+    ///  double angle2(LineD l)                 2線分の角度(0 ～ 2π)
     ///  bool isParalell(LineD l)               平行線の判定
     ///  double crossProduct(PointD p)          外積(線分に対しての左右の位置関係)
     ///  double pointDistance(PointD p)         点との垂線の距離
     ///  PointD intersection(PointD p)          点からの垂線の交点座標(垂点)
     ///  PointD intersection(LineD l)           2線分の交点(延長線上の交点も含む)
+    ///  List<PointD> intersection(ArcD arc)    円との交点を求める
     ///  List<PointD> intersection(PointD c, double r, double sa = 0.0, double ea = Math.PI * 2.0)  円との交点を求める
     ///  bool intersectionHorizon(PointD p)     指定点の水平線と交点を持つかをチェック
     ///  PointD intersectHorizonPoint(PointD p) 指定点の水平線との交点(延長線上も含む)
@@ -50,9 +56,16 @@ namespace CoreLib
     ///  void moveLength(double l)              延長線上に距離を指定して移動
     ///  void rotate(Point ctr, double rotate)  中心を指定して線分を回転
     ///  void rotate(PointD ctr, double rotate) 中心を指定して線分を回転
+    ///  void rotate(PointD cp, PointD mp)      指定点を中心に回転
+    ///  void mirror(PointD sp, PointD ep)      指定線分でミラー
+    ///  void trim(PointD sp, PointD ep)        指定点の垂点で線分の長さを変える
+    ///  void trimNear(PointD tp, PointD pos)   ピックした位置に近い方を消すようにトリミングする
+    ///  void trimFar(PointD tp, PointD pos)    ピックした位置に遠い方を消すようにトリミングする
+    ///  void stretch(PointD vec, PointD pickPos)   指定地に近い端点を移動させる
     ///  bool innerAngle(double sa, double ea, double ang)  2角の間にあるかを判定(境界を含む)
     ///  PointD centerPoint()                   線分の中点を求める
     ///  List<PointD> dividePoints(int divNo)   線分を分割する座標リスト
+    ///  List<PointD> dividePattern(List<double> pattern)   指定したパターンに線分を分割し分割した座標リストを求めめる
     /// </summary>
     public class LineD
     {
@@ -137,18 +150,27 @@ namespace CoreLib
         /// <param name="ps">開始点</param>
         /// <param name="r">長さ</param>
         /// <param name="th">角度(rad)</param>
-        public LineD(Point ps, double r, double th)
+        public LineD(PointD ps, double r, double th)
         {
-            this.ps = new PointD(ps);
-            pe.x = ps.X + r * Math.Cos(th);
-            pe.y = ps.Y + r * Math.Sin(th);
+            this.ps = ps.toCopy();
+            pe.x = ps.x + r * Math.Cos(th);
+            pe.y = ps.y + r * Math.Sin(th);
         }
 
+        /// <summary>
+        /// データを文字列に変換
+        /// </summary>
+        /// <returns>文字列</returns>
         public override string ToString()
         {
             return ps.ToString() + "," + pe.ToString();
         }
 
+        /// <summary>
+        /// データを書式付き文字列に変換
+        /// </summary>
+        /// <param name="form">書式</param>
+        /// <returns>文字列</returns>
         public string ToString(string form)
         {
             return ps.ToString(form) + "," + pe.ToString(form);
@@ -181,10 +203,28 @@ namespace CoreLib
         /// PointDのリストに変換
         /// </summary>
         /// <returns>PointDリスト</returns>
-        public List<PointD> toList()
+        public List<PointD> toPointList()
         {
             List<PointD> plist = new List<PointD>() { ps, pe };
             return plist;
+        }
+
+        /// <summary>
+        /// Rectに変換
+        /// </summary>
+        /// <returns>Rectデータ</returns>
+        public Rect toRect()
+        {
+            return new Rect(ps.toPoint(), pe.toPoint());
+        }
+
+        /// <summary>
+        /// Boxに変換
+        /// </summary>
+        /// <returns>Box</returns>
+        public Box toBox()
+        {
+            return new Box(ps, pe);
         }
 
         /// <summary>
@@ -207,10 +247,20 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定した距離分だけ平行移動させる
+        /// 鉛直方向に移動させる
+        /// </summary>
+        /// <param name="d">移動距離</param>
+        public void offset(double d)
+        {
+            PointD vec = getVectorAngle(Math.PI / 2, d);
+            offset(vec);
+        }
+
+        /// <summary>
+        /// 指定した距離分だけ同じ向きに平行移動させる
         /// </summary>
         /// <param name="l">移動距離</param>
-        public void offset(double l)
+        public void slide(double l)
         {
             double len = length();
             PointD vec = vector();
@@ -219,21 +269,17 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// Rectに変換
+        /// 線分に対して角度と長さを指定したベクトルを求める
         /// </summary>
-        /// <returns>Rectデータ</returns>
-        public Rect toRect()
+        /// <param name="ang">線分に対する角度(rad)</param>
+        /// <param name="l">ベクトルの長さ</param>
+        /// <returns>ベクトル</returns>
+        public PointD getVectorAngle(double ang, double l)
         {
-            return new Rect(ps.toPoint(), pe.toPoint());
-        }
-
-        /// <summary>
-        /// Boxに変換
-        /// </summary>
-        /// <returns>Box</returns>
-        public Box toBox()
-        {
-            return new Box(ps, pe);
+            PointD vec = vector();
+            vec.rotate(ang);
+            vec.setLength(l);
+            return vec;
         }
 
         /// <summary>
@@ -258,30 +304,26 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定したパターンに線分を分割し分割した座標リストを求めメル
+        /// 点との距離
         /// </summary>
-        /// <param name="pattern">分割パターン</param>
-        /// <returns>座標リスト</returns>
-        public List<PointD> divdeePattern(List<double> pattern)
+        /// <param name="p">点座標</param>
+        /// <returns>距離</returns>
+        public double distance(PointD p)
         {
-            double leng = length();
-            List<PointD> pList = new List<PointD>();
-            PointD sp, ep;
-            int i = 0;
-            LineD l = toCopy();
-            double sumLength = pattern[0];
-            pList.Add(l.ps.toCopy());
-            while (sumLength < leng) {
-                l.setLength(sumLength);
-                pList.Add(l.pe.toCopy());
-                i++;
-                if (pattern.Count <= i) i = 0;
-                sumLength += pattern[i];
-            }
-            l.setLength(sumLength);
-            pList.Add(pe.toCopy());
-            return pList;
-       }
+            PointD ip = intersection(p);
+            return ip.length(p);
+        }
+
+        /// <summary>
+        /// 線分との距離(平行でない場合は始点との距離)
+        /// </summary>
+        /// <param name="l">線分</param>
+        /// <returns>距離</returns>
+        public double distance(LineD l)
+        {
+            PointD ip = intersection(l.ps);
+            return ip.length(l.ps);
+        }
 
         /// <summary>
         /// ベクトルとしての角度(-π ～ π)
@@ -300,7 +342,21 @@ namespace CoreLib
         /// <returns>線分同士の角度</returns>
         public double angle(LineD l)
         {
-            return Math.Abs(angle() - l.angle());
+            return Math.Abs(angle() - l.angle()) % Math.PI;
+        }
+
+        /// <summary>
+        /// 2線分の角度(0 ～ 2π)
+        /// </summary>
+        /// <param name="l">対象線分</param>
+        /// <returns>線分同士の角度</returns>
+        public double angle2(LineD l)
+        {
+            double ang0 = angle();
+            double ang1 = l.angle();
+            if (ang1 < ang0)
+                ang1 += Math.PI * 2;
+            return ang1 - ang0;
         }
 
         /// <summary>
@@ -345,9 +401,9 @@ namespace CoreLib
         /// <returns>垂点座標</returns>
         public PointD intersection(PointD p)
         {
-            LineD lp = new LineD(ps, p);                    //  始点と点をつなぐ線分
-            double ll = lp.length() * Math.Cos(angle(lp));  //  始点と垂点との距離
-            double a = angle();                             //  線分の角度
+            LineD lp = new LineD(ps, p);                            //  始点と点をつなぐ線分
+            double ll = lp.length() * Math.Cos(angle2(lp));          //  始点と垂点との距離
+            double a = angle();                                     //  線分の角度
             return new PointD(ll * Math.Cos(a) + ps.x, ll * Math.Sin(a) + ps.y);
         }
 
@@ -362,10 +418,20 @@ namespace CoreLib
             PointD v2 = l.vector();
             double k = v1.x * v2.y - v2.x * v1.y;
             if (Math.Abs(k) < mEps) //  平行線の判定
-                return new PointD(double.NaN, double.NaN);
+                return null;
             double x = (-1 / k) * (v1.y * v2.x * this.ps.x - v2.y * v1.x * l.ps.x + (l.ps.y - this.ps.y) * v1.x * v2.x);
             double y = (1 / k) * (v1.x * v2.y * this.ps.y - v2.x * v1.y * l.ps.y + (l.ps.x - this.ps.x) * v1.y * v2.y);
             return new PointD(x, y);
+        }
+
+        /// <summary>
+        /// 円との交点を求める
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(ArcD arc)
+        {
+            return intersection(arc.mCp, arc.mR, arc.mSa, arc.mEa);
         }
 
         /// <summary>
@@ -385,7 +451,7 @@ namespace CoreLib
             ea += ea <= sa ? Math.PI * 2.0 : 0.0;
             if (r < l) {
                 //  交点なし
-            } else if (l == 0) {
+            } else if (l < mEps) {
                 //  中心点を通る
                 double ang = angle();
                 ang += ang < 0 ? Math.PI : 0;
@@ -485,7 +551,7 @@ namespace CoreLib
         /// <param name="p">近傍座標</param>
         /// <param name="divideNo">分割数</param>
         /// <returns>座標</returns>
-        public PointD nearPoints(PointD p, int  divideNo = 4)
+        public PointD nearPoint(PointD p, int  divideNo = 4)
         {
             List<PointD> points = dividePoints(divideNo);
             double l = double.MaxValue;
@@ -561,12 +627,12 @@ namespace CoreLib
             byte outcode1 = inOutAreaCode(l2.pe, rect);
 
             while (true) {
-                if ((outcode0 | outcode1) == 0) {         //  両端点がフレームの中(クリッピング不要)
+                if ((outcode0 | outcode1) == 0) {           //  両端点がフレームの中(クリッピング不要)
                     break;
-                } else if ((outcode0 & outcode1) != 0) {   //  確実に表示されない線分
+                } else if ((outcode0 & outcode1) != 0) {    //  確実に表示されない線分
                     l2 = null;
                     break;
-                } else {                                //  クリッピング処理
+                } else {                                    //  クリッピング処理
                     double x = 0, y = 0;
                     int outcode = outcode0 != 0 ? outcode0 : outcode1;
                     if ((outcode & TOP) != 0) {
@@ -663,6 +729,69 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定線分でミラーする
+        /// </summary>
+        /// <param name="sp">始点座標</param>
+        /// <param name="ep">終点座標</param>
+        public void mirror(PointD sp, PointD ep)
+        {
+            ps.mirror(sp, ep);
+            pe.mirror(sp, ep);
+        }
+
+        /// <summary>
+        /// 指定点の垂点で線分の長さを変える
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="ep"></param>
+        public void trim(PointD sp, PointD ep)
+        {
+            ps = intersection(sp);
+            pe = intersection(ep);
+        }
+
+        /// <summary>
+        /// ピックした位置に近い方を消すようにトリミングする
+        /// </summary>
+        /// <param name="tp"></param>
+        /// <param name="pos"></param>
+        public void trimNear(PointD tp, PointD pos)
+        {
+            if (ps.length(pos) < pe.length(pos)) {
+                ps = intersection(tp);
+            } else {
+                pe = intersection(tp);
+            }
+        }
+
+        /// <summary>
+        /// ピックした位置に遠い方を消すようにトリミングする
+        /// </summary>
+        /// <param name="tp"></param>
+        /// <param name="pos"></param>
+        public void trimFar(PointD tp, PointD pos)
+        {
+            if (ps.length(pos) > pe.length(pos)) {
+                ps = intersection(tp);
+            } else {
+                pe = intersection(tp);
+            }
+        }
+
+        /// <summary>
+        /// 指定地に近い端点を移動させる
+        /// </summary>
+        /// <param name="vec">移動量</param>
+        /// <param name="pickPos">指定位置</param>
+        public void stretch(PointD vec, PointD pickPos)
+        {
+            if (pickPos.length(ps) < pickPos.length(pe))
+                ps.translate(vec);
+            else
+                pe.translate(vec);
+        }
+
+        /// <summary>
         /// 2角の間にあるかを判定(境界を含む)
         /// </summary>
         /// <param name="sa">開始角(rad)</param>
@@ -706,6 +835,32 @@ namespace CoreLib
                 points.Add(new PointD(ps.x + dx * i, ps.y + dy * i));
             }
             return points;
+        }
+
+        /// <summary>
+        /// 指定したパターンに線分を分割し分割した座標リストを求めメル
+        /// </summary>
+        /// <param name="pattern">分割パターン</param>
+        /// <returns>座標リスト</returns>
+        public List<PointD> dividePattern(List<double> pattern)
+        {
+            double leng = length();
+            List<PointD> pList = new List<PointD>();
+            PointD sp, ep;
+            int i = 0;
+            LineD l = toCopy();
+            double sumLength = pattern[0];
+            pList.Add(l.ps.toCopy());
+            while (sumLength < leng) {
+                l.setLength(sumLength);
+                pList.Add(l.pe.toCopy());
+                i++;
+                if (pattern.Count <= i) i = 0;
+                sumLength += pattern[i];
+            }
+            l.setLength(sumLength);
+            pList.Add(pe.toCopy());
+            return pList;
         }
     }
 }
