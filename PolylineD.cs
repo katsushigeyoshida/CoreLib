@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Windows.Shapes;
+﻿using System;
+using System.Collections.Generic;
 using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
+using System.Runtime.Intrinsics.Arm;
 
 namespace CoreLib
 {
@@ -21,6 +22,7 @@ namespace CoreLib
     /// double length()                                 全体の長さを求める
     /// Box getBox()                                    Box領域を求める
     /// LineD getLine(int n)                            指定位置のポリラインの線分を取り出す
+    /// LineD getLine(PointD p)                         指定座標に近い線分を取り出す
     /// void translate(PointD vec)                      全体を移動する
     /// void rotate(double ang)                         原点を中心に全体を回転する
     /// void rotate(PointD cp, double ang)              指定点を中心に回転する
@@ -45,6 +47,8 @@ namespace CoreLib
     public class PolylineD
     {
         public List<PointD> mPolyline;
+
+        private double mEps = 1E-8;
 
         /// <summary>
         /// コンストラクタ
@@ -185,6 +189,48 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定位置に最も近い線分を取り出す
+        /// </summary>
+        /// <param name="p">指定座標</param>
+        /// <returns>線分</returns>
+        public LineD getLine(PointD p)
+        {
+            int np = nearPos(p);
+            return getLine(np);
+        }
+
+        /// <summary>
+        /// オフセットする
+        /// </summary>
+        /// <param name="d">オフセット距離</param>
+        public void offset(double d)
+        {
+            List<LineD> llist = toLineList();
+            llist.ForEach(l => l.offset(d));
+            if (1 < llist.Count) {
+                mPolyline.Clear();
+                mPolyline.Add(llist[0].ps);
+                for (int i = 0; i < llist.Count - 1; i++) {
+                    PointD ip = llist[i].intersection(llist[i + 1]);
+                    mPolyline.Add(ip);
+                }
+                mPolyline.Add(llist[llist.Count - 1].pe);
+            }
+        }
+
+        /// <summary>
+        /// 直方向に平行移動させる
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(PointD sp, PointD ep)
+        {
+            LineD line = getLine(sp);
+            double dis = line.distance(ep) * Math.Sign(line.crossProduct(ep)) - line.distance(sp) * Math.Sign(line.crossProduct(sp));
+            offset(dis);
+        }
+
+        /// <summary>
         /// 全体を移動する
         /// </summary>
         /// <param name="vec">移動量</param>
@@ -248,11 +294,11 @@ namespace CoreLib
         /// <param name="ep">終点</param>
         public void trim(PointD sp, PointD ep)
         {
-            int sn = nearPos(sp);
-            int en = nearPos(ep);
+            int sn = nearPos(sp, true);
+            int en = nearPos(ep, true);
             PointD ps = getLine(sn).intersection(sp);
             PointD pe = getLine(en).intersection(ep);
-            if (sn < en && 0 <= sn && en <= mPolyline.Count - 2) {
+            if (sn <= en && 0 <= sn && en <= mPolyline.Count - 2) {
                 mPolyline.RemoveRange(en + 2, mPolyline.Count - en - 2);
                 mPolyline.RemoveRange(0, sn);
                 mPolyline[0] = ps;
@@ -275,6 +321,32 @@ namespace CoreLib
             int pos = nearPeackPos(nearPos);
             if (0 <= pos)
                 mPolyline[pos].translate(vec);
+        }
+
+        /// <summary>
+        /// 指定位置で分割する
+        /// </summary>
+        /// <param name="dp">分割参照点</param>
+        /// <returns>分割したポリラインリスト</returns>
+        public List<PolylineD> divide(PointD dp)
+        {
+            List<PolylineD> polylineList = new();
+            PointD mp = nearPoint(dp);
+            if (mp == null)
+                return polylineList;
+            int pos = nearPos(mp, true);
+
+            PolylineD polyline0 = toCopy();
+            int last = polyline0.mPolyline.Count - 1;
+            polyline0.mPolyline.RemoveRange(pos + 1, last - pos);
+            polyline0.mPolyline.Add(mp);
+            polylineList.Add(polyline0);
+
+            PolylineD polyline1 = toCopy();
+            polyline1.mPolyline.RemoveRange(0, pos + 1);
+            polyline1.mPolyline.Insert(0, mp);
+            polylineList.Add(polyline1);
+            return polylineList;
         }
 
         /// <summary>
@@ -360,10 +432,11 @@ namespace CoreLib
         /// 最も近い線分を求める
         /// </summary>
         /// <param name="p">点座標</param>
+        /// <param name="on">線上の交点</param>
         /// <returns>線分</returns>
-        public LineD nearLine(PointD p)
+        public LineD nearLine(PointD p, bool on = false)
         {
-            int np = nearPos(p);
+            int np = nearPos(p, on);
             return getLine(np);
         }
 
@@ -395,8 +468,9 @@ namespace CoreLib
         /// 交点の中で最も近い点の線分位置を求める
         /// </summary>
         /// <param name="p">点座標</param>
+        /// <param name="on">線上の交点</param>
         /// <returns>線分位置</returns>
-        public int nearPos(PointD p)
+        public int nearPos(PointD p, bool on = false)
         {
             List<LineD> llist = toLineList();
             double length = double.MaxValue;
@@ -404,9 +478,19 @@ namespace CoreLib
             for (int i = 0; i < llist.Count; i++) {
                 PointD ip = llist[i].intersection(p);
                 double len = ip.length(p);
-                if (len < length && ip != llist[i].pe) {
-                    length = len;
-                    nearNo = i;
+                if ((!on || llist[i].onPoint(ip)) && len <= length + mEps && ip != llist[i].pe) {
+                    if (len < length - mEps) {
+                        length = len;
+                        nearNo = i;
+                    } else {
+                        //  距離が等しい時
+                        double il = Math.Min(ip.length(llist[i].ps), ip.length(llist[i].pe));
+                        double nl = Math.Min(ip.length(llist[nearNo].ps), ip.length(llist[nearNo].pe));
+                        if (il < nl) {
+                            length = len;
+                            nearNo = i;
+                        }
+                    }
                 }
             }
             return nearNo;

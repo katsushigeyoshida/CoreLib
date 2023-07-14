@@ -57,8 +57,8 @@ namespace CoreLib
     /// </summary>
     public class PointD
     {
-        public double x = 0.0;
-        public double y = 0.0;
+        public double x = double.NaN;
+        public double y = double.NaN;
 
         /// <summary>
         /// コンストラクタ
@@ -348,6 +348,17 @@ namespace CoreLib
         {
             x += vp.x;
             y += vp.y;
+        }
+
+        /// <summary>
+        /// 点位置の移動
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void translate(PointD sp, PointD ep)
+        {
+            PointD vec = ep.vector(sp);
+            translate(vec);
         }
 
         /// <summary>

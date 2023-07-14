@@ -333,6 +333,18 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ(TextDの領域)
+        /// </summary>
+        /// <param name="text"></param>
+        public Box(TextD text)
+        {
+            List<PointD> points = text.getArea();
+            Left = Right = points[0].x;
+            Top = Bottom = points[0].y;
+            extension(points);
+        }
+
+        /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="left">左X 座標</param>
@@ -885,6 +897,8 @@ namespace CoreLib
         /// ポリラインとの交点リストを求める
         /// </summary>
         /// <param name="polyline">ポリライン</param>
+        /// <param name="close">閉ループ</param>
+        /// <param name="abort">一つでも交点があれば中断</param>
         /// <returns>交点リスト</returns>
         public List<PointD> intersection(List<PointD> polyline, bool close = false, bool abort = false)
         {
@@ -909,6 +923,25 @@ namespace CoreLib
                         }
                     }
                 }
+            }
+            return plist;
+        }
+
+
+        /// <summary>
+        /// パーツ(Parts)の交点リストを求める
+        /// </summary>
+        /// <param name="parts">パーツデータ</param>
+        /// <param name="abort">一つでも交点があれば中断</param>
+        /// <returns></returns>
+        public List<PointD> intersection(PartsD parts, bool abort = false)
+        {
+            List<PointD> plist = new List<PointD>();
+            List<LineD> ll = ToLineDList();
+            for (int i = 0; i < ll.Count; i++) {
+                plist.AddRange(parts.intersection(ll[i]));
+                if (abort && 0 < plist.Count)
+                    return plist;
             }
             return plist;
         }

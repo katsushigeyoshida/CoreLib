@@ -11,7 +11,7 @@
         <TextBox x:Name="TbTextBox1" Height="25" Margin="100,0,10,0" VerticalAlignment="Top" />
         <Label Name="LbTitle2" Content="タイトル" Width="100" Height="25" Margin="5,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox x:Name="TbTextBox2" MinHeight="25" Margin="100,30,10,45" />
-        <Button Name="OK" Content="OK" Margin="0,0,100,10" Click="OK_Click" Width="75" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-        <Button Name="Cancel" Content="Cancel" Margin="0,0,10,10" Click="Cancel_Click" Width="75" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+        <Button Name="OK" Content="OK" IsDefault="True" Margin="0,0,100,10" Click="OK_Click" Width="75" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+        <Button Name="Cancel" Content="Cancel" IsCancel="True" Margin="0,0,10,10" Click="Cancel_Click" Width="75" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
     </Grid>
 </Window>

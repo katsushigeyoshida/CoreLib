@@ -19,12 +19,17 @@ namespace CoreLib
     /// string ToString()
     /// void rotate(double angle)                       文字列の回転
     /// void rotate(PointD cp, double angle)            指定点を中心に回転
+    /// void rotate(PointD cp, PointD mp)               指定点を中心に回転
+    /// void mirror(PointD sp, PointD ep)               指定線分でミラーする
     /// List<PointD> toPointList()                      文字列の領域の頂点座標と中点座標を求める
+    /// List<LineD> toLineList()                        文字列の領域を示す線分を求める
     /// bool insideChk(PointD p)                        Pointの内外判定
     /// bool insideChk(Box b)                           Boxの内外判定
     /// Box getBox()                                    文字列のBox領域
     /// List<PointD> getArea()                          文字列の領域の頂点座標を求める
-    /// PointD nearPoints(PointD p)                     頂点座標+中点座標で最も近い点を求める
+    /// PointD nearPeakPoint(PointD p)                  頂点座標+中点座標で最も近い点を求める
+    /// PointD nearPoints(PointD p)                     テキストの領域を示す線分上で最も近い点を求める
+    /// LineD nearLine(PointD pos)                      テキストの領域を示す線分で最も近いものを求める
     /// 
     /// PointD getTextOrg(string text, PointD leftTop, double rotate, HorizontalAlignment ha, VerticalAlignment va)
     /// Size measureText(string text, double textSize)  文字列の大きさを求める

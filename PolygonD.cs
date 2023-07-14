@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Windows.Shapes;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CoreLib
 {
@@ -183,6 +184,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定位置に最も近い線分を取り出す
+        /// </summary>
+        /// <param name="p">指定座標</param>
+        /// <returns>線分</returns>
+        public LineD getLine(PointD p)
+        {
+            int np = nearPos(p);
+            return getLine(np);
+        }
+
+        /// <summary>
         /// 全体を移動する
         /// </summary>
         /// <param name="vec">オフセット値(移動量)</param>
@@ -231,6 +243,37 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// オフセットする
+        /// </summary>
+        /// <param name="d">オフセット距離</param>
+        public void offset(double d)
+        {
+            List<LineD> llist = toLineList();
+            llist.ForEach(l => l.offset(d));
+            if (1 < llist.Count) {
+                mPolygon.Clear();
+                PointD ip = llist[llist.Count - 1].intersection(llist[0]);
+                mPolygon.Add(ip);
+                for (int i = 0; i < llist.Count - 1; i++) {
+                    ip = llist[i].intersection(llist[i + 1]);
+                    mPolygon.Add(ip);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 直方向に平行移動させる
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(PointD sp, PointD ep)
+        {
+            LineD line = getLine(sp);
+            double dis = line.distance(ep) * Math.Sign(line.crossProduct(ep)) - line.distance(sp) * Math.Sign(line.crossProduct(sp));
+            offset(dis);
+        }
+
+        /// <summary>
         /// 指定の線分に対してミラーする
         /// </summary>
         /// <param name="line">線分</param>
@@ -249,6 +292,26 @@ namespace CoreLib
             int pos = nearPeackPos(nearPos);
             if (0 <= pos)
                 mPolygon[pos].translate(vec);
+        }
+
+        /// <summary>
+        /// 要素を分割するしたポリラインを作成
+        /// </summary>
+        /// <param name="dp">分割点</param>
+        /// <returns>ポリライン</returns>
+        public PolylineD divide(PointD dp)
+        {
+            PolylineD polyline = new PolylineD();
+            PointD mp = nearPoint(dp);
+            if (mp == null)
+                return polyline;
+            int pos = nearPos(mp);
+            polyline.Add(mp);
+            if (pos + 1 < mPolygon.Count)
+                polyline.mPolyline.AddRange(mPolygon.Skip(pos + 1));
+            polyline.mPolyline.AddRange(mPolygon.Take(pos + 1));
+            polyline.Add(mp);
+            return polyline;
         }
 
         /// <summary>

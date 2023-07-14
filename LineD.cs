@@ -32,11 +32,12 @@ namespace CoreLib
     ///  double length()                        線分の長さ
     ///  void setLength(double l)               線分の長さを再設定する
     ///  double distance(PointD p)              点と垂点との距離
-    ///   double distance(LineD l)              線分との距離(平行でない場合は始点との距離)
+    ///  double distance(LineD l)               線分との距離(平行でない場合は始点との距離)
     ///  double angle()                         ベクトルとしての角度(-π ～ π)
     ///  double angle(LineD l)                  2線分の角度(0 ～ π)
     ///  double angle2(LineD l)                 2線分の角度(0 ～ 2π)
     ///  bool isParalell(LineD l)               平行線の判定
+    ///  bool innerAngle(double sa, double ea, double ang)  2角の間にあるかを判定(境界を含む)
     ///  double crossProduct(PointD p)          外積(線分に対しての左右の位置関係)
     ///  double pointDistance(PointD p)         点との垂線の距離
     ///  PointD intersection(PointD p)          点からの垂線の交点座標(垂点)
@@ -45,6 +46,7 @@ namespace CoreLib
     ///  List<PointD> intersection(PointD c, double r, double sa = 0.0, double ea = Math.PI * 2.0)  円との交点を求める
     ///  bool intersectionHorizon(PointD p)     指定点の水平線と交点を持つかをチェック
     ///  PointD intersectHorizonPoint(PointD p) 指定点の水平線との交点(延長線上も含む)
+    ///  PointD centerPoint()                   線分の中点を求める
     ///  bool onPoint(PointD pnt)               点が線分上にあるかを判定
     ///  PointD nearPoints(PointD p, int  divideNo = 4) 線分の分割点で最も近い点を求める
     ///  byte inOutAreaCode(PointD p, Rect rect)クリッピング領域に対する点の9分割位置の範囲
@@ -62,8 +64,7 @@ namespace CoreLib
     ///  void trimNear(PointD tp, PointD pos)   ピックした位置に近い方を消すようにトリミングする
     ///  void trimFar(PointD tp, PointD pos)    ピックした位置に遠い方を消すようにトリミングする
     ///  void stretch(PointD vec, PointD pickPos)   指定地に近い端点を移動させる
-    ///  bool innerAngle(double sa, double ea, double ang)  2角の間にあるかを判定(境界を含む)
-    ///  PointD centerPoint()                   線分の中点を求める
+    ///  List<LineD> divide(PointD p)           指定点で分割する
     ///  List<PointD> dividePoints(int divNo)   線分を分割する座標リスト
     ///  List<PointD> dividePattern(List<double> pattern)   指定したパターンに線分を分割し分割した座標リストを求めめる
     /// </summary>
@@ -82,6 +83,8 @@ namespace CoreLib
         {
             ps = new PointD();
             pe = new PointD();
+            ps.setNaN();
+            pe.setNaN();
         }
 
         /// <summary>
@@ -186,6 +189,24 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 不定値を設定(null)の代わり
+        /// </summary>
+        public void setNaN()
+        {
+            ps.setNaN();
+            pe.setNaN();
+        }
+
+        /// <summary>
+        /// 不定値の判定
+        /// </summary>
+        /// <returns></returns>
+        public bool isNaN()
+        {
+            return ps.isNaN() || pe.isNaN();
+        }
+
+        /// <summary>
         /// Lineデータ(Winodws.Shapes)に変換
         /// </summary>
         /// <returns>Lineデータ(Winodws.Shapes)</returns>
@@ -240,7 +261,7 @@ namespace CoreLib
         /// ベクトル分移動させる
         /// </summary>
         /// <param name="vec"></param>
-        public void offset(PointD vec)
+        public void translate(PointD vec)
         {
             ps.offset(vec);
             pe.offset(vec);
@@ -253,7 +274,32 @@ namespace CoreLib
         public void offset(double d)
         {
             PointD vec = getVectorAngle(Math.PI / 2, d);
-            offset(vec);
+            translate(vec);
+        }
+
+        /// <summary>
+        /// 直方向に平行移動させる
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(PointD sp, PointD ep)
+        {
+            double dis = distance(ep) * Math.Sign(crossProduct(ep)) - distance(sp) * Math.Sign(crossProduct(sp));
+            offset(dis);
+        }
+
+        /// <summary>
+        /// 指定座標をオフセットさせる
+        /// </summary>
+        /// <param name="pos">座標</param>
+        /// <param name="dis">オフセット距離</param>
+        /// <returns>オフセット座標</returns>
+        public PointD offset(PointD pos, double dis)
+        {
+            PointD ip = intersection(pos);
+            LineD line = new LineD(ip, pos);
+            line.setLength(line.length() + dis);
+            return line.pe;
         }
 
         /// <summary>
@@ -265,7 +311,7 @@ namespace CoreLib
             double len = length();
             PointD vec = vector();
             vec.scale(l / len);
-            offset(vec);
+            translate(vec);
         }
 
         /// <summary>
@@ -369,6 +415,25 @@ namespace CoreLib
             PointD v1 = vector();
             PointD v2 = l.vector();
             return Math.Abs(v1.x * v2.y - v2.x * v1.y) < mEps;
+        }
+
+        /// <summary>
+        /// 2角の間にあるかを判定(境界を含む)
+        /// </summary>
+        /// <param name="sa">開始角(rad)</param>
+        /// <param name="ea">終了角(rad)</param>
+        /// <param name="ang">対象角(rad)</param>
+        /// <returns>間にある(true)</returns>
+        private bool innerAngle(double sa, double ea, double ang)
+        {
+            if (ea < sa) {
+                ea += Math.PI * 2.0;
+                ang += ang < sa ? Math.PI * 2.0 : 0.0;
+            }
+            if (sa <= ang && ang <= ea)
+                return true;
+            else
+                return false;
         }
 
         /// <summary>
@@ -519,6 +584,17 @@ namespace CoreLib
             PointD v = vector();
             v.x = v.x * (p.y - ps.y) / v.y;
             return new PointD(ps.x + v.x, p.y);
+        }
+
+        /// <summary>
+        /// 線分の中点を求める
+        /// </summary>
+        /// <returns>中点座標</returns>
+        public PointD centerPoint()
+        {
+            double dx = (pe.x - ps.x) / 2;
+            double dy = (pe.y - ps.y) / 2;
+            return new PointD(ps.x + dx, ps.y + dy);
         }
 
         /// <summary>
@@ -746,8 +822,9 @@ namespace CoreLib
         /// <param name="ep"></param>
         public void trim(PointD sp, PointD ep)
         {
-            ps = intersection(sp);
+            PointD tp = intersection(sp);
             pe = intersection(ep);
+            ps = tp;
         }
 
         /// <summary>
@@ -792,33 +869,20 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 2角の間にあるかを判定(境界を含む)
+        /// 線分を指定点で分割する
+        /// 垂点が線分上になければ分割しない
         /// </summary>
-        /// <param name="sa">開始角(rad)</param>
-        /// <param name="ea">終了角(rad)</param>
-        /// <param name="ang">対象角(rad)</param>
-        /// <returns>間にある(true)</returns>
-        private bool innerAngle(double sa, double ea, double ang)
+        /// <param name="p">分割参照点</param>
+        /// <returns>線分リスト</returns>
+        public List<LineD> divide(PointD p)
         {
-            if (ea < sa) {
-                ea += Math.PI * 2.0;
-                ang += ang < sa ? Math.PI * 2.0 : 0.0;
+            PointD ip = intersection(p);
+            List<LineD> llist = new List<LineD>();
+            if (onPoint(ip)) {
+                llist.Add(new LineD(ps, ip));
+                llist.Add(new LineD(ip, pe));
             }
-            if (sa <= ang && ang <= ea)
-                return true;
-            else
-                return false;
-        }
-
-        /// <summary>
-        /// 線分の中点を求める
-        /// </summary>
-        /// <returns>中点座標</returns>
-        public PointD centerPoint()
-        {
-            double dx = (pe.x - ps.x) / 2;
-            double dy = (pe.y - ps.y) / 2;
-            return new PointD(ps.x + dx, ps.y + dy);
+            return llist;
         }
 
         /// <summary>

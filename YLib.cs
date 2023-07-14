@@ -54,6 +54,7 @@ namespace CoreLib
     ///   List<string> extractBrackets(string text, char sb = '{', char eb = '}', bool withBracket = false) 括弧で囲まれた文字列を抽出
     ///  string trimControllCode(string buf)                        文字列内のコントロールコードを除去
     ///  bool IsNumberString(string num, bool allNum = false)       数値文字列かを判定
+    ///  string double2StrZeroSup(double val, string form = "f1")   数値をゼロサプレスして文字列に変化
     ///  bool boolParse(string str, bool val = true)                文字列を論理値に変換
     ///  int intParse(string str, int val = 0)                      文字列を整数に変換
     ///  double doubleParse(string str, double val = 0.0)           文字列を実数に変換
@@ -837,6 +838,29 @@ namespace CoreLib
             double val;
             return double.TryParse(nbuf, out val) ? true : false;
         }
+
+        /// <summary>
+        /// 数値をゼロサプレスして文字列に変換
+        /// </summary>
+        /// <param name="val">数値</param>
+        /// <param name="form">書式</param>
+        /// <returns>数値文字列</returns>
+        public string double2StrZeroSup(double val, string form = "f1")
+        {
+            string valStr = val.ToString(form);
+            if (0 <= valStr.IndexOf('.')) {
+                for (int i = valStr.Length - 1; 0 < i; i--) {
+                    if (valStr[i] !='0') {
+                        if (valStr[i] == '.')
+                            return valStr.Substring(0, i);
+                        else
+                            return valStr.Substring(0, i + 1);
+                    }
+                }
+            }
+            return valStr;
+        }
+
 
         /// <summary>
         /// 文字列を論理値に変換

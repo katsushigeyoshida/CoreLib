@@ -165,6 +165,21 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 中心点と始点、終点から円弧を作成
+        /// </summary>
+        /// <param name="cp">中心点</param>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void setArc(PointD cp, PointD sp, PointD ep)
+        {
+            mCp = cp;
+            mR = cp.length(sp);
+            mSa = sp.angle(mCp);
+            mEa = ep.angle(mCp);
+            normalize();
+        }
+
+        /// <summary>
         /// 開始角と修了角の正規化
         /// 0 <= 開始角 < 2π, 開始角 <= 修了角 < 4π
         /// </summary>
@@ -249,6 +264,18 @@ namespace CoreLib
             mEa = getAngle(ps);
             normalize();
         }
+
+        /// <summary>
+        /// 円弧の半径をオフセットする
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(PointD sp, PointD ep)
+        {
+            double dis = mCp.length(ep) - mCp.length(sp);
+            mR += dis;
+        }
+
 
         /// <summary>
         /// 指定点でトリムする
