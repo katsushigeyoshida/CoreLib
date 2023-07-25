@@ -18,8 +18,9 @@ namespace CoreLib
         public List<ArcD> mArcs;
         public List<TextD> mTexts;
         //  参照点
+        public List<string> mRefString;
         public List<PointD> mRefPoints;
-        public List<double> mRefValue;
+        public List<double> mRefValue;      //  ArrowSize, arrowAngle, TextSize, 
 
         public double mArrowAngle = Math.PI / 6;
         public double mArrowSize = 6;
@@ -36,6 +37,7 @@ namespace CoreLib
             mLines = new List<LineD>();
             mArcs = new List<ArcD>();
             mTexts = new List<TextD>();
+            mRefString = new List<string>();
             mRefPoints = new List<PointD>();
             mRefValue = new List<double>();
         }
@@ -66,6 +68,7 @@ namespace CoreLib
             parts.mLines = mLines.ConvertAll(p => p.toCopy());
             parts.mArcs = mArcs.ConvertAll(p => p.toCopy());
             parts.mTexts = mTexts.ConvertAll(p => p.toCopy());
+            parts.mRefString = mRefString.ConvertAll(p => p);
             parts.mRefPoints = mRefPoints.ConvertAll(p => p.toCopy());
             parts.mRefValue = mRefValue.ConvertAll(p => p);
             return parts;
@@ -405,6 +408,7 @@ namespace CoreLib
         public void createArrow(PointD ps, PointD pe)
         {
             mName = "矢印";
+            mRefValue = new List<double> { mArrowSize, mArrowAngle, mTextSize };
             mLines = new List<LineD>();
             LineD l = new LineD(ps, pe);
             mLines.Add(l);
@@ -421,7 +425,7 @@ namespace CoreLib
         public void createLabel(PointD ps, PointD pe, string str)
         {
             mName = "ラベル";
-            mRefValue = new List<double> { mTextSize };
+            mRefValue = new List<double> { mArrowSize, mArrowAngle, mTextSize };
             mLines = new List<LineD>();
             mTexts = new List<TextD>();
             LineD l = new LineD(ps, pe);
@@ -452,7 +456,7 @@ namespace CoreLib
         public void createDimension(List<PointD> plist)
         {
             mName = "寸法線";
-            mRefValue = new List<double> { mTextSize };
+            mRefValue = new List<double> { mArrowSize, mArrowAngle, mTextSize };
             PointD ps = plist[0];
             PointD pe = plist[1];
             PointD pos = plist[2];
@@ -489,7 +493,7 @@ namespace CoreLib
             le.slide(mTextSize / 4);
             PointD tp = lp.centerPoint();
             double rotate = lp.angle();
-            rotate += rotate < -Math.PI / 2 ? Math.PI : rotate > Math.PI / 2 ? -Math.PI : 0;
+            rotate += rotate <= -Math.PI / 2 ? Math.PI : rotate > Math.PI / 2 ? -Math.PI : 0;
             string mesure = ylib.double2StrZeroSup(lp.length(), mDimValForm);
             TextD text = new TextD(mesure, tp, mTextSize, rotate, System.Windows.HorizontalAlignment.Center, System.Windows.VerticalAlignment.Bottom); ;
 
@@ -543,7 +547,7 @@ namespace CoreLib
         public void createAngleDimension(List<PointD> plist)
         {
             mName = "角度寸法線";
-            mRefValue = new List<double> { mTextSize };
+            mRefValue = new List<double> { mArrowSize, mArrowAngle, mTextSize };
             PointD cp = plist[0];
             PointD ps = plist[1];
             PointD pe = plist[2];
@@ -560,7 +564,9 @@ namespace CoreLib
             le.setLength(le.length() + mTextSize / 2);
             le.slide(mTextSize / 4);
             PointD tp = arc.middlePoint();
-            double rotate = (arc.getAngle(tp) + Math.PI / 2) % Math.PI + Math.PI;
+            double rotate = (arc.getAngle(tp) + Math.PI / 2) % (Math.PI * 2);
+            rotate -= rotate > Math.PI ? Math.PI : 0;
+            rotate += rotate <= -Math.PI / 2 ? Math.PI : rotate > Math.PI / 2 ? -Math.PI : 0;
             string mesure = $"{ylib.double2StrZeroSup(ylib.R2D(arc.mOpenAngle),mDimValForm)}°";
             TextD text = new TextD(mesure, tp, mTextSize, rotate, System.Windows.HorizontalAlignment.Center, System.Windows.VerticalAlignment.Bottom); ;
 
@@ -587,7 +593,7 @@ namespace CoreLib
         public void createDiameterDimension(ArcD arc, List<PointD> plist)
         {
             mName = "直径寸法線";
-            mRefValue = new List<double> { mTextSize };
+            mRefValue = new List<double> { mArrowSize, mArrowAngle, mTextSize };
             PointD pos = plist[0];
             mRefPoints = new List<PointD>() {
                 arc.mCp, arc.startPoint(), arc.endPoint(), pos
@@ -599,7 +605,7 @@ namespace CoreLib
                 lp.pe = aplist[1];
                 PointD tp = lp.centerPoint();
                 double rotate = lp.angle();
-                rotate += rotate < -Math.PI / 2 ? Math.PI : rotate > Math.PI / 2 ? -Math.PI : 0;
+                rotate += rotate <= -Math.PI / 2 ? Math.PI : rotate > Math.PI / 2 ? -Math.PI : 0;
                 string mesure = $"Φ{ylib.double2StrZeroSup(lp.length(), mDimValForm)}";
                 TextD text = new TextD(mesure, tp, mTextSize, rotate, System.Windows.HorizontalAlignment.Center, System.Windows.VerticalAlignment.Bottom); ;
 
@@ -620,7 +626,7 @@ namespace CoreLib
         public void createRadiusDimension(ArcD arc, List<PointD> plist)
         {
             mName = "半径寸法線";
-            mRefValue = new List<double> { mTextSize };
+            mRefValue = new List<double> { mArrowSize, mArrowAngle, mTextSize };
             PointD pos = plist[0];
             mRefPoints = new List<PointD>() {
                 arc.mCp, arc.startPoint(), arc.endPoint(), pos
@@ -632,7 +638,7 @@ namespace CoreLib
                 lp.pe = arc.mCp;
                 PointD tp = lp.centerPoint();
                 double rotate = lp.angle();
-                rotate += rotate < -Math.PI / 2 ? Math.PI : rotate > Math.PI / 2 ? -Math.PI : 0;
+                rotate += rotate <= -Math.PI / 2 ? Math.PI : rotate > Math.PI / 2 ? -Math.PI : 0;
                 string mesure = $"R{ylib.double2StrZeroSup(lp.length(), mDimValForm)}";
                 TextD text = new TextD(mesure, tp, mTextSize, rotate, HorizontalAlignment.Center, VerticalAlignment.Bottom); ;
 
@@ -650,6 +656,13 @@ namespace CoreLib
         public void remakeData()
         {
             if (mRefPoints != null) {
+                if (mRefValue != null && 2 < mRefValue.Count
+                    && (mName == "矢印" || mName == "ラベル" || 0 <= mName.IndexOf("寸法線"))) {
+                    //  要素のパラメータを設定
+                    mArrowSize  = mRefValue[0];
+                    mArrowAngle = mRefValue[1];
+                    mTextSize   = mRefValue[2];
+                }
                 if (mName == "矢印") {
                     createArrow(mLines[0].ps, mLines[0].pe);
                 } else if (mName == "ラベル" && 0 < mTexts.Count) {

@@ -29,7 +29,7 @@ namespace CoreLib
         public double mWindowWidth;                         //  ウィンドウの高さ
         public double mWindowHeight;                        //  ウィンドウ幅
         public bool mWindowSizeOutSet = false;              //  ウィンドウサイズの外部設定
-        public Window mMainWindow = null;                   //  親ウィンドウの設定
+        //public Window mMainWindow = null;                   //  親ウィンドウの設定
 
         public string mEditText;
         public bool mMultiLine = false;                     //  複数行入力可否
@@ -47,11 +47,11 @@ namespace CoreLib
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (mMainWindow != null) {
-                //  親ウィンドウの中心に表示
-                Left = mMainWindow.Left + (mMainWindow.Width - Width) / 2;
-                Top = mMainWindow.Top + (mMainWindow.Height - Height) / 2;
-            }
+            //if (mMainWindow != null) {
+            //    //  親ウィンドウの中心に表示
+            //    Left = mMainWindow.Left + (mMainWindow.Width - Width) / 2;
+            //    Top = mMainWindow.Top + (mMainWindow.Height - Height) / 2;
+            //}
 
             //  編集文字列
             EditText.Text = mEditText;
@@ -67,6 +67,7 @@ namespace CoreLib
                     Width = mWindowWidth;
                     Height = mWindowHeight;
                 }
+                OK.IsDefault = false;
             }
             //  表示専用(編集不可,OKボタン非表示)設定
             EditText.IsReadOnly = mReadOnly;

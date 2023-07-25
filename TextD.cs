@@ -39,6 +39,7 @@ namespace CoreLib
     {
         public string mText = "";
         public double mTextSize = 12;
+        public double mLinePitchRate = 1.2;
         public PointD mPos = new PointD();
         public double mRotate = 0;
         public HorizontalAlignment mHa = HorizontalAlignment.Left;
@@ -63,7 +64,7 @@ namespace CoreLib
         /// <param name="va">垂直方向アライメント</param>
         public TextD(string text, PointD pos, double size = 12, double rotate = 0,
             HorizontalAlignment ha = HorizontalAlignment.Left,
-            VerticalAlignment va = VerticalAlignment.Top)
+            VerticalAlignment va = VerticalAlignment.Top, double linePitchRate = 1.0)
         {
             mText = text;
             mPos = pos;
@@ -71,6 +72,7 @@ namespace CoreLib
             mRotate = rotate;
             mHa = ha;
             mVa = va;
+            mLinePitchRate = linePitchRate;
         }
 
         /// <summary>
@@ -79,7 +81,7 @@ namespace CoreLib
         /// <returns>TextD</returns>
         public TextD toCopy()
         {
-            return new TextD(mText, mPos.toCopy(), mTextSize, mRotate, mHa, mVa);
+            return new TextD(mText, mPos.toCopy(), mTextSize, mRotate, mHa, mVa, mLinePitchRate);
         }
 
         /// <summary>
@@ -88,7 +90,8 @@ namespace CoreLib
         /// <returns></returns>
         public override string ToString()
         {
-            return $"{mText},{mPos.ToString("F2")},{mTextSize.ToString("F2")},{mRotate.ToString("F2")},{mHa},{mVa}";
+            return $"{mText},{mPos.ToString("F2")},{mTextSize.ToString("F2")},{mLinePitchRate.ToString("F2")}," +
+                $"{mRotate.ToString("F2")},{mHa},{mVa}";
         }
 
         /// <summary>
@@ -175,61 +178,80 @@ namespace CoreLib
         /// <returns></returns>
         public bool insideChk(PointD p)
         {
-            PointD pos = mPos;
-            Size size = measureText(mText, mTextSize);
-            if (mHa != HorizontalAlignment.Left || mVa != VerticalAlignment.Top)
-                pos = getTextOrg(mText, mPos, mRotate, mHa, mVa);
-            Box box = new Box(pos, size);
-            p.rotate(pos, -mRotate);
+            double tRotate = mRotate;
+            mRotate = 0;
+            Box box = getBox();
+            mRotate = tRotate;
+            p.rotate(mPos, -mRotate);
             return box.insideChk(p);
         }
 
         /// <summary>
-        /// Boxの内外判定
+        /// Boxの内外判定(Boxの中にすべて含まれている)
         /// </summary>
         /// <param name="b"></param>
         /// <returns></returns>
         public bool insideChk(Box b)
         {
-            PointD pos = mPos;
-            Size size = measureText(mText, mTextSize);
-            if (mHa != HorizontalAlignment.Left || mVa != VerticalAlignment.Top)
-                pos = getTextOrg(mText, mPos, mRotate, mHa, mVa);
-            Box box = new Box(pos, size);
+            double tRotate = mRotate;
+            mRotate = 0;
+            Box box = getBox();
+            mRotate = tRotate;
             PointD tp = b.TopLeft;
-            tp.rotate(pos, -mRotate);
+            tp.rotate(mPos, -mRotate);
             PointD bp = b.BottomRight;
-            bp.rotate(pos, -mRotate);
+            bp.rotate(mPos, -mRotate);
             return box.insideChk(tp) && box.insideChk(bp);
         }
 
         /// <summary>
-        /// 文字列のBox領域
+        /// 文字列のBox領域(複数行に対応)
         /// </summary>
         /// <returns>Box領域</returns>
         public Box getBox()
         {
+            string[] multiText = mText.Split(new char[] { '\n' });
+            Box area = null;
             PointD pos = mPos;
-            Size size = measureText(mText, mTextSize);
+            for (int i = 0; i < multiText.Length; i++) {
+                string text = multiText[i].TrimEnd('\r');
+                if (i == 0)
+                    area = getBox(text, pos);
+                else
+                    area.extension(getBox(text, pos));
+                pos += pos.vector(mRotate - Math.PI / 2, mTextSize * mLinePitchRate);
+            }
+            return area;
+        }
+
+        /// <summary>
+        /// 指定した文字列の領域を求める
+        /// </summary>
+        /// <param name="text">文字列</param>
+        /// <param name="pos">文字位置</param>
+        /// <returns>Box領域</returns>
+        public Box getBox(string text, PointD pos)
+        {
+            PointD tpos = pos;
+            Size size = measureText(text, mTextSize);
             if (mHa != HorizontalAlignment.Left || mVa != VerticalAlignment.Top)
-                pos = getTextOrg(mText, mPos, mRotate, mHa, mVa);
-            Box box = new Box(pos, size);
-            box.rotateArea(pos, mRotate);
+                tpos = getTextOrg(text, pos, mRotate, mHa, mVa);
+            Box box = new Box(tpos, size);
+            box.rotateArea(tpos, mRotate);
             return box;
         }
 
         /// <summary>
         /// 文字列の領域の頂点座標を求める
         /// </summary>
-        /// <returns></returns>
+        /// <returns>頂点リスト</returns>
         public List<PointD> getArea()
         {
-            PointD pos = mPos;
-            Size size = measureText(mText, mTextSize);
-            if (mHa != HorizontalAlignment.Left || mVa != VerticalAlignment.Top)
-                pos = getTextOrg(mText, mPos, mRotate, mHa, mVa);
-            Box box = new Box(pos, size);
-            return box.getRotateBox(pos, mRotate);
+            double tRotate = mRotate;
+            mRotate = 0;
+            Box box = getBox();
+            mRotate = tRotate;
+            return box.getRotateBox(mPos, mRotate);
         }
 
         /// <summary>

@@ -245,6 +245,18 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 角度と距離を指定したベクトル値
+        /// </summary>
+        /// <param name="angle">角度(rad)</param>
+        /// <param name="length">距離</param>
+        /// <returns>ベクトル値</returns>
+        public PointD vector(double angle, double length)
+        {
+            PointD vec = new PointD(length * Math.Cos(angle), length * Math.Sin(angle));
+            return vec;
+        }
+
+        /// <summary>
         /// ベクトルを反転させる
         /// </summary>
         /// <returns>反転したベクトル</returns>

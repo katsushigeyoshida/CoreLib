@@ -417,7 +417,7 @@ namespace CoreLib
                     } else {
                         //  クリッピング処理あり
                         double sr = world2screenXlength(arc.mR);
-                        if (10 < sr) {
+                        if (2 < sr) {
                             if (close) {
                                 int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
                                 List<PointD> plist = arc.toAnglePointList(Math.PI * 2 / div);
@@ -488,7 +488,7 @@ namespace CoreLib
                         drawWRectangle(mClipBox.ToRect());
                 } else {
                     double sr = world2screenXlength(radius);
-                    if (10 < sr) {
+                    if (2 < sr) {
                         ArcD arc = new ArcD(ctr, radius);
                         if (close) {
                             int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
@@ -641,13 +641,19 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 文字列の描画
+        /// 文字列の描画(複数行対応)
         /// </summary>
         /// <param name="text">TextD</param>
-        public void drawWText(TextD text)
+        public void drawWText(TextD mText)
         {
-            mTextSize = Math.Abs(world2screenYlength(text.mTextSize));
-            drawWText(text.mText, text.mPos, text.mTextSize, text.mRotate, text.mHa, text.mVa);
+            mTextSize = Math.Abs(world2screenYlength(mText.mTextSize));
+            string[] multiText = mText.mText.Split(new char[] { '\n' });
+            for (int i = 0; i < multiText.Length; i++) {
+                TextD text = mText.toCopy();
+                text.mText = multiText[i].TrimEnd('\r');
+                text.mPos += text.mPos.vector(text.mRotate - Math.PI / 2, i * text.mTextSize * text.mLinePitchRate);
+                drawWText(text.mText, text.mPos, text.mTextSize, text.mRotate, text.mHa, text.mVa);
+            }
         }
 
         /// <summary>

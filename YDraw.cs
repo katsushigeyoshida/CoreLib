@@ -316,7 +316,7 @@ namespace CoreLib
 
         /// <summary>
         /// 点の描画
-        /// 形状 type : 0=dot 1:cross 2:plus 3:box 4:Circle
+        /// 形状 type : 0=dot 1:cross 2:plus 3:box 4:Circle 5:triangle
         /// </summary>
         /// <param name="p">点座標</param>
         /// <param name="size">点の大きさ</param>
@@ -362,6 +362,18 @@ namespace CoreLib
                 case 4:     //  Circle
                     size *= 4;
                     drawCircle(p, size / 2.0);
+                    break;
+                case 5:     //  Triangle
+                    size *= 4;
+                    PointD pm = p.toCopy();
+                    pm.offset(0, -size / 2.0);
+                    double dx = size / 2 * Math.Cos(30 * Math.PI / 180.0);
+                    double dy = size / 2 * Math.Sin(30 * Math.PI / 180.0);
+                    ps.offset(-dx, dy);
+                    pe.offset(dx, dy);
+                    drawLine(new LineD(pm, ps));
+                    drawLine(new LineD(pm, pe));
+                    drawLine(new LineD(ps, pe));
                     break;
                 default:    //  Dot
                     ps.offset(-size / 2.0, -size / 2.0);

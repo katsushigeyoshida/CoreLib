@@ -13,14 +13,17 @@ namespace CoreLib
     ///  ArcD(PointD cp, double r)                          円
     ///  ArcD(ArcD arc)
     ///  
-    /// void normalize()                                    開始角と修了角の正規化
+    ///  void setArc(PointD cp, PointD sp, PointD ep)       中心点と始点、終点から円弧を作成
+    ///  void normalize()                                   開始角と修了角の正規化
     ///  string ToString()
     ///  string ToString(string format)                     書式付き文字列変換
     ///  ArcD toCopy()                                      コピーを作成
+    ///  List<ArcD> tangentCircle(LineD lf, LineD ls, double r) 2線分に接する円のリスト
     ///  void rotate(double angle)                          円弧の回転
     ///  void rotate(PointD cp, double ang)                 指定点を中心に回転
     ///  void rotate(PointD cp, PointD mp)                  指定点を中心に回転
     ///  void mirror(PointD sp, PointD ep)                  指定成分でミラーする
+    ///  void offset(PointD sp, PointD ep)                  円弧の半径をオフセットする
     ///  void trim(PointD sp, PointD ep)                    指定点でトリムする
     ///  void trimNear(PointD tp, PointD pos)               ピックした位置に近い方を消すようにトリミング
     ///  void trimFar(PointD tp, PointD pos)                ピックした位置に遠いを消すようにトリミング
@@ -113,15 +116,17 @@ namespace CoreLib
             l1.rotate(mp1, Math.PI / 2);
             l2.rotate(mp2, Math.PI / 2);
             mCp = l1.intersection(l2);
-            mR = mCp.length(sp);
-            LineD sl = new LineD(mCp, sp);
-            LineD el = new LineD(mCp, ep);
-            mSa = sl.angle();
-            mEa = el.angle();
-            if (crossProduct < 0) {
-                YLib.Swap(ref mSa, ref mEa);
+            if (mCp != null) {
+                mR = mCp.length(sp);
+                LineD sl = new LineD(mCp, sp);
+                LineD el = new LineD(mCp, ep);
+                mSa = sl.angle();
+                mEa = el.angle();
+                if (crossProduct < 0) {
+                    YLib.Swap(ref mSa, ref mEa);
+                }
+                mEa += mEa < mSa ? Math.PI * 2 : 0;
             }
-            mEa += mEa < mSa ? Math.PI * 2 : 0;
         }
 
         /// <summary>
@@ -213,6 +218,38 @@ namespace CoreLib
         public ArcD toCopy()
         {
             return new ArcD(mCp.toCopy(), mR, mSa, mEa);
+        }
+
+        /// <summary>
+        /// 2線分に接する円のリスト
+        /// </summary>
+        /// <param name="lf">線分</param>
+        /// <param name="ls">線分</param>
+        /// <param name="r">半径</param>
+        /// <returns>円リスト</returns>
+        public List<ArcD> tangentCircle(LineD lf, LineD ls, double r)
+        {
+            List<LineD> llf = new List<LineD>();
+            llf.Add(lf.toCopy());
+            llf[0].offset(r);
+            llf.Add(lf.toCopy());
+            llf[1].offset(-r);
+            List<LineD> lls = new List<LineD>();
+            lls.Add(ls.toCopy());
+            lls[0].offset(r);
+            lls.Add(ls.toCopy());
+            lls[1].offset(-r);
+            List<ArcD> arcs = new List<ArcD>();
+            for (int i = 0; i < llf.Count; i++) {
+                for (int j = 0; j < lls.Count; j++) {
+                    PointD cp = llf[i].intersection(lls[j]);
+                    if (cp != null && 0 < r) {
+                        ArcD arc = new ArcD(cp, r);
+                        arcs.Add(arc);
+                    }
+                }
+            }
+            return arcs;
         }
 
         /// <summary>
@@ -588,7 +625,7 @@ namespace CoreLib
             double l = mp.length(mCp);                      //  垂点と中心点との距離
             normalize();
 
-            if (mR < l) {
+            if (mR < l - mEps) {
                 //  交点なし
             } else if (Math.Abs(mR - l) < mEps) {
                 //  接点

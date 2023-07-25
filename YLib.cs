@@ -25,6 +25,7 @@ namespace CoreLib
     /// short GetKeyState(int nVirtkey)                 クリックされているか判定用
     /// bool IsClickDownLeft()                          マウス左ボタン(0x01)(VK_LBUTTON)の状態
     /// bool IsClickDownRight()                         マウス右ボタン(0x02)(VK_RBUTTON)の状態
+    /// bool isGetKeyState(int nVirtKey)                マウスやキーボードの状態取得
     /// 
     /// ---  システム関連  ------
     ///  void DoEvents()                                コントロールを明示的に更新するコード
@@ -315,6 +316,13 @@ namespace CoreLib
             new ColorTitle("Yellow", System.Windows.Media.Brushes.Yellow),
             new ColorTitle("YellowGreen", System.Windows.Media.Brushes.YellowGreen),
         };
+
+        public int VK_BACK    = 0x08;
+        public int VK_TAB     = 0x09;
+        public int VK_RETURN  = 0x0D;
+        public int VK_SHIFT   = 0x10;
+        public int VK_CONTROL = 0x11;
+        public int VK_ESCAPE  = 0x1B;
 
         System.Diagnostics.Stopwatch mSw;       //  ストップウォッチクラス
         private TimeSpan mStopWatchTotalTime;   //  mSwの経過時間
@@ -1344,6 +1352,36 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// Console用ファイル選択
+        /// </summary>
+        /// <param name="folder">検索先フォルダ</param>
+        /// <param name="fname">検索ファイル名(*.fit)</param>
+        /// <returns>選択ファイルパス</returns>
+        public string consoleFileSelect(string folder, string fname)
+        {
+            List<string> files;
+            if (folder == null) {
+                files = getDrives();
+            } else {
+                files = getFilesDirectories(folder, fname);
+                files.Insert(0, "..");
+            }
+            for (int i = 0; i < files.Count; i++) {
+                if (Directory.Exists(files[i])) {
+                    Console.WriteLine($"{i}: [{files[i]}]");
+                } else {
+                    Console.WriteLine($"{i}: {files[i]}");
+                }
+            }
+            string inp = Console.ReadLine();
+            if (Directory.Exists(files[int.Parse(inp)])) {
+                folder = files[int.Parse(inp)].CompareTo("..") == 0 ? Path.GetDirectoryName(folder) : files[int.Parse(inp)];
+                return consoleFileSelect(folder, fname);
+            }
+            return files[int.Parse(inp)];
+        }
+
+        /// <summary>
         /// ディレクトリをコピー
         /// srcDir以下のファイルとディレクトリをdestDir以下にコピーする
         /// </summary>
@@ -1633,6 +1671,24 @@ namespace CoreLib
                     //dataFile.Close(); //  usingの場合は不要 Disposeを含んでいる
                 }
             }
+        }
+
+        public string arrayStr2CsvData(string[] data)
+        {
+            string buf = "";
+            for (int i = 0; i < data.Length; i++) {
+                data[i] = data[i] == null ? "" : data[i].Replace("\"", "\\\"");
+                buf += "\"" + data[i] + "\"";
+                if (i != data.Length - 1)
+                    buf += ",";
+            }
+            return buf;
+        }
+
+        public string[] csvData2ArrayStr(string line)
+        {
+            string[] buf = seperateString(line);
+            return buf;
         }
 
         /// <summary>

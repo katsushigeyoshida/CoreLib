@@ -23,11 +23,11 @@ namespace CoreLib
     ///  List<PointD> toPointList()             PointDのリストに変換
     ///  Rect toRect()                          Rectに変換
     ///  Box toBox()                            Boxに変換
-    ///  PointD vector()                        ベクトル(増分データ)に変換
+    ///  void setNaN()                          不定値を設定(null)の代わり
+    ///  bool isNaN()                           不定値の判定
     ///  
-    ///  void offset(PointD vec)                ベクトル分移動させる
-    ///  void offset(double d)                  指定した距離分だけ平行移動させる
-    ///  void slide(double l)                   指定した距離分だけ同じ向きに平行移動させる
+    ///  PointD vector()                        ベクトル(増分データ)に変換
+    ///  PointD offset(PointD pos, double dis   指定座標をオフセットした座標を求める
     ///  PointD getVectorAngle(double ang, double l)    線分に対して角度と長さを指定したベクトルを求める
     ///  double length()                        線分の長さ
     ///  void setLength(double l)               線分の長さを再設定する
@@ -51,8 +51,13 @@ namespace CoreLib
     ///  PointD nearPoints(PointD p, int  divideNo = 4) 線分の分割点で最も近い点を求める
     ///  byte inOutAreaCode(PointD p, Rect rect)クリッピング領域に対する点の9分割位置の範囲
     ///  byte inOutAreaCode(Point p, Rect rect) クリッピング領域に対する点の9分割位置の範囲
-    ///  LineD clippingLine(Rect rect)          分矩形領域でクリッピングする
+    ///  LineD clippingLine(Rect rect)          矩形領域でクリッピングする
     ///  
+    ///  void translate(PointD vec)             ベクトル分移動させる
+    ///  void offset(double d)                  指定した距離分だけ平行移動させる
+    ///  void offset(double dis, PointD pos)    指定点の方向に平行移動させる
+    ///  void offset(PointD sp, PointD ep)      垂直方向に平行移動させる
+    ///  void slide(double l)                   指定した距離分だけ同じ向きに平行移動させる
     ///  void move(double dx, double dy)        増分を指定して平行移動
     ///  void moveLength(double r,double th)    距離と角度を指定して平行移動
     ///  void moveLength(double l)              延長線上に距離を指定して移動
@@ -189,24 +194,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 不定値を設定(null)の代わり
-        /// </summary>
-        public void setNaN()
-        {
-            ps.setNaN();
-            pe.setNaN();
-        }
-
-        /// <summary>
-        /// 不定値の判定
-        /// </summary>
-        /// <returns></returns>
-        public bool isNaN()
-        {
-            return ps.isNaN() || pe.isNaN();
-        }
-
-        /// <summary>
         /// Lineデータ(Winodws.Shapes)に変換
         /// </summary>
         /// <returns>Lineデータ(Winodws.Shapes)</returns>
@@ -249,6 +236,24 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 不定値を設定(null)の代わり
+        /// </summary>
+        public void setNaN()
+        {
+            ps.setNaN();
+            pe.setNaN();
+        }
+
+        /// <summary>
+        /// 不定値の判定
+        /// </summary>
+        /// <returns></returns>
+        public bool isNaN()
+        {
+            return ps.isNaN() || pe.isNaN();
+        }
+
+        /// <summary>
         /// ベクトル(増分データ)に変換
         /// </summary>
         /// <returns>増分データ</returns>
@@ -258,38 +263,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// ベクトル分移動させる
-        /// </summary>
-        /// <param name="vec"></param>
-        public void translate(PointD vec)
-        {
-            ps.offset(vec);
-            pe.offset(vec);
-        }
-
-        /// <summary>
-        /// 鉛直方向に移動させる
-        /// </summary>
-        /// <param name="d">移動距離</param>
-        public void offset(double d)
-        {
-            PointD vec = getVectorAngle(Math.PI / 2, d);
-            translate(vec);
-        }
-
-        /// <summary>
-        /// 直方向に平行移動させる
-        /// </summary>
-        /// <param name="sp">始点</param>
-        /// <param name="ep">終点</param>
-        public void offset(PointD sp, PointD ep)
-        {
-            double dis = distance(ep) * Math.Sign(crossProduct(ep)) - distance(sp) * Math.Sign(crossProduct(sp));
-            offset(dis);
-        }
-
-        /// <summary>
-        /// 指定座標をオフセットさせる
+        /// 指定座標を線分に対して平行移動した座標を求める
         /// </summary>
         /// <param name="pos">座標</param>
         /// <param name="dis">オフセット距離</param>
@@ -300,18 +274,6 @@ namespace CoreLib
             LineD line = new LineD(ip, pos);
             line.setLength(line.length() + dis);
             return line.pe;
-        }
-
-        /// <summary>
-        /// 指定した距離分だけ同じ向きに平行移動させる
-        /// </summary>
-        /// <param name="l">移動距離</param>
-        public void slide(double l)
-        {
-            double len = length();
-            PointD vec = vector();
-            vec.scale(l / len);
-            translate(vec);
         }
 
         /// <summary>
@@ -326,6 +288,47 @@ namespace CoreLib
             vec.rotate(ang);
             vec.setLength(l);
             return vec;
+        }
+
+        /// <summary>
+        /// 線分の端点を求める(寸法線用)
+        /// 参照点からピック位置と同じ方向でピック位置に近い端点
+        /// </summary>
+        /// <param name="pickPos">ピック位置</param>
+        /// <param name="cp">参照点</param>
+        /// <returns>端点座標</returns>
+        public PointD getEndPointLine(PointD pickPos, PointD cp)
+        {
+            PointD ep;
+            if (cp == null) {
+                if (pickPos.length(ps) < pickPos.length(pe))
+                    return ps;
+                else
+                    return pe;
+            }
+            LineD ls = new LineD(cp, ps);
+            LineD lp = new LineD(cp, pickPos);
+            LineD le = new LineD(cp, pe);
+            if (ls.length() < mEps) {
+                ep = pe;
+            } else if (le.length() < mEps) {
+                ep = ps;
+            } else if (ls.angle2(le) < Math.PI / 2 || Math.PI * 3 / 2 < ls.angle2(le)) {
+                ep = pe;
+            } else {
+                ep = ps;
+            }
+            return ep;
+        }
+
+        /// <summary>
+        /// 始終点を入れ換える
+        /// </summary>
+        public void inverse()
+        {
+            PointD tp = ps;
+            ps = pe;
+            pe = tp;
         }
 
         /// <summary>
@@ -449,17 +452,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 点との垂線の距離
-        /// </summary>
-        /// <param name="p">点座標</param>
-        /// <returns>距離</returns>
-        public double pointDistance(PointD p)
-        {
-            LineD lp = new LineD(ps, p);
-            return Math.Abs(lp.length() * Math.Sin(angle(lp)));
-        }
-
-        /// <summary>
         /// 点からの垂線の交点座標(垂点)
         /// </summary>
         /// <param name="p">点座標</param>
@@ -509,12 +501,12 @@ namespace CoreLib
         {
             List<PointD> pointList = new List<PointD>();
             PointD mp = intersection(c);                    //  線分と中心点との垂点
-            double l = pointDistance(c);                    //  垂点と中心点との距離
+            double l = distance(c);                    //  垂点と中心点との距離
             //  角度の正規化(0～4π)
             sa = ylib.mod(sa, Math.PI * 2);
             ea = ylib.mod(ea, Math.PI * 2);
             ea += ea <= sa ? Math.PI * 2.0 : 0.0;
-            if (r < l) {
+            if (r < l - mEps) {
                 //  交点なし
             } else if (l < mEps) {
                 //  中心点を通る
@@ -739,6 +731,62 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ベクトル分移動させる
+        /// </summary>
+        /// <param name="vec"></param>
+        public void translate(PointD vec)
+        {
+            ps.offset(vec);
+            pe.offset(vec);
+        }
+
+        /// <summary>
+        /// 鉛直方向に移動させる
+        /// </summary>
+        /// <param name="d">移動距離</param>
+        public void offset(double d)
+        {
+            PointD vec = getVectorAngle(Math.PI / 2, d);
+            translate(vec);
+        }
+
+        /// <summary>
+        /// 指定点の方向に平行移動させる
+        /// </summary>
+        /// <param name="dis">オフセット距離</param>
+        /// <param name="pos">指定点</param>
+        public void offset(double dis, PointD pos)
+        {
+            PointD ip = intersection(pos);
+            LineD line = new LineD(ip, pos);
+            line.setLength(dis);
+            translate(line.vector());
+        }
+
+        /// <summary>
+        /// 垂直方向に平行移動させる
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(PointD sp, PointD ep)
+        {
+            double dis = distance(ep) * Math.Sign(crossProduct(ep)) - distance(sp) * Math.Sign(crossProduct(sp));
+            offset(dis);
+        }
+
+        /// <summary>
+        /// 指定した距離分だけ同じ向きに平行移動させる
+        /// </summary>
+        /// <param name="l">移動距離</param>
+        public void slide(double l)
+        {
+            double len = length();
+            PointD vec = vector();
+            vec.scale(l / len);
+            translate(vec);
+        }
+
+        /// <summary>
         /// 増分を指定して平行移動
         /// </summary>
         /// <param name="dx">x方向の増分</param>
@@ -756,7 +804,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="r">移動距離</param>
         /// <param name="th">角度(rad)</param>
-        public void moveLength(double r,double th)
+        public void moveLength(double r, double th)
         {
             double dx = r * Math.Cos(th);
             double dy = r * Math.Sin(th);

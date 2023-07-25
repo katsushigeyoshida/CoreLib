@@ -385,6 +385,21 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// カンマ区切りの文字列をデータに設定する
+        /// </summary>
+        /// <param name="data">文字列</param>
+        public Box(string buf)
+        {
+            string[] data = buf.Split(new char[] { ',' });
+            if (3 < data.Length) {
+                Left = ylib.string2double(data[0]);
+                Top = ylib.string2double(data[1]);
+                Right = ylib.string2double(data[2]);
+                Bottom = ylib.string2double(data[3]);
+            }
+        }
+
+        /// <summary>
         /// 正規化 (Left < Right, Bottom < Top)
         /// </summary>
         public void normalize()
@@ -412,7 +427,7 @@ namespace CoreLib
         /// <returns></returns>
         public override string ToString()
         {
-            return Left + " " + Top + " " + Right + " " + Bottom;
+            return Left + "," + Top + "," + Right + "," + Bottom;
         }
 
         /// <summary>
