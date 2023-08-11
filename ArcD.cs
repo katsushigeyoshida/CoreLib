@@ -234,11 +234,13 @@ namespace CoreLib
             llf[0].offset(r);
             llf.Add(lf.toCopy());
             llf[1].offset(-r);
+
             List<LineD> lls = new List<LineD>();
             lls.Add(ls.toCopy());
             lls[0].offset(r);
             lls.Add(ls.toCopy());
             lls[1].offset(-r);
+
             List<ArcD> arcs = new List<ArcD>();
             for (int i = 0; i < llf.Count; i++) {
                 for (int j = 0; j < lls.Count; j++) {
@@ -246,6 +248,68 @@ namespace CoreLib
                     if (cp != null && 0 < r) {
                         ArcD arc = new ArcD(cp, r);
                         arcs.Add(arc);
+                    }
+                }
+            }
+            return arcs;
+        }
+
+        /// <summary>
+        /// 線分と円に接する円
+        /// </summary>
+        /// <param name="lf">線分</param>
+        /// <param name="af">円</param>
+        /// <param name="r">半径</param>
+        /// <returns>円リスト</returns>
+        public List<ArcD> tangentCircle(LineD lf, ArcD af, double r)
+        {
+            List<LineD> llf = new List<LineD>();
+            llf.Add(lf.toCopy());
+            llf[0].offset(r);
+            llf.Add(lf.toCopy());
+            llf[1].offset(-r);
+
+            List<ArcD> afl = new List<ArcD>();
+            afl.Add(new ArcD(af.mCp, af.mR + r));
+            if (0 < af.mR - r)
+                afl.Add(new ArcD(af.mCp, af.mR - r));
+
+            List<ArcD> arcs = new List<ArcD>();
+            ArcD arc = new ArcD(af.mCp, af.mR + r);
+            for (int i = 0; i < llf.Count; i++) {
+                for (int j = 0; j < afl.Count; j++) {
+                    List<PointD> cplist = afl[j].intersection(llf[i]);
+                    for (int k = 0; k < cplist.Count; k++) {
+                        arcs.Add(new ArcD(cplist[k], r));
+                    }
+                }
+            }
+            return arcs;
+        }
+
+        /// <summary>
+        /// 2円に接する円
+        /// </summary>
+        /// <param name="a1">円1</param>
+        /// <param name="a2">円2</param>
+        /// <param name="r">半径</param>
+        /// <returns>円リスト</returns>
+        public List<ArcD> tangentCircle(ArcD a1, ArcD a2, double r)
+        {
+            List<ArcD> a1l = new List<ArcD>();
+            a1l.Add(new ArcD(a1.mCp, a1.mR + r));
+            if (0 < a1.mR - r)
+                a1l.Add(new ArcD(a1.mCp, a1.mR - r));
+            List<ArcD> a2l = new List<ArcD>();
+            a2l.Add(new ArcD(a2.mCp, a2.mR + r));
+            if (0 < a2.mR - r)
+                a2l.Add(new ArcD(a2.mCp, a2.mR - r));
+            List<ArcD> arcs = new List<ArcD>();
+            for (int i = 0; i < a1l.Count; i++) {
+                for (int j = 0;  j < a2l.Count; j++) {
+                    List<PointD> cplist = a1l[i].intersection(a2l[j]);
+                    for (int k = 0; k < cplist.Count; k++) {
+                        arcs.Add(new ArcD(cplist[k], r));
                     }
                 }
             }
@@ -312,7 +376,6 @@ namespace CoreLib
             double dis = mCp.length(ep) - mCp.length(sp);
             mR += dis;
         }
-
 
         /// <summary>
         /// 指定点でトリムする
@@ -726,6 +789,32 @@ namespace CoreLib
                 plist.AddRange(intersection(line, on));
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 点からの接線の接点リスト
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        public List<PointD> tangentPoint(PointD p)
+        {
+            PointD pos = p.toCopy();
+            pos.translate(mCp.inverse());
+            double di = Math.Sqrt(pos.x * pos.x + pos.y * pos.y - mR * mR);
+            double ai = pos.x * pos.x + pos.y * pos.y;
+            
+            PointD p1 = new PointD();
+            p1.x = mR * (pos.x * mR + pos.y * di) / ai;
+            p1.y = mR * (pos.y * mR - pos.x * di) / ai;
+            p1.translate(mCp);
+            
+            PointD p2 = new PointD();
+            p2.x = mR * (pos.x * mR - pos.y * di) / ai;
+            p2.y = mR * (pos.y * mR + pos.x * di) / ai;
+            p2.translate(mCp);
+
+            List<PointD> plits = new List<PointD>() { p1, p2 };
+            return plits;
         }
     }
 }
