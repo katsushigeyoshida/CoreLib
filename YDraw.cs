@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -397,17 +398,7 @@ namespace CoreLib
             new List<double> (){ 20, 3, 5, 3},          //  一点鎖線 center
             new List<double> (){ 20, 3, 5, 3, 5, 3},    //  二点鎖線 phantom
         };
-
-        /// <summary>
-        /// 線分の描画(線種 0:実線 1:破線 2:一点鎖線 2:二点鎖線)
-        /// </summary>
-        /// <param name="ps">始点座標</param>
-        /// <param name="pe">終点座標</param>
-        /// <param name="type">線種</param>
-        public void drawLine(PointD ps, PointD pe)
-        {
-            drawLine(new LineD(ps, pe));
-        }
+        public double mLineTypeOffset = 0;              //  パターンの連続性のためのオフセット値
 
         /// <summary>
         /// 線分の描画(線種 0:実線 1:破線 2:一点鎖線 2:二点鎖線)
@@ -416,7 +407,11 @@ namespace CoreLib
         public void drawLine(LineD l)
         {
             if (0 < mLineType) {
-                List<PointD> plist = l.dividePattern(mLinePattern[mLineType - 1]);
+                //  線分パターン描画
+                double patternlength = mLinePattern[mLineType - 1].Sum();
+                double offset = mLineTypeOffset % patternlength;
+                List<PointD> plist = l.dividePattern(mLinePattern[mLineType - 1], offset);
+                mLineTypeOffset = (l.length() + mLineTypeOffset) % patternlength;
                 for (int i = 0; i < plist.Count - 1; i += 2)
                     drawLine(new LineD(plist[i].x, plist[i].y, plist[i+1].x, plist[i+1].y).toLine());
             } else {
@@ -446,21 +441,26 @@ namespace CoreLib
                 drawEllipse(arc.mCp.x, arc.mCp.y, arc.mR, arc.mR, arc.mSa, arc.mEa);
             } else {
                 //  線種対応
+                int tmpLineTpe = mLineType;
+                mLineType = 0;
                 PointD sp = arc.startPoint();
                 PointD ep;
                 double ang = arc.mSa;
+                ArcD a = arc.toCopy();
                 int i = 0;
                 while (ang < arc.mEa) {
-                    ang += mLinePattern[mLineType - 1][(i++) % mLinePattern[mLineType - 1].Count] / arc.mR;
+                    ang += mLinePattern[tmpLineTpe - 1][(i++) % mLinePattern[tmpLineTpe - 1].Count] / arc.mR;
                     if (arc.mEa < ang) {
-                        drawLine(new LineD(sp, arc.endPoint()));
+                        a.mEa = arc.mEa;
+                        drawArc(a);
                         break;
                     }
-                    ep = arc.getPoint(ang);
-                    drawLine(new LineD(sp, ep));
-                    ang += mLinePattern[mLineType - 1][(i++) % mLinePattern[mLineType - 1].Count] / arc.mR;
-                    sp = arc.getPoint(ang);
+                    a.mEa = ang;
+                    drawArc(a);
+                    ang += mLinePattern[tmpLineTpe - 1][(i++) % mLinePattern[tmpLineTpe - 1].Count] / arc.mR;
+                    a.mSa = ang;
                 }
+                mLineType = tmpLineTpe;
             }
         }
  
@@ -546,6 +546,8 @@ namespace CoreLib
         /// <param name="rotate">回転角(rad)</param>
         public void drawEllipse(double cx, double cy, double rx, double ry, double startAngle, double endAngle, double rotate =0.0)
         {
+            if (rx <= 0 || ry <= 0) 
+                return;
             //  円の大きさ
             Size size = new Size(rx, ry);     //  X軸半径,Y軸半径
             //  始点座標
@@ -677,8 +679,9 @@ namespace CoreLib
                 }
                 drawPolyline(pointList);
             } else {
+                mLineTypeOffset = 0;
                 for (int i = 0; i < polylineList.Count - 1; i++) {
-                    drawLine(polylineList[i], polylineList[i + 1]);
+                    drawLine(new LineD(polylineList[i], polylineList[i + 1]));
                 }
             }
         }
