@@ -77,8 +77,8 @@ namespace CoreLib
     {
         private YLib ylib = new YLib();
 
-        public PointD ps;
-        public PointD pe;
+        public PointD ps = new();
+        public PointD pe = new();
         private double mEps = 1E-8;
 
         /// <summary>
@@ -775,6 +775,16 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ベクトルで移動する
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        public void offset(PointD vec)
+        {
+            offset(ps, ps + vec);
+        }
+
+
+        /// <summary>
         /// 指定した距離分だけ同じ向きに平行移動させる
         /// </summary>
         /// <param name="l">移動距離</param>
@@ -818,6 +828,16 @@ namespace CoreLib
         public void moveLength(double l)
         {
             moveLength(l, angle());
+        }
+
+        /// <summary>
+        /// 原点を中心に回転
+        /// </summary>
+        /// <param name="rotate">回転角度(rad)</param>
+        public void rotate(double rotate)
+        {
+            ps.rotate(rotate);
+            pe.rotate(rotate);
         }
 
         /// <summary>
@@ -904,13 +924,18 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定地に近い端点を移動させる
+        /// 指定位置に近い端点を移動、中間点が近ければ全体を移動
         /// </summary>
         /// <param name="vec">移動量</param>
         /// <param name="pickPos">指定位置</param>
         public void stretch(PointD vec, PointD pickPos)
         {
-            if (pickPos.length(ps) < pickPos.length(pe))
+            double sl = pickPos.length(ps);
+            double ml = pickPos.length(centerPoint());
+            double el = pickPos.length(pe);
+            if (ml < sl & ml < el) {
+                translate(vec);
+            } else if (sl < el)
                 ps.translate(vec);
             else
                 pe.translate(vec);
@@ -953,22 +978,26 @@ namespace CoreLib
         /// 指定したパターンに線分を分割し分割した座標リストを求めメル
         /// </summary>
         /// <param name="pattern">分割パターン</param>
+        /// <param name="offset">パターン開始位置</param>
         /// <returns>座標リスト</returns>
-        public List<PointD> dividePattern(List<double> pattern)
+        public List<PointD> dividePattern(List<double> pattern, double offset = 0)
         {
             double leng = length();
             List<PointD> pList = new List<PointD>();
             PointD sp, ep;
             int i = 0;
             LineD l = toCopy();
-            double sumLength = pattern[0];
-            pList.Add(l.ps.toCopy());
+            double sumLength = 0;
+            while (sumLength <= offset) {
+                sumLength += pattern[i++ % pattern.Count];
+            }
+            sumLength -= offset;
+            if (i % 2 != 0)
+                pList.Add(l.ps.toCopy());
             while (sumLength < leng) {
                 l.setLength(sumLength);
                 pList.Add(l.pe.toCopy());
-                i++;
-                if (pattern.Count <= i) i = 0;
-                sumLength += pattern[i];
+                sumLength += pattern[i++ % pattern.Count];
             }
             l.setLength(sumLength);
             pList.Add(pe.toCopy());
