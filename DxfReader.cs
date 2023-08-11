@@ -113,7 +113,9 @@ namespace CoreLib
         public TextD getText()
         {
             TextD text = new TextD();
-            text.mText = textCnv(string.Join("", mStringList));
+            string buf = "";
+            mStringList.ForEach(p => buf += p.val);
+            text.mText = textCnv(buf);
             text.mPos = mPoints[0];
             text.mTextSize = mDoubleList.Find(p => p.code == 40).val;
             text.mRotate = mDoubleList.Find(p => p.code == 50).val;
