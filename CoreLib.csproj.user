@@ -17,6 +17,9 @@
     <Compile Update="MenuDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="MessageBoxEx.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="SelectMenu.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -35,6 +38,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="MenuDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="MessageBoxEx.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="SelectMenu.xaml">
