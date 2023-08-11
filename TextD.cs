@@ -176,8 +176,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public bool insideChk(PointD p)
+        public bool insideChk(PointD pos)
         {
+            PointD p = pos.toCopy();
             double tRotate = mRotate;
             mRotate = 0;
             Box box = getBox();
