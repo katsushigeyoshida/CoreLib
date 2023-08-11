@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.Numerics;
 
 namespace CoreLib
 {
@@ -34,6 +35,7 @@ namespace CoreLib
     ///  void fileExecute(string path)                  ファイルを実行する
     ///  void openUrl(string url)                       URLを標準ブラウザで開く
     ///  static void Swap<T>(ref T lhs, ref T rhs)      ジェネリックによるswap関数
+    ///  MessageBoxResult messageBox(Window owner, string message, string title = "", MessageBoxButton buttonType = MessageBoxButton.OK)
     ///  
     /// ---  ストップウォッチ  ---
     /// void stopWatchStartNew()                    ストップウォッチ機能初期化・計測開始
@@ -121,6 +123,8 @@ namespace CoreLib
     ///  List<PointD> divideCircleList(PointD c, double r, int div = 32)    円を分割した点座標リストを作成
     ///  List<Point> divideCircleList(Point c, double r, int div = 32)      円を分割した点座標リストを作成
     ///  Point averagePoint(List<Point> pList)                              一種の中心点(点リストの平均位置)
+    ///  PointD nearPoint(List<PointD> plist, PointD pos)                   座標点リストで指定点に最も近い点
+    ///  ---  ビットマップ処理  ----
     ///  Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe) 画面の指定領域をキャプチャする
     ///  Bitmap getActiveWindowCapture()                                    アクティブウィンドウの画面をキャプチャする
     ///  BitmapImage cnvBitmap2BitmapImage(Bitmap bitmap, ImageFormat imageFormat)  BitmapをBitmapImageに変換
@@ -136,9 +140,14 @@ namespace CoreLib
     ///  Drawing.Color Media2DrawColor(Windows.Media.Color color)           Media.Color から Drawing.Color に変換
     ///  
     ///  ---  数値処理関連  ------
-    ///  double mod(double a, double b)
-    ///  int mod(int a, int b)
-    ///  
+    ///  double mod(double a, double b)                                     2点間の距離
+    ///  int mod(int a, int b)                                              剰余関数 (負数の剰余を正数で返す)
+    ///  List<double> solveQuadraticEquation(double a, double b, double c)  2次方程式の解
+    ///  List<double> solveCubicEquation(double a, double b, double c, double d)    3次方程式の解(カルダノの公式)
+    ///  List<double> solveQuarticEquation(double a, double b, double c, double d, double e)    4次方程式の解(フェラリ(Ferrari)の公式)
+    ///  double Cuberoot(double x)                                          3乗根(x^1/3)
+    ///  Complex Squreroot(Complex x)                                       複素数の平方根
+    /// 
     ///  ---  行列計算  ---
     ///  double[,] unitMatrix(int unit)                     単位行列
     ///  double[,] matrixTranspose(double[,] A)             転置行列  行列Aの転置A^T
@@ -528,6 +537,28 @@ namespace CoreLib
             temp = lhs;
             lhs = rhs;
             rhs = temp;
+        }
+
+        /// <summary>
+        /// メッセージダイヤログ(親indowの中央に表示)
+        /// ボタンの種類 MessageBoxButton.OK/OKCancel/YesNo/YesNoCancel
+        /// </summary>
+        /// <param name="owner">オーナー</param>
+        /// <param name="message">メッセージ</param>
+        /// <param name="title">タイトル</param>
+        /// <param name="buttonType">ボタンの種類</param>
+        /// <returns></returns>
+        public MessageBoxResult messageBox(Window owner, string message, string title = "",
+            MessageBoxButton buttonType = MessageBoxButton.OK)
+        {
+            MessageBoxEx dlg = new MessageBoxEx();
+            dlg.Owner = owner;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.mMessage = message;
+            dlg.mTitle = title;
+            dlg.mButton = buttonType;
+            dlg.ShowDialog();
+            return dlg.mResult;
         }
 
         // ---  ストップウォッチ  ---
@@ -2318,6 +2349,8 @@ namespace CoreLib
             if (plist.Count < 2)
                 return plist;
             System.Windows.Point ap = averagePoint(plist);
+            if (double.IsNaN(ap.X) || double.IsNaN(ap.Y))
+                return plist;
             List<(double, System.Windows.Point)> angList = new List<(double, System.Windows.Point)>();
             foreach (System.Windows.Point p in plist) {
                 angList.Add((anglePoint(ap, p), p));
@@ -2429,6 +2462,28 @@ namespace CoreLib
             ap.Y /= pList.Count;
             return ap;
         }
+
+
+        /// <summary>
+        /// 座標点リストで指定点に最も近い点
+        /// </summary>
+        /// <param name="plist">座標点リスト</param>
+        /// <param name="pos">細菌傍点</param>
+        /// <returns></returns>
+        public PointD nearPoint(List<PointD> plist, PointD pos)
+        {
+            double dis = double.MaxValue;
+            PointD mp = null;
+            for (int i = 0; i < plist.Count; i++) {
+                if (dis > pos.length(plist[i])) {
+                    dis = pos.length(plist[i]);
+                    mp = plist[i];
+                }
+            }
+            return mp;
+        }
+
+        //  ---  ビットマップ処理  ----
 
         /// <summary>
         /// 画面の指定領域をキャプチャする
@@ -2816,6 +2871,160 @@ namespace CoreLib
             int c = (a % b);
             c += c < 0 ? b : 0;
             return c;
+        }
+
+        /// <summary>
+        /// 2次方程式の解を求める
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <returns>実数解リスト</returns>
+        public List<double> solveQuadraticEquation(double a, double b, double c)
+        {
+            List<double> solve = new List<double>();
+            if (a == 0) {
+                solve.Add(-c / b);
+            } else {
+                double d = b * b - 4 * a * c;
+                if (0 < d) {
+                    d = Math.Sqrt(d);
+                    solve.Add((-b + d) / (2 * a));
+                    solve.Add((-b - d) / (2 * a));
+                } else if (d == 0) {
+                    solve.Add(-b / (2 * a));
+                } else {
+                    //  複素数の解
+                    Complex ca = new Complex(a, 0);
+                    Complex cb = new Complex(b, 0);
+                    Complex cc = new Complex(c, 0);
+                    Complex cd = cb * cb - 4 * ca * cc;
+                    Complex x1 = (-cb - Complex.Sqrt(cd) / (2 * ca));
+                    Complex x2 = (-cb + Complex.Sqrt(cd) / (2 * ca));
+                    Console.WriteLine($"複素数の解 {x1} , {x2}");
+                }
+            }
+            return solve;
+        }
+
+        /// <summary>
+        /// 3次方程式の解(カルダノの公式)
+        ///   https://qiita.com/yotapoon/items/42b1749b69c264d6f486
+        ///   https://onihusube.hatenablog.com/entry/2018/10/08/140426
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <param name="d"></param>
+        /// <returns>実数解リスト</returns>
+        public List<double> solveCubicEquation(double a, double b, double c, double d)
+        {
+            List<double> solve = new List<double>();
+            if (a == 0)
+                return solveQuadraticEquation(b, c, d);
+
+            Complex[] x = new Complex[3];
+            double A = b / a;
+            double B = c / a;
+            double C = d / a;
+            double p = B - A * A / 3.0;
+            double q = 2.0 * A * A * A / 27.0 - A * B / 3.0 + C;
+            double D = q * q / 4.0 + p * p * p / 27.0;
+            if (D < 0.0) {//three real solutions
+                double theta = Math.Atan2(Math.Sqrt(-D), -q * 0.5);
+                x[0] = 2.0 * Math.Sqrt(-p / 3.0) * Math.Cos(theta / 3.0) - A / 3.0;
+                x[1] = 2.0 * Math.Sqrt(-p / 3.0) * Math.Cos((theta + 2.0 * Math.PI) / 3.0) - A / 3.0;
+                x[2] = 2.0 * Math.Sqrt(-p / 3.0) * Math.Cos((theta + 4.0 * Math.PI) / 3.0) - A / 3.0;
+            } else {//single real solution and two imaginary solutions(c.c)
+                double u = Cuberoot(-q * 0.5 + Math.Sqrt(D));
+                double v = Cuberoot(-q * 0.5 - Math.Sqrt(D));
+                x[0] = u + v - A / 3.0;
+                x[1] = -0.5 * (u + v) + Math.Sqrt(3.0) * 0.5 * Complex.ImaginaryOne * (u - v) - A / 3.0;
+                x[2] = -0.5 * (u + v) - Math.Sqrt(3.0) * 0.5 * Complex.ImaginaryOne * (u - v) - A / 3.0;
+            }
+            for (int i = 0; i < x.Length; i++) {
+                if (x[i].Imaginary == 0)
+                    solve.Add(x[i].Real);
+                Console.WriteLine($"複素数の解 {x[i]}");
+            }
+            return solve;
+        }
+
+        /// <summary>
+        /// 4次方程式の解(フェラリ(Ferrari)の公式)
+        ///   https://qiita.com/yotapoon/items/42b1749b69c264d6f486
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <param name="d"></param>
+        /// <param name="e"></param>
+        /// <returns>実数解リスト</returns>
+        public List<double> solveQuarticEquation(double a, double b, double c, double d, double e)
+        {
+            List<double> solve = new List<double>();
+            if (a == 0.0) {
+                return solveCubicEquation(b, c, d, e);
+            }
+            Complex[] x = new Complex[4];
+            double A = b / a;
+            double B = c / a;
+            double C = d / a;
+            double D = e / a;
+            double p = -6.0 * Math.Pow(A / 4.0, 2.0) + B;
+            double q =  8.0 * Math.Pow(A / 4.0, 3.0) - 2.0 * B * A / 4.0 + C;
+            double r = -3.0 * Math.Pow(A / 4.0, 4.0) + B * Math.Pow(A / 4.0, 2.0) - C * A / 4.0 + D;
+            List<double> temp = solveCubicEquation(1.0, -p, -4.0 * r, 4.0 * p * r - q * q);
+            Complex m = Squreroot(temp[0] - p);
+            x[0] = (-m + Squreroot(-temp[0] - p + 2.0 * q / m)) * 0.5 - A / 4.0;
+            x[1] = (-m - Squreroot(-temp[0] - p + 2.0 * q / m)) * 0.5 - A / 4.0;
+            x[2] = ( m + Squreroot(-temp[0] - p - 2.0 * q / m)) * 0.5 - A / 4.0;
+            x[3] = ( m - Squreroot(-temp[0] - p - 2.0 * q / m)) * 0.5 - A / 4.0;
+            for (int i = 0; i < x.Length; i++) {
+                if (x[i].Imaginary == 0)
+                    solve.Add(x[i].Real);
+                Console.WriteLine($"複素数の解 {x[i]}");
+            }
+            return solve;
+        }
+
+        /// <summary>
+        /// 3乗根(x^1/3)
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        public double Cuberoot(double x)
+        {
+            if (x > 0.0) {
+                return Math.Pow(x, 1.0 / 3.0);
+            } else {
+                return -Math.Pow(-x, 1.0 / 3.0);
+            }
+        }
+
+        /// <summary>
+        /// 複素数の平方根
+        /// </summary>
+        /// <param name="x">複素数</param>
+        /// <returns></returns>
+        public Complex Squreroot(Complex x)
+        {
+            Complex y;
+            double r = x.Magnitude; //  複素数の大きさ(Sqrt(x.Real * x.Real + x.Imaginary * x.Imaginary)) 
+            double theta = x.Phase; //  複素数の位相(Atan2(x.Imaginary, x.Real))
+            if (x.Imaginary == 0.0) {
+                if (x.Real > 0.0) {
+                    y = Math.Sqrt(r);
+                } else {
+                    y = Math.Sqrt(r) * Complex.ImaginaryOne;
+                }
+            } else {
+                if (theta < 0.0) {
+                    theta += 2.0 * Math.PI;
+                }
+                y = Math.Sqrt(r) * (Math.Cos(theta * 0.5) + Complex.ImaginaryOne  * Math.Sin(theta * 0.5));
+            }
+            return y;
         }
 
         //  ---  行列計算  ---
