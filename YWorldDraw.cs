@@ -62,6 +62,8 @@ namespace CoreLib
         public bool mAspectFix = true;          //  アスペクト比固定
         public bool mTextOverWrite = true;      //  文字が重なった時に前の文字を透かす
 
+        private double mEps = 1e-8;
+
         private YLib ylib = new YLib();
 
         /// <summary>
@@ -174,6 +176,16 @@ namespace CoreLib
         public void setWorldZoom(double zoom)
         {
             mWorld.zoom(zoom);
+            mClipBox = mWorld.toCopy();
+        }
+
+        /// <summary>
+        /// WorldWindowを移動する
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        public void setWorldOffset(PointD vec)
+        {
+            mWorld.offset(vec);
             mClipBox = mWorld.toCopy();
         }
 
@@ -318,7 +330,7 @@ namespace CoreLib
         /// <returns>スクリーン座標での長さ</returns>
         public double world2screenYlength(double y)
         {
-            return y * (mView.Top - mView.Bottom) / (mWorld.Top - mWorld.Bottom);
+            return y * (mView.Bottom - mView.Top) / (mWorld.Top - mWorld.Bottom);
         }
 
         /// <summary>
@@ -401,7 +413,7 @@ namespace CoreLib
         /// <param name="arc">ArcD</param>
         public void drawWArc(ArcD arc, bool close = true)
         {
-            if (2 * Math.PI <= Math.Abs(arc.mOpenAngle)) {
+            if (2 * Math.PI <= Math.Abs(arc.mOpenAngle) + mEps) {
                 //  円の描画
                 drawWCircle(arc.mCp, arc.mR, close);
             } else {
@@ -481,7 +493,11 @@ namespace CoreLib
                 mFillColor = null;
             if (mClipping) {
                 if (mClipBox.insideChk(ctr, radius * 2)) {
-                    drawCircle(cnvWorld2Screen(ctr), world2screenXlength(radius));
+                    //  Box内
+                    if (mLineType == 0)
+                        drawCircle(cnvWorld2Screen(ctr), world2screenXlength(radius));
+                    else
+                        drawArc(new ArcD(cnvWorld2Screen(ctr), world2screenXlength(radius)));
                 } else if (mClipBox.circleInsideChk(ctr, radius)) {
                     // Boxが円の内側
                     if (close)          //  Boxないすべて塗潰し
@@ -508,6 +524,37 @@ namespace CoreLib
             }
             mFillColor = tmpFillColor;
         }
+
+        /// <summary>
+        /// 楕円の描画
+        /// </summary>
+        /// <param name="ellipse">EllipseD</param>
+        public void drawWEllipse(EllipseD ellipse)
+        {
+            if (mLineType == 0 && (mClipping && ellipse.insideChk(mClipBox))) {
+                if (Math.PI * 2 <= ellipse.mOpenAngle) {
+                    Box b = ellipse.getBox();
+                    PointD pos = cnvWorld2Screen(b.BottomLeft);
+                    double rotate = Math.PI * 2 - ellipse.mRotate;
+                    drawOval(pos.x, pos.y, world2screenXlength(b.Width), world2screenYlength(b.Height), rotate);
+                } else {
+                    PointD cp = cnvWorld2Screen(ellipse.mCp);
+                    double rx = world2screenXlength(ellipse.mRx);
+                    double ry = world2screenYlength(ellipse.mRy);
+                    double ea = Math.PI * 2 - ellipse.mSa;
+                    double sa = Math.PI * 2 - ellipse.mEa;
+                    ea += ea < sa ? Math.PI * 2 : 0;
+                    double rotate = Math.PI * 2 - ellipse.mRotate;
+                    drawEllipse(cp.x, cp.y, rx, ry, sa, ea, rotate);
+                }
+            } else {
+                double sr = world2screenXlength(ellipse.mRx);
+                int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
+                List<PointD> plist = ellipse.toPointList(div);
+                drawWPolyline(plist);
+            }
+        }
+
 
         /// <summary>
         /// 四角形の描画
@@ -584,7 +631,7 @@ namespace CoreLib
         {
             if (mClipping) {
                 for (int i = 0; i < wpList.Count - 1; i++) {
-                    drawWLine(wpList[i], wpList[i + 1]);
+                    drawWLine(new LineD(wpList[i], wpList[i + 1]));
                 }
             } else {
                 List<PointD> pointList = wpList.ConvertAll(p => cnvWorld2Screen(p));
