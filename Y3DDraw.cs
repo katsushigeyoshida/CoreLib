@@ -89,7 +89,7 @@ namespace CoreLib
         {
             Point3D sp3 = perspective(sp);
             Point3D ep3 = perspective(ep);
-            drawWLine(sp3.toPointXY(), ep3.toPointXY());
+            drawWLine(new LineD(sp3.toPointXY(), ep3.toPointXY()));
         }
 
         /// <summary>
