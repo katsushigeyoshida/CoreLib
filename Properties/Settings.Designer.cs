@@ -12,7 +12,7 @@ namespace CoreLib.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.5.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.7.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -164,6 +164,102 @@ namespace CoreLib.Properties {
             }
             set {
                 this["MenuDialgHeight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double DiffFolderWindowTop {
+            get {
+                return ((double)(this["DiffFolderWindowTop"]));
+            }
+            set {
+                this["DiffFolderWindowTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double DiffFolderWindowLeft {
+            get {
+                return ((double)(this["DiffFolderWindowLeft"]));
+            }
+            set {
+                this["DiffFolderWindowLeft"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double DiffFolderWindowWidth {
+            get {
+                return ((double)(this["DiffFolderWindowWidth"]));
+            }
+            set {
+                this["DiffFolderWindowWidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double DiffFolderWindowHeight {
+            get {
+                return ((double)(this["DiffFolderWindowHeight"]));
+            }
+            set {
+                this["DiffFolderWindowHeight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double ChkListWindowTop {
+            get {
+                return ((double)(this["ChkListWindowTop"]));
+            }
+            set {
+                this["ChkListWindowTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double ChkListWindowLeft {
+            get {
+                return ((double)(this["ChkListWindowLeft"]));
+            }
+            set {
+                this["ChkListWindowLeft"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double ChkListWindowWidth {
+            get {
+                return ((double)(this["ChkListWindowWidth"]));
+            }
+            set {
+                this["ChkListWindowWidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double ChkListWindowHeight {
+            get {
+                return ((double)(this["ChkListWindowHeight"]));
+            }
+            set {
+                this["ChkListWindowHeight"] = value;
             }
         }
     }
