@@ -2,7 +2,13 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
+    <Compile Update="ChkListDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="ColorDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="DiffFolder.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="FullView.xaml.cs">
@@ -25,7 +31,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="ChkListDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="ColorDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="DiffFolder.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="FullView.xaml">

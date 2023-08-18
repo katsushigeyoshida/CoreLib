@@ -22,6 +22,7 @@ namespace CoreLib
         private double mWindowWidth;                            //  ウィンドウの高さ
         private double mWindowHeight;                           //  ウィンドウ幅
 
+        public string mDlgTitle = "";
         public string mTitle = "";
         public string mMessage = "";
         public MessageBoxButton mButton = MessageBoxButton.OK;
@@ -64,6 +65,9 @@ namespace CoreLib
                     break;
             }
 
+            Title = mDlgTitle;
+            if (mTitle.Length ==0)
+                tbTitle.Visibility = Visibility.Collapsed;
             tbTitle.Text = mTitle;
             tbMessage.Text = mMessage;
             Size textSize = measureText(mMessage, tbMessage.FontSize);

@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MessageBoxEx" Height="150" Width="300" WindowStyle="ToolWindow" Background="White" Loaded="Window_Loaded" >
     <StackPanel >
-        <TextBlock x:Name="tbTitle" Text="タイトル" FontSize="12" Height="30" Margin="20,0,0,0" />
+        <TextBlock x:Name="tbTitle" Text="タイトル" FontSize="12" Height="18" Margin="20,2,0,0" />
         <TextBlock x:Name="tbMessage" Text="メッセージ" FontSize="12" Height="30" Margin="20,0,0,0" />
         <StackPanel Orientation="Horizontal" >
             <Button x:Name="btOK" Content="OK" Width="50" Margin="20,0,0,0" Click="btOK_Click" />
