@@ -1,0 +1,33 @@
+﻿<Window x:Class="CoreLib.ChkListDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CoreLib"
+        mc:Ignorable="d"
+        Title="ChkListDialog" Height="450" Width="200" Loaded="Window_Loaded" Closing="Window_Closing">
+    <Grid >
+        <ListBox x:Name="lbChkList" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,0,0,30" >
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <CheckBox Content="{Binding Text}" IsChecked="{Binding Checked, Mode=TwoWay}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Name="lbChkListMenuAdd" Header="追加" Click="lbChkListMenu_Click" />
+                    <MenuItem Name="lbChkListMenuEdit" Header="編集" Click="lbChkListMenu_Click" />
+                    <MenuItem Name="lbChkListMenuDelete" Header="削除" Click="lbChkListMenu_Click" />
+                    <MenuItem Name="lbChkListMenuMove" Header="移動" Click="lbChkListMenu_Click" />
+                    <MenuItem Name="lbChkListMenuAllCheck" Header="すべてにチェックを入れる" Click="lbChkListMenu_Click" />
+                    <MenuItem Name="lbChkListMenuAllUnCheck" Header="すべてのチェックを外す" Click="lbChkListMenu_Click" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+        <StatusBar Height="30" VerticalAlignment="Bottom">
+            <Button x:Name="btOK" Content="OK" Width="50" IsDefault="True" Click="btOK_Click" />
+            <Button x:Name="btCancel" Content="Cancel" Width="50" IsCancel="True" Click="btCancel_Click" />
+        </StatusBar>
+    </Grid>
+
+</Window>
