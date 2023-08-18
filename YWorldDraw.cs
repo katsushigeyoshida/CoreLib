@@ -15,42 +15,50 @@ namespace CoreLib
     /// ---  ViewとWorldの領域設定
     /// void setViewArea(double left, double top, double right, double bottom)
     /// void setWorldWindow(double left, double top, double right, double bottom)
-    /// void setWorldWindow(Box area)
-    /// void setWorldWindow()
-    /// void setWorldTextSize(double size)
-    /// double getWorldTextSize()
-    /// void aspectFix()
+    /// void setWorldWindow(Box area)                               WorldWindowの設定
+    /// void setWorldWindow()                                       WorldWindowを再計算
+    /// void setWorldZoom(PointD wp, double zoom, bool inverse = false) 指定した座標を中心にしてスケーリング
+    /// void setWorldZoom(double zoom)                              領域の中心からスケーリング
+    /// void setWorldOffset(PointD vec)                             WorldWindowを移動
+    /// void setWorldTextSize(double size)                          文字サイズをワールド座標で設定
+    /// double getWorldTextSize()                                   文字サイズをワールド座標で取得
+    /// void aspectFix()                                            論理座標のアスペクト比を1にする
     /// ---  スクリーン座標とワールド座標の相互変換
-    /// double cnvWorld2ScreenX(double x)
-    /// double cnvWorld2ScreenY(double y)
-    /// double cnvScreen2WorldX(double x)
-    /// double cnvScreen2WorldY(double y)
-    /// PointD cnvWorld2Screen(PointD wp)
-    /// PointD cnvScreen2World(PointD sp)
-    /// double world2screenXlength(double x)
-    /// double world2screenYlength(double y)
-    /// double screen2worldXlength(double x)
-    /// double screen2worldYlength(double y)
+    /// double cnvWorld2ScreenX(double x)                   X軸のワールド座標をスクリーン座標に変換
+    /// double cnvWorld2ScreenY(double y)                   Y軸のワールド座標をスクリーン座標に変換
+    /// double cnvScreen2WorldX(double x)                   X軸のスクリーン座標をワールド座標に変換
+    /// double cnvScreen2WorldY(double y)                   Y軸のスクリーン座標をワールド座標に変換
+    /// PointD cnvWorld2Screen(PointD wp)                   論理座標(ワールド座標)をスクリーン座標に変換
+    /// LineD cnvWorld2Screen(LineD wl)                     論理座標(ワールド座標)をスクリーン座標に変換
+    /// ArcD cnvWorld2Screen(ArcD warc)                     論理座標(ワールド座標)をスクリーン座標に変換
+    /// PointD cnvScreen2World(PointD sp)                   スクリーン座標を論理座標(ワールド座標)に変換
+    /// double world2screenXlength(double x)                論理座標でのX方向の長さからスクリーン座標の長さを求める
+    /// double world2screenYlength(double y)                論理座標でのY方向の長さからスクリーン座標の長さを求める
+    /// double screen2worldXlength(double x)                スクリーン座標のX方向長さをワールド座標の長さに変換
+    /// double screen2worldYlength(double y)                スクリーン座標のY方向長さをワールド座標の長さに変換
     /// ---  ワールド座標系での図形描画
-    /// void drawWPoint(PointD p, int size = 1)
-    /// void drawWLine(LineD l)
-    /// void drawWLine(PointD lps, PointD lpe)
-    /// void drawWArc(ArcD arc)
-    /// void drawWArc(PointD center, double radius, double startAngle, double endAngle)
-    /// void drawWArcSub(PointD center, double radius, double startAngle, double endAngle)
-    /// void drawWCircle(PointD ctr, double radius)
-    /// void drawWRectangle(Rect rect, double rotate = 0.0
-    /// void drawWRectangle(Box box, double rotate = 0.0)
-    /// void drawWRectangle(PointD ps, PointD pe, double rotate = 0.0)
-    /// List<PointD> toPointList(PointD ps, PointD pe, double rotate = 0.0)
-    /// void drawWPolygon(List<Point> wpList)
-    /// void drawWPolygon(List<PointD> wpList)
-    /// void drawWText(TextD text)
+    /// void drawWPoint(PointD p)                           点の描画
+    /// void drawWLine(LineD l)                             線分の描画
+    /// void drawWLine(PointD lps, PointD lpe)              線分の描画
+    /// void drawWArc(PointD center, double radius, double startAngle, double endAngle, bool close = true)  円弧の描画
+    /// void drawWArc(ArcD arc, bool close = true)          円弧の描画
+    /// void drawWArcSub(PointD center, double radius, double startAngle, double endAngle, bool close = true)   円弧を楕円弧に変換して表示
+    /// void drawWCircle(PointD ctr, double radius, bool close = true)  円の描画
+    /// void drawWEllipse(EllipseD ellipse)                 楕円の描画
+    /// void drawWRectangle(Rect rect, double rotate = 0.0) 四角形の描画
+    /// void drawWRectangle(Box box, double rotate = 0.0)   四角形の描画
+    /// void drawWRectangle(PointD ps, PointD pe, double rotate = 0.0)  四角形の描画
+    /// List<PointD> toPointList(PointD ps, PointD pe, double rotate = 0.0) 2点指定のBoxの頂点リストを求める
+    /// void drawWPolyline(PolylineD polyline)              ポリラインの描画
+    /// void drawWPolyline(List<PointD> wpList)             ポリラインの描画
+    /// void drawWPolygon(PolygonD polygon, bool fill = true)   ポリゴンの描画(閉領域)
+    /// void drawWPolygon(List<PointD> wpList, bool fill = true)    ポリゴンの描画(閉領域)
+    /// void drawWText(TextD text)                          文字列の描画(複数行対応)
     /// void drawWText(string text, PointD p, double textSize = 0, double rotate = 0, 
-    ///     HorizontalAlignment ha = HorizontalAlignment.Left, VerticalAlignment va = VerticalAlignment.Top)
+    ///     HorizontalAlignment ha = HorizontalAlignment.Left, VerticalAlignment va = VerticalAlignment.Top)    文字列の描画
     /// ---  文字列パラメータ処理
-    /// List<PointD> textBoxArea(string text, PointD p, double rotate, HorizontalAlignment ha, VerticalAlignment va)
-    /// Size measureWText(string text)
+    /// List<PointD> textBoxArea(string text, PointD p, double rotate, HorizontalAlignment ha, VerticalAlignment va)    テキスト領域を求める
+    /// Size measureWText(string text)                      文字列の大きさを取得
     /// 
     /// </summary>
     public class YWorldDraw : YDraw
@@ -402,6 +410,7 @@ namespace CoreLib
         /// <param name="radius">半径</param>
         /// <param name="startAngle">開始角度(rad)</param>
         /// <param name="endAngle">終了角度(rad)</param>
+        /// <param name="close">閉領域)</param>
         public void drawWArc(PointD center, double radius, double startAngle, double endAngle, bool close = true)
         {
             drawWArc(new ArcD(center, radius, startAngle, endAngle), close);
@@ -411,6 +420,7 @@ namespace CoreLib
         /// 円弧の描画
         /// </summary>
         /// <param name="arc">ArcD</param>
+        /// <param name="close">閉領域)</param>
         public void drawWArc(ArcD arc, bool close = true)
         {
             if (2 * Math.PI <= Math.Abs(arc.mOpenAngle) + mEps) {
@@ -460,6 +470,7 @@ namespace CoreLib
         /// <param name="radius">半径</param>
         /// <param name="startAngle">開始角(rad)</param>
         /// <param name="endAngle">終了角(rad)</param>
+        /// <param name="close">閉領域)</param>
         private void drawWArcSub(PointD center, double radius, double startAngle, double endAngle, bool close = true)
         {
             Brush tmpFillColor = mFillColor;
@@ -486,6 +497,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="ctr">中心座標</param>
         /// <param name="radius">半径</param>        
+        /// <param name="close">閉領域)</param>
         public void drawWCircle(PointD ctr, double radius, bool close = true)
         {
             Brush tmpFillColor = mFillColor;
@@ -533,11 +545,13 @@ namespace CoreLib
         {
             if (mLineType == 0 && (mClipping && ellipse.insideChk(mClipBox))) {
                 if (Math.PI * 2 <= ellipse.mOpenAngle) {
+                    //  楕円
                     Box b = ellipse.getBox();
                     PointD pos = cnvWorld2Screen(b.BottomLeft);
                     double rotate = Math.PI * 2 - ellipse.mRotate;
                     drawOval(pos.x, pos.y, world2screenXlength(b.Width), world2screenYlength(b.Height), rotate);
                 } else {
+                    //  楕円弧
                     PointD cp = cnvWorld2Screen(ellipse.mCp);
                     double rx = world2screenXlength(ellipse.mRx);
                     double ry = world2screenYlength(ellipse.mRy);
@@ -548,6 +562,7 @@ namespace CoreLib
                     drawEllipse(cp.x, cp.y, rx, ry, sa, ea, rotate);
                 }
             } else {
+                //  実線以外またはクリッピング有
                 double sr = world2screenXlength(ellipse.mRx);
                 int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
                 List<PointD> plist = ellipse.toPointList(div);
@@ -691,15 +706,15 @@ namespace CoreLib
         /// 文字列の描画(複数行対応)
         /// </summary>
         /// <param name="text">TextD</param>
-        public void drawWText(TextD mText)
+        public void drawWText(TextD text)
         {
-            mTextSize = Math.Abs(world2screenYlength(mText.mTextSize));
-            string[] multiText = mText.mText.Split(new char[] { '\n' });
+            mTextSize = Math.Abs(world2screenYlength(text.mTextSize));
+            string[] multiText = text.mText.Split(new char[] { '\n' });
             for (int i = 0; i < multiText.Length; i++) {
-                TextD text = mText.toCopy();
-                text.mText = multiText[i].TrimEnd('\r');
-                text.mPos += text.mPos.vector(text.mRotate - Math.PI / 2, i * text.mTextSize * text.mLinePitchRate);
-                drawWText(text.mText, text.mPos, text.mTextSize, text.mRotate, text.mHa, text.mVa);
+                TextD ttext = text.toCopy();
+                ttext.mText = multiText[i].TrimEnd('\r');
+                ttext.mPos += ttext.mPos.vector(ttext.mRotate - Math.PI / 2, i * ttext.mTextSize * ttext.mLinePitchRate);
+                drawWText(ttext.mText, ttext.mPos, ttext.mTextSize, ttext.mRotate, ttext.mHa, ttext.mVa);
             }
         }
 
