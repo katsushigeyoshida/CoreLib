@@ -33,6 +33,7 @@ namespace CoreLib
     ///  string getAppFolderPath()                      実行ファイルのフォルダを取得(アプリケーションが存在するのディレクトリ)
     ///  string getAppName()                            実行プログラム名をフルパスで取得
     ///  void fileExecute(string path)                  ファイルを実行する
+    ///  bool processStart(string prog, string arg)     プログラムの実行
     ///  void openUrl(string url)                       URLを標準ブラウザで開く
     ///  static void Swap<T>(ref T lhs, ref T rhs)      ジェネリックによるswap関数
     ///  MessageBoxResult messageBox(Window owner, string message, string title = "", MessageBoxButton buttonType = MessageBoxButton.OK)
@@ -76,13 +77,23 @@ namespace CoreLib
     ///  
     ///  ---  ファイル・ディレクトリ関連  ------
     ///  bool makeDir(string path)                                  ファイルパスからディレクトリを作成
+    ///  string folderSelect(string title, string initFolder)       フォルダの選択ダイヤログの表示
     ///  string fileOpenSelectDlg(string title, string initDir, List<string[]> filters) ファイル読込選択ダイヤログ表示
     ///  string fileSaveSelectDlg(string title, string initDir, List<string[]> filters) ファイル保存選択ダイヤログ表示
+    ///  string consoleFileSelect(string folder, string fname)      Console用ファイル選択
+    ///  void copyDrectory(string srcDir, string destDir)           ディレクトリをコピー
+    ///  void fileCopy(string srcFile, string destFile, int copyType)   ファイルのコピー
     ///  string[] getFiles(string path)                             指定されたパスからファイルリストを作成
+    ///  List<string> getDirectories(string path)                   ディレクトリリストの取得
+    ///  List<string> getFilesDirectories(string folder, string fileName)   フォルダとファイルの一覧を取得
+    ///  List<FileInfo> getDirectoriesInfo(string folder, string fileName = "*")    ファイル情報検索(サブディレクトリを含む)
+    ///  List<string> getDrives()                                   ドライブの一覧を取得
     ///  List<string[]> loadCsvData(string filePath, string[] title, bool firstTitle = false)   CSV形式のファイルを読み込みList<String[]>形式で出力する
     ///  List<string[]> loadCsvData(string filePath, bool tabSep = false)       CSV形式のファイルを読み込む
     ///  void saveCsvData(string path, string[] format, List<string[]> data)    タイトルをつけてCSV形式でListデータをファイルに保存
     ///  void saveCsvData(string path, List<string[]> csvData)      データをCSV形式でファイルに書き込む
+    ///  string arrayStr2CsvData(string[] data)                     配列データをCSVデータに変換
+    ///  string[] csvData2ArrayStr(string line)                     CSVデータを配列データに戻す
     ///  List<string[]> loadJsonData(string filePath)               JSON形式のファイルを読み込む
     ///  string loadTextFile(string path)                           テキストファイルの読込
     ///  void saveTextFile(string path, string buffer)              テキストファイルの保存
@@ -496,6 +507,27 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// プログラムの実行
+        /// ylib.processStart(mDiffTool, $"\"{srcPath}\" \"{destPath}\"");
+        /// </summary>
+        /// <param name="prog">プログラムのパス</param>
+        /// <param name="arg">プログラムの引数</param>
+        /// <returns>実行の可否</returns>
+        public bool processStart(string prog, string arg)
+        {
+            try {
+                if (File.Exists(prog))
+                    Process.Start(prog, arg);
+                else
+                    return false;
+            } catch (Exception e) {
+                Debug.WriteLine(e.Message);
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
         /// URLを標準ブラウザで開く
         /// Process.Start()でエラー(.NET COre)になる時に使用
         /// https://oita.oika.me/2017/09/17/dotnet-core-process-start-with-url/
@@ -549,12 +581,13 @@ namespace CoreLib
         /// <param name="buttonType">ボタンの種類</param>
         /// <returns></returns>
         public MessageBoxResult messageBox(Window owner, string message, string title = "",
-            MessageBoxButton buttonType = MessageBoxButton.OK)
+            string dlgTitle = "",MessageBoxButton buttonType = MessageBoxButton.OK)
         {
             MessageBoxEx dlg = new MessageBoxEx();
             dlg.Owner = owner;
             dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             dlg.mMessage = message;
+            dlg.mDlgTitle = dlgTitle;
             dlg.mTitle = title;
             dlg.mButton = buttonType;
             dlg.ShowDialog();
@@ -1440,12 +1473,12 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// ファイルのコピー
-        /// copyType: 0:update, 1:date | size, 2:force, 3:new
+        /// ファイルのコピー(renameも含む)
+        /// copyType: 0:update, 1: != date | != size, 2:force, 3:new(dest not existe)
         /// </summary>
-        /// <param name="srcFile"></param>
-        /// <param name="destFile"></param>
-        /// <param name="copyType"></param>
+        /// <param name="srcFile">コピー元ファイルパス</param>
+        /// <param name="destFile">コピー先ファイルパス</param>
+        /// <param name="copyType">コピー条件</param>
         public void fileCopy(string srcFile, string destFile, int copyType)
         {
             FileInfo sf = new FileInfo(srcFile);
@@ -1457,7 +1490,10 @@ namespace CoreLib
                 (copyType == 2) ||
                 (copyType == 3 && !df.Exists)
                 ) {
-                File.Copy(srcFile, destFile, true);
+                if (!Directory.Exists(Path.GetDirectoryName(destFile)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+                if (File.Exists(srcFile))
+                    File.Copy(srcFile, destFile, true);
             }
         }
 
@@ -1704,6 +1740,11 @@ namespace CoreLib
             }
         }
 
+        /// <summary>
+        /// 配列データをCSVデータに変換
+        /// </summary>
+        /// <param name="data">配列データ</param>
+        /// <returns>文字列</returns>
         public string arrayStr2CsvData(string[] data)
         {
             string buf = "";
@@ -1716,6 +1757,11 @@ namespace CoreLib
             return buf;
         }
 
+        /// <summary>
+        /// CSVデータを配列データに戻す
+        /// </summary>
+        /// <param name="line">文字列</param>
+        /// <returns>配列データ</returns>
         public string[] csvData2ArrayStr(string line)
         {
             string[] buf = seperateString(line);
