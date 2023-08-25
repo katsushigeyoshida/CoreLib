@@ -317,6 +317,15 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ベクトル分移動させる
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        public void translate(PointD vec)
+        {
+            mCp.translate(vec);
+        }
+
+        /// <summary>
         /// 円弧の回転
         /// </summary>
         /// <param name="angle">回転角(rad)</param>
