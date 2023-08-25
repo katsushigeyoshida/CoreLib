@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Shapes;
 
 namespace CoreLib
 {
@@ -117,6 +118,16 @@ namespace CoreLib
         {
             return $"{mCp.ToString(form)},{mRx.ToString(form)},{mRy.ToString(form)},{mSa.ToString(form)},{mEa.ToString(form)},{mRotate.ToString(form)}";
         }
+
+        /// <summary>
+        /// ベクトル分移動させる
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        public void translate(PointD vec)
+        {
+            mCp.translate(vec);
+        }
+
 
         /// <summary>
         /// 楕円の回転
@@ -596,9 +607,111 @@ namespace CoreLib
             return plist;
         }
 
+        /// <summary>
+        /// 楕円と円の交点を求める
+        /// </summary>
+        /// <param name="arc">円</param>
+        /// <returns>交点リスト</returns>
         public List<PointD> intersection(ArcD arc)
         {
-            return null;
+            List<PointD> plist = new List<PointD>();
+
+            ArcD arc2 = arc.toCopy();
+            arc2.translate(mCp.inverse());
+            arc2.rotate(-mRotate);
+            double w1 = mRx * mRx / (mRy * mRy);
+            double w2 = mRx * mRx;
+            double k1 = 0.5 * (1 - w1);
+            double k2 = -arc2.mCp.y;
+            double k3 = 0.5 * (arc2.mCp.x * arc2.mCp.x + arc2.mCp.y * arc2.mCp.y - arc2.mR * arc2.mR + w2);
+
+            if (Math.Abs(arc2.mCp.x) < mEps) {
+                //  k1 == 0 の時は2次方程式の解
+                List<double> ylist = ylib.solveQuadraticEquation(k1, k2, k3);
+                for (int i = 0; i < ylist.Count; i++) {
+                    double wk = w2 - w1 * ylist[i] * ylist[i];
+                    if (wk < 0)
+                        continue;
+                    PointD p = new PointD(Math.Sqrt(wk), ylist[i]);
+                    p.rotate(mRotate);
+                    p.translate(mCp);
+                    plist.Add(p);
+                    p = new PointD(-Math.Sqrt(wk), ylist[i]);
+                    p.rotate(mRotate);
+                    p.translate(mCp);
+                    if (plist.FindIndex(pc => pc.isEqual(p)) < 0)
+                        plist.Add(p);
+                }
+            } else {
+                double a = k1 * k1;
+                double b = 2 * k1 * k2;
+                double c = k2 * k2 + 2 * k1 * k3 + w1 * arc2.mCp.x * arc2.mCp.x;
+                double d = 2 * k2 * k3;
+                double e = k3 * k3 - arc2.mCp.x * arc2.mCp.x * w2;
+                List<double> ylist = ylib.solveQuarticEquation(a, b, c, d, e);
+                for (int i = 0; i < ylist.Count; i++) {
+                    double x = (k1 * ylist[i] * ylist[i] + k2 * ylist[i] + k3) / arc2.mCp.x;
+                    double y = ylist[i];
+                    PointD p = new PointD(x, y);
+                    p.rotate(mRotate);
+                    if (plist.FindIndex(pc => pc.isEqual(p)) < 0)
+                        p.translate(mCp);
+                    plist.Add(p);
+                }
+            }
+
+            return plist;
+        }
+
+        /// <summary>
+        /// 楕円同士の交点
+        /// </summary>
+        /// <param name="ellipse">楕円</param>
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(EllipseD ellipse)
+        {
+            List<PointD> plist = new List<PointD>();
+            EllipseD elli = ellipse.toCopy();
+            elli.translate(mCp.inverse());
+            elli.rotate(-mRotate);
+            List<double> impli = elli.canonical2Implicit();
+            double a1 = 1 / (mRx * mRx);
+            double a2 = 1 / (mRy * mRy);
+            double a3 = -1;
+            double b1 = impli[0];
+            double b2 = impli[1];
+            double b3 = impli[2];
+            double b4 = impli[3];
+            double b5 = impli[4];
+            double b6 = impli[5];
+            double k = b1 / a1;
+            double c1 = b1;
+            double c2 = a2 * k;
+            double c3 = a3 * k;
+            double d1 = c2 - b2;
+            double d2 = -b5;
+            double d3 = c3 - b6;
+            double g1 = b3;
+            double g2 = b4;
+
+            double a = a1 * d1 * d1 + a2 * g1 * g1;
+            double b = 2 * (a1 * d1 * d2 + a2 * g1 * g2);
+            double c = a1 * d2 * d2 + 2 * a1 * d1 * d3 + a2 * g2 * g2 + a3 * g1 * g1;
+            double d = 2 * (a1 * d2 * d3 + a3 * g1 * g2);
+            double e = a1 * d3 * d3 + a3 * g2 * g2;
+
+            List<double> ylist = ylib.solveQuarticEquation(a, b, c, d, e);
+            for (int i = 0; i < ylist.Count; i++) {
+                double x = (d1 * ylist[i] * ylist[i] + d2 * ylist[i] + d3) / (g1 * ylist[i] + g2);
+                double y = ylist[i];
+                PointD p = new PointD(x, y);
+                p.rotate(mRotate);
+                if (plist.FindIndex(pc => pc.isEqual(p)) < 0)
+                    p.translate(mCp);
+                plist.Add(p);
+            }
+
+            return plist;
         }
 
         /// <summary>
@@ -740,6 +853,30 @@ namespace CoreLib
                     plist.Add(iplist[0]);
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 陰関数の形式に変換する
+        /// a x2 + b y2 + c x y + d x + e y + f = 0
+        /// </summary>
+        /// <returns>陰関数の係数リスト</returns>
+        public List<double> canonical2Implicit()
+        {
+            double cos2 = Math.Cos(mRotate) * Math.Cos(mRotate);
+            double sin2 = Math.Sin(mRotate) * Math.Sin(mRotate);
+            double cossin = Math.Cos(mRotate) * Math.Sin(mRotate);
+            double a2 = mRx * mRx;
+            double b2 = mRy * mRy;
+
+            double a = cos2 / a2 + sin2 / b2;
+            double b = sin2 / a2 + cos2 / b2;
+            double c = 2 * cossin * (1 / a2 - 1 / b2);
+            double d = -2 * ((mCp.x * cos2 + mCp.y * cossin) / a2 + (mCp.x * sin2 - mCp.y * cossin) / b2);
+            double e = -2 * ((mCp.x * cossin + mCp.y * sin2) / a2 - (mCp.x * cossin - mCp.y * cos2) / b2);
+            double f = (mCp.x * mCp.x * cos2 + 2 * mCp.x * mCp.y * cossin + mCp.y * mCp.y * sin2) / a2
+                + (mCp.x * mCp.x * sin2 - 2 * mCp.x * mCp.y * cossin + mCp.y * mCp.y * cos2) / b2 - 1;
+            List<double> impli = new List<double>() { a, b, c, d, e, f };
+            return impli;
         }
     }
 }
