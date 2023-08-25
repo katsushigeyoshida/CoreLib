@@ -146,6 +146,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 同じ値かの判定
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public bool isEqual(PointD p)
+        {
+            if (x == p.x && y == p.y) return true;
+            return false;
+        }
+
+        /// <summary>
         /// 値に非数を設定する
         /// </summary>
         public void setNaN()
