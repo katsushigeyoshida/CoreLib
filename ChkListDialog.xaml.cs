@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -31,9 +28,15 @@ namespace CoreLib
         private double mPrevWindowWidth;                        //  変更前のウィンドウ幅
         private double mPrevWindowHeight;                       //  変更前のウィンドウ高さ
         private WindowState mWindowState = WindowState.Normal;  //  ウィンドウの状態(最大化/最小化)
-        private bool mGroupEnabled = true;                      //  不要なグループリストの変更を防ぐためのフラグ
 
+        public string mTitle = "";
         public List<CheckBoxListItem> mChkList = new List<CheckBoxListItem>();
+
+        public bool mAddMenuEnable = false;
+        public bool mEditMenuEnable = false;
+        public bool mDeleteMenuEnable = false;
+        public bool mMoveMenuEnable = false;
+
         public Window mMainWindow;
 
         private YLib ylib = new YLib();
@@ -50,9 +53,12 @@ namespace CoreLib
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             listDataSet();
-            lbChkListMenuAdd.Visibility = Visibility.Collapsed;
-            lbChkListMenuDelete.Visibility = Visibility.Collapsed;
-            lbChkListMenuMove.Visibility = Visibility.Collapsed;
+            lbChkListMenuAdd.Visibility = mAddMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+            lbChkListMenuEdit.Visibility = mEditMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+            lbChkListMenuDelete.Visibility = mDeleteMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+            lbChkListMenuMove.Visibility = mMoveMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+            if (0 < mTitle.Length)
+                Title = mTitle;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -116,6 +122,8 @@ namespace CoreLib
                         }
                     }
                 }
+            } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuEdit") == 0) {
+                //  編集
             } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuDelete") == 0) {
                 //  リストボックスから項目削除
                 CheckBoxListItem item = (CheckBoxListItem)lbChkList.Items[index];
