@@ -6,14 +6,14 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows.Media;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using System.Numerics;
 
 namespace CoreLib
 {
@@ -2816,7 +2816,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="bitmapSource">ビットマップデータ</param>
         /// <param name="filePath">ファイル名(png/jpg/bmp)</param>
-        public void SaveBitmapSourceToFile(BitmapSource bitmapSource, string filePath)
+        public void saveBitmapImage(BitmapSource bitmapSource, string filePath)
         {
             string ext = System.IO.Path.GetExtension(filePath);
 
