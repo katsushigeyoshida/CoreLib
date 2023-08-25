@@ -149,7 +149,7 @@ namespace CoreLib
             foreach (var file in mFiles) {
                 if (file.mSrcFile != null && file.mDstFile != null) {
                     //  両方に存在するファイル
-                    if (file.mSrcFile.LastAccessTime > file.mDstFile.LastAccessTime)
+                    if (file.mSrcFile.LastWriteTime > file.mDstFile.LastWriteTime)
                         files.Add(file);
                 } else if (file.mSrcFile != null && file.mDstFile == null) {
                     //  コピー先にないファイル
