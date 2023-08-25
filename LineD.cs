@@ -313,10 +313,10 @@ namespace CoreLib
                 ep = pe;
             } else if (le.length() < mEps) {
                 ep = ps;
-            } else if (ls.angle2(le) < Math.PI / 2 || Math.PI * 3 / 2 < ls.angle2(le)) {
-                ep = pe;
-            } else {
+            } else if (ls.angle2(lp) < Math.PI / 2 || Math.PI * 3 / 2 < ls.angle2(lp)) {
                 ep = ps;
+            } else {
+                ep = pe;
             }
             return ep;
         }
