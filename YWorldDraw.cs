@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.ConstrainedExecution;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -563,7 +562,7 @@ namespace CoreLib
                 }
             } else {
                 //  実線以外またはクリッピング有
-                double sr = world2screenXlength(ellipse.mRx);
+                double sr = world2screenXlength(ellipse.mRx > ellipse.mRy ? ellipse.mRx : ellipse.mRy);
                 int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
                 List<PointD> plist = ellipse.toPointList(div);
                 drawWPolyline(plist);
