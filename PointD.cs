@@ -26,6 +26,8 @@ namespace CoreLib
     /// double length(PointD p)                     指定点との距離
     /// void setLength(double l)                    原点からのベクトルの長さを設定する
     /// PointD vector(PointD p)                     指定点に対するベクトル値
+    /// PointD vector(double angle, double length)  角度と距離を指定したベクトル値
+    /// void invert()                               符号を反転する
     /// PointD inverse()                            ベクトルを反転させる
     /// double innerProduct(PointD p)               自ベクトルと指定ベクトルの内積(合成ベクトルの長さ)
     /// double crossProduct(PointD p)               ベクトルと指定ベクトルの外積(ベクトルの平行判定 0の時平行、点が線上かの判定)
@@ -34,8 +36,9 @@ namespace CoreLib
     /// void fromPoler(double r, double th)         極座標からの取り込み
     /// void offset(double dx, double dy)           指定の量だけ移動
     /// void offset(PointD offset)                  指定の量だけ移動
-    /// void transform(double dx, double dy)        点位置の移動
-    /// void transform(PointD vp)                   点位置の移動(ベクトル値で移動)
+    /// void translate(double dx, double dy)        点位置の移動
+    /// void translate(PointD vp)                   点位置の移動(ベクトル値で移動)
+    /// void translate(PointD sp, PointD ep)        点位置の移動
     /// void rotate(double ang)                     原点を中心に回転
     /// void rotate(PointD cp, double ang)          中心点を指定して回転
     /// void rotate(PointD cp, PointD up)           指定点を中心に回転(回転角はcpとupでの角度)
@@ -166,15 +169,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 符号を反転する
-        /// </summary>
-        public void invert()
-        {
-            x *= -1.0;
-            y *= -1.0;
-        }
-
-        /// <summary>
         /// Pointクラスに変換
         /// </summary>
         /// <returns></returns>
@@ -265,6 +259,15 @@ namespace CoreLib
         {
             PointD vec = new PointD(length * Math.Cos(angle), length * Math.Sin(angle));
             return vec;
+        }
+
+        /// <summary>
+        /// 符号を反転する
+        /// </summary>
+        public void invert()
+        {
+            x *= -1.0;
+            y *= -1.0;
         }
 
         /// <summary>
