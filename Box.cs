@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 
 namespace CoreLib
@@ -29,9 +28,11 @@ namespace CoreLib
     ///     Box(PointD c, double r, bool inBox = false)     コンストラクタ(円の外接Box)
     ///     Box(ArcD arc)                                   コンストラクタ(円弧の外接Box)
     ///     Box(PointD c, double r, double sa, double ea)   コンストラクタ(円弧の外接Box)
+    ///     Box(TextD text)                                 コンストラクタ(TextDの領域)
     ///     Box(double left, double top, double right, double bottom)
     ///     Box(double size)                                コンストラクタ(正方形、原点中心)
     ///     Box(List<PointD> plist)                         座標列からBoxを作成
+    ///     Box(string buf)                                 カンマ区切りの文字列をデータに設定
     ///     
     ///     void normalize()                    正規化 (Left < Right, Bottom < Top)
     ///     Box toCopy()                        コピーを作る
@@ -68,6 +69,7 @@ namespace CoreLib
     ///     List<PointD> intersection(ArcD arc) 円弧との交点リストを求める
     ///     List<PointD> intersection(PoinDt c, double r, double sa, double ea) 円との交点を求める
     ///     List<PointD> intersection(List<PointD> polyline, bool close = false, bool abort = false)    ポリラインとの交点リストを求める
+    ///     List<PointD> intersection(PartsD parts, bool abort = false) パーツ(Parts)の交点リストを求める
     ///     List<LineD> clipLineList(LineD line)    線分をクリッピングしてBox内の線分を求める
     ///     List<ArcD> clipArcList(ArcD arc)    円弧をクリッピングしてBox内の円弧リストを求める
     ///     List<LineD> clipPolyline2LineList(List<PointD> polyline)    ポリラインのクリッピングを線分リストに変換
