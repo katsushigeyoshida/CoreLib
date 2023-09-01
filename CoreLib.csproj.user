@@ -32,6 +32,9 @@
     <Compile Update="SelectMenu.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="SelectMenu2.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="ChkListDialog.xaml">
@@ -62,6 +65,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="SelectMenu.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SelectMenu2.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
