@@ -72,8 +72,8 @@ namespace CoreLib
             tbMessage.Text = mMessage;
             Size textSize = measureText(mMessage, tbMessage.FontSize);
             int rowCount = mMessage.Count(p => p == '\n');
-            tbMessage.Height = 30 + rowCount * tbMessage.FontSize * 1.2 + 20;
-            Height = tbMessage.Height + 80 + 30;
+            tbMessage.Height = 30 + rowCount * tbMessage.FontSize * 1.2 + 10;
+            Height = tbMessage.Height + 80 + (0 < mTitle.Length ? 20 : 0);
             Width = Math.Max(textSize.Width + 50, minWidth);
         }
 
