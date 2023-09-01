@@ -8,6 +8,44 @@ namespace CoreLib
 
     /// <summary>
     /// パーツ(部品)クラス
+    /// 
+    /// PartsD()                                                    コンストラクタ
+    /// PartsD(string name, List<LineD> lines, List<ArcD> arcs, List<TextD> texts)
+    /// 
+    /// PartsD toCopy()                                             コピーの作成
+    /// Box getBox()                                                領域Boxを求める
+    /// void translate(PointD vec)                                  移動
+    /// void rotate(PointD cp, PointD mp)                           回転
+    /// void mirror(PointD sp, PointD ep)                           反転
+    /// void scale(PointD cp, double scale)                         原点を指定して拡大縮小
+    /// void stretch(PointD vec, PointD pos)                        ストレッチ
+    /// 
+    /// void createArrow(PointD ps, PointD pe)                      矢印データを作成
+    /// void createLabel(List<PointD> plist, string str)            ラベルの作成
+    /// void createDimension(List<PointD> plist)                    直線寸法線の作成
+    /// void createAngleDimension(List<PointD> plist)               角度寸法の作成
+    /// void createDiameterDimension(ArcD arc, List<PointD> plist)  直径寸法線の作成
+    /// void createRadiusDimension(ArcD arc, List<PointD> plist)    半径寸法線の作成
+    /// void remakeData()                                           パラメータ(矢印と文字サイズ)を更新して再作成
+    /// List<PointD> getDimensionPos()                              寸法線の参照点を求める
+    /// PointD onPoint(PointD pos)                                  要素上の座標かの確認
+    /// bool textInsideChk(Box b)                                   Boxが文字列内にあるかをチェック
+    /// List<PointD> intersection(PointD point)                     点との垂点を求める
+    /// List<PointD> intersection(LineD line)                       線分との交点を求める
+    /// List<PointD> intersection(ArcD arc)                         円弧との交点を求める
+    /// List<PointD> intersection(PolylineD polyline)               ポリラインとの交点を求める
+    /// List<PointD> intersection(PolygonD polygon)                 ポリゴンとの交点を求める
+    /// List<PointD> getPointList()                                 点座標リストの取得
+    /// PointD nearPoint(PointD p)                                  座標リストから指定点にもっと近い点座標を取得
+    /// 
+    /// 
+    /// int getDimType(PointD ps, PointD pe, PointD pos)            寸法線のタイプ
+    /// List<LineD> arrow(PointD ps, PointD pe)                     矢印の先端形状の作成
+    /// List<LineD> angleArrow(ArcD arc)                            円弧矢印の先端形状の作成
+    /// List<PointD> addTextPos(List<PointD> plist, int n, PointD pos, PointD tp)   ピック位置が文字位置の場合文字位置を追加
+    /// bool textPickChk(PointD pos)                                指定点が文字位置に含まれているかの判定
+    /// 
+    /// 
     /// </summary>
     public class PartsD
     {
@@ -48,16 +86,19 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="mName">パーツ名</param>
-        /// <param name="mLines">線分リスト</param>
-        /// <param name="mArcs">円弧リスト</param>
-        /// <param name="mTexts">文字リスト</param>
-        public PartsD(string mName, List<LineD> mLines, List<ArcD> mArcs, List<TextD> mTexts)
+        /// <param name="name">パーツ名</param>
+        /// <param name="lines">線分リスト</param>
+        /// <param name="arcs">円弧リスト</param>
+        /// <param name="texts">文字リスト</param>
+        public PartsD(string name, List<LineD> lines, List<ArcD> arcs, List<TextD> texts)
         {
-            this.mName = mName;
-            this.mLines = mLines;
-            this.mArcs = mArcs;
-            this.mTexts = mTexts;
+            mName = name;
+            mLines = lines;
+            mArcs = arcs;
+            mTexts = texts;
+            mRefString = new List<string>();
+            mRefPoints = new List<PointD>();
+            mRefValue = new List<double>();
         }
 
         /// <summary>
@@ -182,6 +223,31 @@ namespace CoreLib
             if (mRefPoints != null) {
                 foreach (var point in mRefPoints)
                     point.mirror(sp, ep);
+            }
+        }
+
+        /// <summary>
+        /// 原点を指定して拡大縮小
+        /// </summary>
+        /// <param name="cp">原点</param>
+        /// <param name="scale">拡大率</param>
+        public void scale(PointD cp, double scale)
+        {
+            if (mLines != null) {
+                foreach (var line in mLines)
+                    line.scale(cp, scale);
+            }
+            if (mArcs != null) {
+                foreach (var arc in mArcs)
+                    arc.scale(cp, scale);
+            }
+            if (mTexts != null) {
+                foreach (var text in mTexts)
+                    text.scale(cp, scale);
+            }
+            if (mRefPoints != null) {
+                foreach (var point in mRefPoints)
+                    point.scale(cp, scale);
             }
         }
 
@@ -313,7 +379,8 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 直線寸法線の作成(対象座標と寸法位置との関係で水平/垂直/平行寸法に切り替える)
+        /// 直線寸法線の作成
+        /// (対象座標と寸法位置との関係で水平/垂直/平行寸法に切り替える)
         /// plist [0] 寸法対象座標 [1] 寸法対象座標 [2] 寸法位置 ([3] 文字位置)
         /// mRefPoints[0],[1] 寸法対象座標 [2] 寸法位置
         /// </summary>
@@ -582,191 +649,6 @@ namespace CoreLib
             }
         }
 
-        /// <summary>
-        /// 寸法線の参照点を求める
-        /// </summary>
-        /// <returns>座標点リスト</returns>
-        public List<PointD> getDimensionPos()
-        {
-            List<PointD> plist = new List<PointD>();
-            if (mName == "寸法線") {
-                mLines[0].slide(-mTextSize / 4);
-                mLines[1].slide(-mTextSize / 4);
-                PointD mp = mLines[2].centerPoint();
-                plist.Add(mLines[0].ps);        //  始点
-                plist.Add(mLines[1].ps);        //  終点
-                plist.Add(mp);                  //  寸法値位置
-            } else if (mName == "角度寸法線") {
-                PointD cp = mLines[0].intersection(mLines[1]);
-                mLines[0].slide(-mTextSize / 4);
-                mLines[1].slide(-mTextSize / 4);
-                PointD mp = mTexts[0].mPos;
-                plist.Add(cp);                  //  中心点
-                plist.Add(mLines[0].ps);        //  始点
-                plist.Add(mLines[1].ps);        //  終点
-                plist.Add(mp);                  //  寸法値位置
-            } else if (mName == "直径寸法線") {
-                plist.Add(mLines[0].centerPoint()); //  中心点
-                plist.Add(mLines[0].ps);            //  始点
-                plist.Add(mLines[0].pe);            //  終点
-                plist.Add(mLines[0].centerPoint()); //  寸法値位置
-            } else if (mName == "半径寸法線") {
-                plist.Add(mLines[0].ps);            //  始点(中心点)
-                plist.Add(mLines[0].pe);            //  始点
-                plist.Add(mLines[0].pe);            //  終点
-                plist.Add(mLines[0].centerPoint()); //  寸法値位置
-            }
-            return plist;
-        }
-
-        /// <summary>
-        /// 寸法線のタイプ
-        /// 1:水平寸法  -1:垂直寸法 0:平行寸法
-        /// </summary>
-        /// <param name="ps">始点</param>
-        /// <param name="pe">終点</param>
-        /// <param name="pos">寸法位置</param>
-        /// <returns></returns>
-        private int getDimType(PointD ps, PointD pe, PointD pos)
-        {
-            bool horSign = false;
-            if (ps.x < pe.x) {
-                if (ps.x < pos.x && pos.x< pe.x)
-                    horSign = true;
-            } else {
-                if (pe.x < pos.x && pos.x < ps.x)
-                    horSign = true;
-            }
-            bool verSign = false;
-            if (ps.y < pe.y) {
-                if (ps.y < pos.y && pos.y < pe.y)
-                    verSign = true;
-            } else {
-                if (pe.y < pos.y && pos.y < ps.y)
-                    verSign = true;
-            }
-            if (horSign && verSign)
-                return 0;
-            else if (horSign)
-                return 1;
-            else if (verSign)
-                return -1;
-            else
-                return 0;
-        }
-
-        /// <summary>
-        /// 矢印の先端形状の作成
-        /// </summary>
-        /// <param name="ps">始点</param>
-        /// <param name="pe">終点</param>
-        /// <returns>線分リスト</returns>
-        public List<LineD> arrow(PointD ps, PointD pe)
-        {
-            List<LineD> llist = new List<LineD>();
-            LineD l = new LineD(ps, pe);
-            LineD l0 = l.toCopy();
-            l0.rotate(ps, mArrowAngle);
-            l0.setLength(mArrowSize);
-            llist.Add(l0);
-            LineD l1 = l.toCopy();
-            l1.rotate(ps, -mArrowAngle);
-            l1.setLength(mArrowSize);
-            llist.Add(l1);
-            return llist;
-        }
-
-        /// <summary>
-        /// 円弧矢印の先端形状の作成
-        /// </summary>
-        /// <param name="arc">円弧</param>
-        /// <returns>線分リスト</returns>
-        public List<LineD> angleArrow(ArcD arc)
-        {
-            List<LineD> llist = new List<LineD>();
-            LineD ls = new LineD(arc.startPoint(), arc.mCp);
-            LineD ls0 = ls.toCopy();
-            ls0.rotate(ls0.ps, -Math.PI / 2 + mArrowAngle);
-            ls0.setLength(mArrowSize);
-            LineD ls1 = ls.toCopy();
-            ls1.rotate(ls1.ps, -Math.PI / 2 - mArrowAngle);
-            ls1.setLength(mArrowSize);
-
-            LineD le = new LineD(arc.endPoint(), arc.mCp);
-            LineD le0 = le.toCopy();
-            le0.rotate(le0.ps, Math.PI / 2 + mArrowAngle);
-            le0.setLength(mArrowSize);
-            LineD le1 = le.toCopy();
-            le1.rotate(le1.ps, Math.PI / 2 - mArrowAngle);
-            le1.setLength(mArrowSize);
-
-            llist.Add(ls0);
-            llist.Add(ls1);
-            llist.Add(le0);
-            llist.Add(le1);
-            return llist;
-        }
-
-        /// <summary>
-        /// ピック位置が文字位置の場合文字位置を追加
-        /// </summary>
-        /// <param name="plist">座標リスト</param>
-        /// <param name="n">寸法値配列位置</param>
-        /// <param name="pos">ピック位置</param>
-        /// <param name="tp">文字位置</param>
-        /// <returns></returns>
-        private List<PointD> addTextPos(List<PointD> plist, int n, PointD pos, PointD tp)
-        {
-            if (textPickChk(pos)) {
-                //  寸法値をピックした場合は寸法値を移動
-                if (n < plist.Count)
-                    plist[n] = tp;
-                else
-                    plist.Add(tp);
-            } else {
-                //  寸法値以外をピックした場合、寸法値の位置関係を保持
-                if (mName == "直径寸法線" || mName == "半径寸法線") {
-                    LineD tl = new LineD(mRefPoints[0], tp);
-                    if (tl.length() < mEps)
-                        tl = new LineD(mRefPoints[0], mLines[0].pe);
-                    tl.setLength(mRefPoints[0].length(mTexts[0].mPos));
-                    tp = tl.pe;
-                } else if (mName == "角度寸法線") {
-                    double ang = mTexts[0].mPos.angle(mRefPoints[0]);
-                    LineD tl = new LineD(mRefPoints[0], tp);
-                    tl.rotate(tl.ps, ang - tl.angle());
-                    tp = tl.pe;
-                } else if (mName == "寸法線") {
-                    LineD tl = new LineD(mTexts[0].mPos, 1, mTexts[0].mRotate + Math.PI / 2);
-                    tp = tl.intersection(tp);
-                } else if (mName == "ラベル") {
-
-                } else {
-                    plist.RemoveRange(n, plist.Count - n);
-                    return plist;
-                }
-                if (n < plist.Count) {
-                    plist[n] = tp;
-                } else {
-                    plist.Add(tp);
-                }
-            }
-            return plist;
-        }
-
-        /// <summary>
-        /// 指定点が文字位置に含まれているかの判定
-        /// </summary>
-        /// <param name="pos">指定点</param>
-        /// <returns>文字位置内</returns>
-        private bool textPickChk(PointD pos)
-        {
-            foreach (var text in mTexts)
-                if (text.insideChk(pos))
-                    return true;
-            return false;
-        }
-
 
         /// <summary>
         /// 要素上の座標かの確認
@@ -920,6 +802,237 @@ namespace CoreLib
                 plist.AddRange(parc.intersection(polygon));
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 点座標リストの取得
+        /// 線分の両端点、円弧のピーク点をリストで取得
+        /// </summary>
+        /// <returns>点データリスト</returns>
+        public List<PointD> getPointList()
+        {
+            List<PointD> plist = new List<PointD>();
+            foreach (var pline in mLines) {
+                if (plist.FindIndex(p => p.isEqual(pline.ps)) < 0)
+                    plist.Add(pline.ps);
+                if (plist.FindIndex(p => p.isEqual(pline.pe)) < 0)
+                    plist.Add(pline.pe);
+            }
+            foreach (var parc in mArcs) {
+                List<PointD> peaks = parc.toPeakList();
+                foreach (var peak in peaks) {
+                    if (plist.FindIndex(p => p.isEqual(peak)) < 0)
+                        plist.Add(peak);
+                }
+            }
+
+            return plist;
+        }
+
+        /// <summary>
+        /// 点座標リストから指定点にもっと近い点座標を取得
+        /// </summary>
+        /// <param name="p">参照点</param>
+        /// <returns></returns>
+        public PointD nearPoint(PointD p)
+        {
+            List<PointD> plist = getPointList();
+            double dis = double.MaxValue;
+            int no = -1;
+            for(int i = 0; i < plist.Count; i++) {
+                if (p.length(plist[i]) < dis) {
+                    dis = p.length(plist[i]);
+                    no = i;
+                }
+            }
+            if (0 <= no)
+                return plist[no];
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// 寸法線の参照点を求める
+        /// </summary>
+        /// <returns>座標点リスト</returns>
+        private List<PointD> getDimensionPos()
+        {
+            List<PointD> plist = new List<PointD>();
+            if (mName == "寸法線") {
+                mLines[0].slide(-mTextSize / 4);
+                mLines[1].slide(-mTextSize / 4);
+                PointD mp = mLines[2].centerPoint();
+                plist.Add(mLines[0].ps);        //  始点
+                plist.Add(mLines[1].ps);        //  終点
+                plist.Add(mp);                  //  寸法値位置
+            } else if (mName == "角度寸法線") {
+                PointD cp = mLines[0].intersection(mLines[1]);
+                mLines[0].slide(-mTextSize / 4);
+                mLines[1].slide(-mTextSize / 4);
+                PointD mp = mTexts[0].mPos;
+                plist.Add(cp);                  //  中心点
+                plist.Add(mLines[0].ps);        //  始点
+                plist.Add(mLines[1].ps);        //  終点
+                plist.Add(mp);                  //  寸法値位置
+            } else if (mName == "直径寸法線") {
+                plist.Add(mLines[0].centerPoint()); //  中心点
+                plist.Add(mLines[0].ps);            //  始点
+                plist.Add(mLines[0].pe);            //  終点
+                plist.Add(mLines[0].centerPoint()); //  寸法値位置
+            } else if (mName == "半径寸法線") {
+                plist.Add(mLines[0].ps);            //  始点(中心点)
+                plist.Add(mLines[0].pe);            //  始点
+                plist.Add(mLines[0].pe);            //  終点
+                plist.Add(mLines[0].centerPoint()); //  寸法値位置
+            }
+            return plist;
+        }
+        /// <summary>
+        /// 寸法線のタイプ
+        /// 1:水平寸法  -1:垂直寸法 0:平行寸法
+        /// </summary>
+        /// <param name="ps">始点</param>
+        /// <param name="pe">終点</param>
+        /// <param name="pos">寸法位置</param>
+        /// <returns></returns>
+        private int getDimType(PointD ps, PointD pe, PointD pos)
+        {
+            bool horSign = false;
+            if (ps.x < pe.x) {
+                if (ps.x < pos.x && pos.x < pe.x)
+                    horSign = true;
+            } else {
+                if (pe.x < pos.x && pos.x < ps.x)
+                    horSign = true;
+            }
+            bool verSign = false;
+            if (ps.y < pe.y) {
+                if (ps.y < pos.y && pos.y < pe.y)
+                    verSign = true;
+            } else {
+                if (pe.y < pos.y && pos.y < ps.y)
+                    verSign = true;
+            }
+            if (horSign && verSign)
+                return 0;
+            else if (horSign)
+                return 1;
+            else if (verSign)
+                return -1;
+            else
+                return 0;
+        }
+
+        /// <summary>
+        /// 矢印の先端形状の作成
+        /// </summary>
+        /// <param name="ps">始点</param>
+        /// <param name="pe">終点</param>
+        /// <returns>線分リスト</returns>
+        private List<LineD> arrow(PointD ps, PointD pe)
+        {
+            List<LineD> llist = new List<LineD>();
+            LineD l = new LineD(ps, pe);
+            LineD l0 = l.toCopy();
+            l0.rotate(ps, mArrowAngle);
+            l0.setLength(mArrowSize);
+            llist.Add(l0);
+            LineD l1 = l.toCopy();
+            l1.rotate(ps, -mArrowAngle);
+            l1.setLength(mArrowSize);
+            llist.Add(l1);
+            return llist;
+        }
+
+        /// <summary>
+        /// 円弧矢印の先端形状の作成
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <returns>線分リスト</returns>
+        private List<LineD> angleArrow(ArcD arc)
+        {
+            List<LineD> llist = new List<LineD>();
+            LineD ls = new LineD(arc.startPoint(), arc.mCp);
+            LineD ls0 = ls.toCopy();
+            ls0.rotate(ls0.ps, -Math.PI / 2 + mArrowAngle);
+            ls0.setLength(mArrowSize);
+            LineD ls1 = ls.toCopy();
+            ls1.rotate(ls1.ps, -Math.PI / 2 - mArrowAngle);
+            ls1.setLength(mArrowSize);
+
+            LineD le = new LineD(arc.endPoint(), arc.mCp);
+            LineD le0 = le.toCopy();
+            le0.rotate(le0.ps, Math.PI / 2 + mArrowAngle);
+            le0.setLength(mArrowSize);
+            LineD le1 = le.toCopy();
+            le1.rotate(le1.ps, Math.PI / 2 - mArrowAngle);
+            le1.setLength(mArrowSize);
+
+            llist.Add(ls0);
+            llist.Add(ls1);
+            llist.Add(le0);
+            llist.Add(le1);
+            return llist;
+        }
+
+        /// <summary>
+        /// ピック位置が文字位置の場合文字位置を追加
+        /// </summary>
+        /// <param name="plist">座標リスト</param>
+        /// <param name="n">寸法値配列位置</param>
+        /// <param name="pos">ピック位置</param>
+        /// <param name="tp">文字位置</param>
+        /// <returns></returns>
+        private List<PointD> addTextPos(List<PointD> plist, int n, PointD pos, PointD tp)
+        {
+            if (textPickChk(pos)) {
+                //  寸法値をピックした場合は寸法値を移動
+                if (n < plist.Count)
+                    plist[n] = tp;
+                else
+                    plist.Add(tp);
+            } else {
+                //  寸法値以外をピックした場合、寸法値の位置関係を保持
+                if (mName == "直径寸法線" || mName == "半径寸法線") {
+                    LineD tl = new LineD(mRefPoints[0], tp);
+                    if (tl.length() < mEps)
+                        tl = new LineD(mRefPoints[0], mLines[0].pe);
+                    tl.setLength(mRefPoints[0].length(mTexts[0].mPos));
+                    tp = tl.pe;
+                } else if (mName == "角度寸法線") {
+                    double ang = mTexts[0].mPos.angle(mRefPoints[0]);
+                    LineD tl = new LineD(mRefPoints[0], tp);
+                    tl.rotate(tl.ps, ang - tl.angle());
+                    tp = tl.pe;
+                } else if (mName == "寸法線") {
+                    LineD tl = new LineD(mTexts[0].mPos, 1, mTexts[0].mRotate + Math.PI / 2);
+                    tp = tl.intersection(tp);
+                } else if (mName == "ラベル") {
+
+                } else {
+                    plist.RemoveRange(n, plist.Count - n);
+                    return plist;
+                }
+                if (n < plist.Count) {
+                    plist[n] = tp;
+                } else {
+                    plist.Add(tp);
+                }
+            }
+            return plist;
+        }
+
+        /// <summary>
+        /// 指定点が文字位置に含まれているかの判定
+        /// </summary>
+        /// <param name="pos">指定点</param>
+        /// <returns>文字位置内</returns>
+        private bool textPickChk(PointD pos)
+        {
+            foreach (var text in mTexts)
+                if (text.insideChk(pos))
+                    return true;
+            return false;
         }
     }
 }

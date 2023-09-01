@@ -21,11 +21,13 @@ namespace CoreLib
     /// void rotate(PointD cp, double angle)            指定点を中心に回転
     /// void rotate(PointD cp, PointD mp)               指定点を中心に回転
     /// void mirror(PointD sp, PointD ep)               指定線分でミラーする
+    ///  void scale(PointD cp, double scale)            原点を指定して拡大縮小
     /// List<PointD> toPointList()                      文字列の領域の頂点座標と中点座標を求める
     /// List<LineD> toLineList()                        文字列の領域を示す線分を求める
     /// bool insideChk(PointD p)                        Pointの内外判定
     /// bool insideChk(Box b)                           Boxの内外判定
     /// Box getBox()                                    文字列のBox領域
+    /// Box getBox(string text, PointD pos)             定した文字列の領域を求める
     /// List<PointD> getArea()                          文字列の領域の頂点座標を求める
     /// PointD nearPeakPoint(PointD p)                  頂点座標+中点座標で最も近い点を求める
     /// PointD nearPoints(PointD p)                     テキストの領域を示す線分上で最も近い点を求める
@@ -136,6 +138,17 @@ namespace CoreLib
             mVa = mVa == VerticalAlignment.Top ? VerticalAlignment.Bottom : mVa == VerticalAlignment.Bottom ? VerticalAlignment.Top : VerticalAlignment.Center;
             double ang = ep.angle(sp);
             mRotate = ang - mRotate + ang;
+        }
+
+        /// <summary>
+        /// 原点を指定して拡大縮小
+        /// </summary>
+        /// <param name="cp">原点</param>
+        /// <param name="scale">拡大率</param>
+        public void scale(PointD cp, double scale)
+        {
+            mPos.scale(cp, scale);
+            mTextSize *= scale;
         }
 
         /// <summary>

@@ -28,7 +28,11 @@ namespace CoreLib
     /// void rotate(PointD cp, PointD rp)               指定点を中心に全体を回転
     /// void mirror(PointD sp, PointD ep)               指定の線分に対してミラーする
     /// void mirror(LineD line)                         指定の線分に対してミラーする
+    /// void offset(double d)                           オフセットする
+    /// void offset(PointD sp, PointD ep)               垂直方向に平行移動させる
+    /// void scale(PointD cp, double scale)             原点を指定して拡大縮小
     /// void stretch(PointD vec, PointD nearPos)        要素の指定位置に近い座標を移動させる
+    /// PolylineD divide(PointD dp)                     要素を分割するしたポリラインを作成
     /// List<PointD> intersection(PointD p)             点との交点(垂点)リストを求める
     /// List<PointD> intersection(LineD l)              線分との交点リストを求める
     /// List<PointD> intersection(ArcD arc)             円弧との交点の座標リストを求める
@@ -243,6 +247,15 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定の線分に対してミラーする
+        /// </summary>
+        /// <param name="line">線分</param>
+        public void mirror(LineD line)
+        {
+            mPolygon.ForEach(p => p.mirror(line.ps, line.pe));
+        }
+
+        /// <summary>
         /// オフセットする
         /// </summary>
         /// <param name="d">オフセット距離</param>
@@ -262,7 +275,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 直方向に平行移動させる
+        /// 垂直方向に平行移動させる
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
@@ -274,12 +287,13 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定の線分に対してミラーする
+        /// 原点を指定して拡大縮小
         /// </summary>
-        /// <param name="line">線分</param>
-        public void mirror(LineD line)
+        /// <param name="cp">原点</param>
+        /// <param name="scale">拡大率</param>
+        public void scale(PointD cp, double scale)
         {
-            mPolygon.ForEach(p => p.mirror(line.ps, line.pe));
+            mPolygon.ForEach(p => p.scale(cp, scale));
         }
 
         /// <summary>

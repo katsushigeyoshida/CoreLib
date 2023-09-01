@@ -27,8 +27,9 @@ namespace CoreLib
     ///  bool isNaN()                           不定値の判定
     ///  
     ///  PointD vector()                        ベクトル(増分データ)に変換
-    ///  PointD offset(PointD pos, double dis   指定座標をオフセットした座標を求める
     ///  PointD getVectorAngle(double ang, double l)    線分に対して角度と長さを指定したベクトルを求める
+    ///  PointD getEndPointLine(PointD pickPos, PointD cp)  線分の端点を求める(寸法線用)
+    ///  void inverse()                         始終点を入れ換える
     ///  double length()                        線分の長さ
     ///  void setLength(double l)               線分の長さを再設定する
     ///  double distance(PointD p)              点と垂点との距離
@@ -54,17 +55,19 @@ namespace CoreLib
     ///  LineD clippingLine(Rect rect)          矩形領域でクリッピングする
     ///  
     ///  void translate(PointD vec)             ベクトル分移動させる
+    ///  PointD offset(PointD pos, double dis)  指定座標をオフセットした座標を求める
     ///  void offset(double d)                  指定した距離分だけ平行移動させる
     ///  void offset(double dis, PointD pos)    指定点の方向に平行移動させる
     ///  void offset(PointD sp, PointD ep)      垂直方向に平行移動させる
+    ///  void offset(PointD vec)                ベクトルで移動する
     ///  void slide(double l)                   指定した距離分だけ同じ向きに平行移動させる
     ///  void move(double dx, double dy)        増分を指定して平行移動
     ///  void moveLength(double r,double th)    距離と角度を指定して平行移動
     ///  void moveLength(double l)              延長線上に距離を指定して移動
-    ///  void rotate(Point ctr, double rotate)  中心を指定して線分を回転
     ///  void rotate(PointD ctr, double rotate) 中心を指定して線分を回転
     ///  void rotate(PointD cp, PointD mp)      指定点を中心に回転
     ///  void mirror(PointD sp, PointD ep)      指定線分でミラー
+    ///  void scale(PointD cp, double scale)    原点を指定して拡大縮小
     ///  void trim(PointD sp, PointD ep)        指定点の垂点で線分の長さを変える
     ///  void trimNear(PointD tp, PointD pos)   ピックした位置に近い方を消すようにトリミングする
     ///  void trimFar(PointD tp, PointD pos)    ピックした位置に遠い方を消すようにトリミングする
@@ -260,20 +263,6 @@ namespace CoreLib
         public PointD vector()
         {
             return new PointD(pe.x - ps.x, pe.y - ps.y);
-        }
-
-        /// <summary>
-        /// 指定座標を線分に対して平行移動した座標を求める
-        /// </summary>
-        /// <param name="pos">座標</param>
-        /// <param name="dis">オフセット距離</param>
-        /// <returns>オフセット座標</returns>
-        public PointD offset(PointD pos, double dis)
-        {
-            PointD ip = intersection(pos);
-            LineD line = new LineD(ip, pos);
-            line.setLength(line.length() + dis);
-            return line.pe;
         }
 
         /// <summary>
@@ -741,6 +730,20 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定座標を線分に対して平行移動した座標を求める
+        /// </summary>
+        /// <param name="pos">座標</param>
+        /// <param name="dis">オフセット距離</param>
+        /// <returns>オフセット座標</returns>
+        public PointD offset(PointD pos, double dis)
+        {
+            PointD ip = intersection(pos);
+            LineD line = new LineD(ip, pos);
+            line.setLength(line.length() + dis);
+            return line.pe;
+        }
+
+        /// <summary>
         /// 鉛直方向に移動させる
         /// </summary>
         /// <param name="d">移動距離</param>
@@ -845,16 +848,6 @@ namespace CoreLib
         /// </summary>
         /// <param name="ctr">中心座標</param>
         /// <param name="rotate">回転角度(rad)</param>
-        public void rotate(Point ctr, double rotate)
-        {
-            this.rotate(new PointD(ctr), rotate);
-        }
-
-        /// <summary>
-        /// 中心を指定して線分を回転させる
-        /// </summary>
-        /// <param name="ctr">中心座標</param>
-        /// <param name="rotate">回転角度(rad)</param>
         public void rotate(PointD ctr, double rotate)
         {
             ps.rotate(ctr, rotate);
@@ -881,6 +874,17 @@ namespace CoreLib
         {
             ps.mirror(sp, ep);
             pe.mirror(sp, ep);
+        }
+
+        /// <summary>
+        /// 原点を指定して拡大縮小
+        /// </summary>
+        /// <param name="cp">原点</param>
+        /// <param name="scale">拡大率</param>
+        public void scale(PointD cp, double scale)
+        {
+            ps.scale(cp, scale);
+            pe.scale(cp, scale);
         }
 
         /// <summary>

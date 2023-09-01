@@ -1,10 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Shapes;
 
 namespace CoreLib
 {
+    /// <summary>
+    /// EllipseD()                                              コンストラクタ
+    /// EllipseD(PointD cp, double rx, double ry, double sa = 0, double ea = Math.PI * 2, double rotate = 0)
+    /// EllipseD(PointD sp, PointD ep)
+    /// EllipseD(EllipseD ellipse)
+    /// 
+    /// EllipseD toCopy()                                       コピーを作成
+    /// void normalize()                                        開始角と修了角の正規化
+    /// override string ToString()
+    /// string ToString(string form)                            データを文字列化
+    /// void translate(PointD vec)                              ベクトル分移動させる
+    /// void rotate(double angle)                               楕円の回転
+    /// void rotate(PointD cp, double ang)                      指定点を中心に回転
+    /// void rotate(PointD cp, PointD mp)                       指定点を中心に回転
+    /// void mirror(PointD sp, PointD ep)                       指定点でミラーする
+    /// void scale(PointD cp, double scale)                     原点を指定して拡大縮小
+    /// void offset(PointD sp, PointD ep)                       楕円の半径をオフセットする
+    /// void offset(double dis)                                 楕円の半径をオフセットする
+    /// void trim(PointD sp, PointD ep)                         指定点でトリムする
+    /// void stretch(PointD vec, PointD pos)                    円を端点または半径をストレッチする
+    /// Box getBox()                                            Rotateを0とした楕円のBox
+    /// Box getArea()                                           楕円の領域
+    /// PointD startPoint()                                     始点座標
+    /// PointD endPoint()                                       終点座標
+    /// PointD middlePoint()                                    中間点
+    /// PointD getPoint(double ang)                             指定角度の座標
+    /// double getAngle(PointD p)                               指定座標の垂点の楕円上の角度を求める
+    /// List<PointD> toPeakList()                               円周上の端点リスト(端点+4分割点)
+    /// bool onPoint(PointD p)                                  指定点が楕円上の点かの判定
+    /// List<PointD> dividePoints(int divNo)                    楕円を分割した座標点リスト
+    /// List<PointD> toPointList(int divideNo)                  楕円の分割点リストを作成
+    /// PointD nearPoints(PointD p, int divideNo = 4)           円弧の分割点で最も近い点を求める
+    /// bool insideChk(PointD p)                                点が楕円の内側かの判定
+    /// bool insideChk(LineD line)                              線分が楕円の内側かの判定
+    /// bool insideChk(Box b)                                   線分が楕円の内側かの判定
+    /// PointD intersection(PointD pos)                         点との交点(垂点)
+    /// List<PointD> dropPoint(PointD pos)                      点との交点(垂点)
+    /// List<PointD> intersection(LineD line, bool on = true)   線分との交点
+    /// List<PointD> intersection(ArcD arc)                     楕円と円の交点を求める
+    /// List<PointD> intersection(EllipseD ellipse)             楕円同士の交点
+    /// List<PointD> intersection(PolylineD polyline, bool on = true)   ポリラインとの交点を求める
+    /// List<PointD> intersection(Box b, bool on = true)        Boxとの交点を求める
+    /// List<LineD> tangentLine(PointD pos)                     指定点を通る接線を求める
+    /// List<LineD> tangentLine(LineD line)                     線分と同じ傾きの接線を求める
+    /// List<PointD> tangentPoint(PointD pos)                   指定点を通る接線の接点座標
+    /// List<PointD> tangentPoint(LineD line)                   線分と同じ傾きの接線の接点を求める
+    /// 
+    /// List<double> canonical2Implicit()                       陰関数の形式に変換する
+    /// 
+    /// </summary>
+
     public class EllipseD
     {
         public PointD mCp = new PointD();
@@ -128,7 +178,6 @@ namespace CoreLib
             mCp.translate(vec);
         }
 
-
         /// <summary>
         /// 楕円の回転
         /// </summary>
@@ -162,7 +211,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定成分でミラーする
+        /// 指定点でミラーする
         /// </summary>
         /// <param name="sp"></param>
         /// <param name="ep"></param>
@@ -175,6 +224,18 @@ namespace CoreLib
             mEa = sa;
             mRotate = ep.angle(sp) * 2 - mRotate + Math.PI;
             normalize();
+        }
+
+        /// <summary>
+        /// 原点を指定して拡大縮小
+        /// </summary>
+        /// <param name="cp">原点</param>
+        /// <param name="scale">拡大率</param>
+        public void scale(PointD cp, double scale)
+        {
+            mCp.scale(cp, scale);
+            mRx *= scale;
+            mRy *= scale;
         }
 
         /// <summary>
@@ -247,7 +308,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// Roateを0とした楕円のBox(
+        /// Rotateを0とした楕円のBox
         /// </summary>
         /// <returns></returns>
         public Box getBox()

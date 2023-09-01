@@ -19,10 +19,14 @@ namespace CoreLib
     ///  string ToString(string format)                     書式付き文字列変換
     ///  ArcD toCopy()                                      コピーを作成
     ///  List<ArcD> tangentCircle(LineD lf, LineD ls, double r) 2線分に接する円のリスト
+    ///  List<ArcD> tangentCircle(LineD lf, ArcD af, double r)  線分と円に接する円
+    ///  List<ArcD> tangentCircle(ArcD a1, ArcD a2, double r)   2円に接する円
+    ///  void translate(PointD vec)                         ベクトル分移動させる
     ///  void rotate(double angle)                          円弧の回転
     ///  void rotate(PointD cp, double ang)                 指定点を中心に回転
     ///  void rotate(PointD cp, PointD mp)                  指定点を中心に回転
     ///  void mirror(PointD sp, PointD ep)                  指定成分でミラーする
+    ///  void scale(PointD cp, double scale)                原点を指定して拡大縮小
     ///  void offset(PointD sp, PointD ep)                  円弧の半径をオフセットする
     ///  void trim(PointD sp, PointD ep)                    指定点でトリムする
     ///  void trimNear(PointD tp, PointD pos)               ピックした位置に近い方を消すようにトリミング
@@ -41,12 +45,13 @@ namespace CoreLib
     ///  PointD nearPoints(PointD p, int divideNo = 4)      円弧の分割点で最も近い点を求める
     ///  bool onPoint(PointD p)                             点が円弧上にあるかの判定
     ///  bool innerAngle(double ang)                        指定の角度が円弧内かの判定
-    ///  List<PointD> interSection(PointD p, bool on = true)    点との交点リスト
+    ///  List<PointD> intersection(PointD p, bool on = true)    点との交点リスト
     ///  PointD intersection(PointD p)                      垂点(円に対して)
     ///  List<PointD> intersection(LineD line, bool on = true)  線分との交点
     ///  List<PointD> intersection(ArcD Arc, bool on = true)    円と円との交点を求める
     ///  List<PointD> intersection(PolylineD polyline, bool on = true)  ポリラインとの交点を求める
     ///  List<PointD> intersection(PolygonD polygon, bool on = true)    ポリゴンとの交点を求める
+    ///  List<PointD> tangentPoint(PointD p)                点からの接線の接点リスト
     /// 
     /// </summary>
 
@@ -376,6 +381,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 原点を指定して拡大縮小
+        /// </summary>
+        /// <param name="cp">原点</param>
+        /// <param name="scale">拡大率</param>
+        public void scale(PointD cp, double scale)
+        {
+            mCp.scale(cp, scale);
+            mR *= scale;
+        }
+
+        /// <summary>
         /// 円弧の半径をオフセットする
         /// </summary>
         /// <param name="sp">始点</param>
@@ -663,7 +679,7 @@ namespace CoreLib
         /// <param name="p">点座標</param>
         /// <param name="on">判定あり</param>
         /// <returns></returns>
-        public List<PointD> interSection(PointD p, bool on = true)
+        public List<PointD> intersection(PointD p, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
             PointD ip = intersection(p);

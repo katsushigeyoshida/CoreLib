@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
-using System.Runtime.Intrinsics.Arm;
 
 namespace CoreLib
 {
@@ -12,6 +10,7 @@ namespace CoreLib
     /// PolylineD()
     /// PolylineD(List<PointD> polyline)
     /// PolylineD(PolylineD polyline)
+    /// 
     /// void Add(PointD p)                              座標の追加
     /// void Insert(int index, PointD p)                座標の挿入
     /// override string ToString()
@@ -23,20 +22,24 @@ namespace CoreLib
     /// Box getBox()                                    Box領域を求める
     /// LineD getLine(int n)                            指定位置のポリラインの線分を取り出す
     /// LineD getLine(PointD p)                         指定座標に近い線分を取り出す
+    /// void offset(double d)                           オフセットする
+    /// void offset(PointD sp, PointD ep)               垂直方向に平行移動させる
     /// void translate(PointD vec)                      全体を移動する
     /// void rotate(double ang)                         原点を中心に全体を回転する
     /// void rotate(PointD cp, double ang)              指定点を中心に回転する
     /// void rotate(PointD cp, PointD mp)               指定点を中心に回転する
     /// void mirror(PointD sp, PointD ep)               指定線分でミラーする
     /// void mirror(LineD l)                            指定線分でミラーする
+    /// void scale(PointD cp, double scale)             原点を指定して拡大縮小
     /// void trim(PointD sp, PointD ep)                 指定点でトリミングする
     /// void stretch(PointD vec, PointD nearPos)        要素の指定位置に近い座標を移動させる
+    /// List<PolylineD> divide(PointD dp)               指定位置で分割する
     /// List<PointD> intersection(PointD p)             交点(垂点)の座標リストを求める
     /// List<PointD> intersection(LineD l)              交点の座標リストを求める
     /// List<PointD> intersection(ArcD arc)             交点の座標リストを求める
     /// List<PointD> intersection(PolylineD polyline)   交点の座標リストを求める
     /// List<PointD> intersection(PolygonD polygon)     交点の座標リストを求める
-    /// LineD nearLine(PointD p)                        最も近い線分を求める
+    /// LineD nearLine(PointD p, bool on = false)       最も近い線分を求める
     /// PointD nearPoint(PointD p)                      交点の中で最も近い点を求める
     /// int nearPos(PointD p)                           交点の中で最も近い点の線分位置を求める
     /// PointD nearPeackPoint(PointD p)                 頂点の中で最も近い点の座標
@@ -219,7 +222,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 直方向に平行移動させる
+        /// 垂直方向に平行移動させる
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
@@ -285,6 +288,16 @@ namespace CoreLib
         public void mirror(LineD l)
         {
             mPolyline.ForEach(p => p.mirror(l.ps, l.pe));
+        }
+
+        /// <summary>
+        /// 原点を指定して拡大縮小
+        /// </summary>
+        /// <param name="cp">原点</param>
+        /// <param name="scale">拡大率</param>
+        public void scale(PointD cp, double scale)
+        {
+            mPolyline.ForEach(p => p.scale(cp, scale));
         }
 
         /// <summary>
