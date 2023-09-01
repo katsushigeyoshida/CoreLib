@@ -109,7 +109,7 @@ namespace CoreLib
         {
             //  Rectにデータを入れるとleft<right, top<bottomの関係に補正される
             mView = new Rect(new Point(left, top), new Point(right, bottom));
-            if (mWorld == null)
+            if (mWorld == null || mWorld.Height == 0 || double.IsNaN(mWorld.Width))
                 mWorld = new Box(mView);
             if (mAspectFix)
                 aspectFix();
