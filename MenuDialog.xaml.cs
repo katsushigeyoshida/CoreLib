@@ -136,8 +136,10 @@ namespace CoreLib
         {
             if (0 <= lbMenuList.SelectedIndex) {
                 mResultMenu = lbMenuList.Items[lbMenuList.SelectedIndex].ToString();
+                DialogResult = true;
             } else {
                 mResultMenu = "";
+                DialogResult = false;
             }
             Close();
         }
