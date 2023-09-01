@@ -7,6 +7,6 @@
         mc:Ignorable="d"
         Title="SelectMenu" Height="65" Width="300" Loaded="Window_Loaded">
     <Grid>
-        <ComboBox Name="CbMenu" SelectionChanged="CbMenu_SelectionChanged" Grid.ColumnSpan="2"/>
+        <ComboBox Name="CbMenu" SelectionChanged="CbMenu_SelectionChanged" Grid.ColumnSpan="2" MouseDoubleClick="CbMenu_MouseDoubleClick"/>
     </Grid>
 </Window>
