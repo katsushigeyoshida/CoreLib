@@ -320,7 +320,8 @@ namespace CoreLib
                 plist = addTextPos(plist, 1, pos, plist[0].toCopy());
                 createRadiusDimension(arc, plist);
             } else {
-
+                //  その他、シンボルなど
+                translate(vec);
             }
         }
 
@@ -805,18 +806,37 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 楕円との交点を求める
+        /// </summary>
+        /// <param name="ellipse"></param>
+        /// <returns></returns>
+        public List<PointD> intersection(EllipseD ellipse)
+        {
+            List<PointD> plist = new List<PointD>();
+            PointD ip = null;
+            foreach (var pline in mLines) {
+                plist.AddRange(ellipse.intersection(pline));
+            }
+            foreach (var parc in mArcs) {
+                plist.AddRange(ellipse.intersection(parc));
+            }
+            return plist;
+        }
+
+        /// <summary>
         /// 点座標リストの取得
         /// 線分の両端点、円弧のピーク点をリストで取得
         /// </summary>
         /// <returns>点データリスト</returns>
-        public List<PointD> getPointList()
+        public List<PointD> getPointList(int divideNo = 4)
         {
             List<PointD> plist = new List<PointD>();
             foreach (var pline in mLines) {
-                if (plist.FindIndex(p => p.isEqual(pline.ps)) < 0)
-                    plist.Add(pline.ps);
-                if (plist.FindIndex(p => p.isEqual(pline.pe)) < 0)
-                    plist.Add(pline.pe);
+                List<PointD> points = pline.dividePoints(divideNo);
+                foreach (var point in points) {
+                    if (plist.FindIndex(p => p.isEqual(point)) < 0)
+                        plist.Add(point);
+                }
             }
             foreach (var parc in mArcs) {
                 List<PointD> peaks = parc.toPeakList();
@@ -834,7 +854,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="p">参照点</param>
         /// <returns></returns>
-        public PointD nearPoint(PointD p)
+        public PointD nearPoint(PointD p, int divideNo = 4)
         {
             List<PointD> plist = getPointList();
             double dis = double.MaxValue;
