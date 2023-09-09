@@ -154,6 +154,50 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 水平垂直線分の座標点リストに変換
+        /// </summary>
+        /// <returns></returns>
+        public List<PointD> toHVLine()
+        {
+            List<PointD> hvplist = new List<PointD>();
+            bool horizontal = false;
+            for (int i = 0; i < mPolyline.Count; i++) {
+                if (i == 0) {
+                    hvplist.Add(mPolyline[0]);
+                    continue;
+                } else if (i == 1) {
+                    LineD line = new LineD(mPolyline[0], mPolyline[1]);
+                    horizontal = line.directHorizontal();
+                } else if (i == 2) {
+                    hvplist.RemoveAt(hvplist.Count - 1);
+                    horizontal = !horizontal;
+                }
+                if (horizontal)
+                    hvplist.Add(new PointD(mPolyline[i].x, hvplist[^1].y));
+                else
+                    hvplist.Add(new PointD(hvplist[^1].x, mPolyline[i].y));
+                horizontal = !horizontal;
+            }
+            //  重複削除
+            for (int i = hvplist.Count - 1; 0 < i; i--) {
+                if (hvplist[i].isEqual(hvplist[i - 1]))
+                    hvplist.RemoveAt(i);
+            }
+            return hvplist;
+        }
+
+        /// <summary>
+        /// 重複データ削除
+        /// </summary>
+        public void squeeze()
+        {
+            for (int i = mPolyline.Count - 1; 0 < i; i--) {
+                if (mPolyline[i].isEqual(mPolyline[i - 1]))
+                    mPolyline.RemoveAt(i);
+            }
+        }
+
+        /// <summary>
         /// 全体の長さを求める
         /// </summary>
         /// <returns>長さ</returns>
@@ -198,7 +242,7 @@ namespace CoreLib
         /// <returns>線分</returns>
         public LineD getLine(PointD p)
         {
-            int np = nearPos(p);
+            int np = nearCrossLinePos(p);
             return getLine(np);
         }
 
@@ -307,8 +351,8 @@ namespace CoreLib
         /// <param name="ep">終点</param>
         public void trim(PointD sp, PointD ep)
         {
-            int sn = nearPos(sp, true);
-            int en = nearPos(ep, true);
+            int sn = nearCrossLinePos(sp, true);
+            int en = nearCrossLinePos(ep, true);
             PointD ps = getLine(sn).intersection(sp);
             PointD pe = getLine(en).intersection(ep);
             if (sn <= en && 0 <= sn && en <= mPolyline.Count - 2) {
@@ -344,10 +388,10 @@ namespace CoreLib
         public List<PolylineD> divide(PointD dp)
         {
             List<PolylineD> polylineList = new();
-            PointD mp = nearPoint(dp);
+            PointD mp = nearCrossPoint(dp);
             if (mp == null)
                 return polylineList;
-            int pos = nearPos(mp, true);
+            int pos = nearCrossLinePos(mp, true);
 
             PolylineD polyline0 = toCopy();
             int last = polyline0.mPolyline.Count - 1;
@@ -449,7 +493,7 @@ namespace CoreLib
         /// <returns>線分</returns>
         public LineD nearLine(PointD p, bool on = false)
         {
-            int np = nearPos(p, on);
+            int np = nearCrossLinePos(p, on);
             return getLine(np);
         }
 
@@ -458,7 +502,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="p">点座標</param>
         /// <returns>交点</returns>
-        public PointD nearPoint(PointD p)
+        public PointD nearCrossPoint(PointD p)
         {
             List<PointD> plist = intersection(p);
             if (plist != null && 0 < plist.Count) {
@@ -483,7 +527,7 @@ namespace CoreLib
         /// <param name="p">点座標</param>
         /// <param name="on">線上の交点</param>
         /// <returns>線分位置</returns>
-        public int nearPos(PointD p, bool on = false)
+        public int nearCrossLinePos(PointD p, bool on = false)
         {
             List<LineD> llist = toLineList();
             double length = double.MaxValue;
