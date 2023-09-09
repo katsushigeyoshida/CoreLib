@@ -150,6 +150,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 重複データ削除
+        /// </summary>
+        public void squeeze()
+        {
+            for (int i = mPolygon.Count - 1; 0 < i; i--) {
+                if (mPolygon[i].isEqual(mPolygon[i - 1]))
+                    mPolygon.RemoveAt(i);
+            }
+        }
+
+        /// <summary>
         /// 全体の長さ
         /// </summary>
         /// <returns>長さ</returns>
@@ -194,7 +205,7 @@ namespace CoreLib
         /// <returns>線分</returns>
         public LineD getLine(PointD p)
         {
-            int np = nearPos(p);
+            int np = nearCrossLinePos(p);
             return getLine(np);
         }
 
@@ -316,10 +327,10 @@ namespace CoreLib
         public PolylineD divide(PointD dp)
         {
             PolylineD polyline = new PolylineD();
-            PointD mp = nearPoint(dp);
+            PointD mp = nearCrossPoint(dp);
             if (mp == null)
                 return polyline;
-            int pos = nearPos(mp);
+            int pos = nearCrossLinePos(mp);
             polyline.Add(mp);
             if (pos + 1 < mPolygon.Count)
                 polyline.mPolyline.AddRange(mPolygon.Skip(pos + 1));
@@ -414,7 +425,7 @@ namespace CoreLib
         /// <returns>線分</returns>
         public LineD nearLine(PointD p)
         {
-            int np = nearPos(p);
+            int np = nearCrossLinePos(p);
             return getLine(np);
         }
 
@@ -423,7 +434,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="p">点座標</param>
         /// <returns>交点</returns>
-        public PointD nearPoint(PointD p)
+        public PointD nearCrossPoint(PointD p)
         {
             List<PointD> plist = intersection(p);
             if (plist != null && 0 < plist.Count) {
@@ -446,7 +457,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="p">点座標</param>
         /// <returns>線分位置</returns>
-        public int nearPos(PointD p)
+        public int nearCrossLinePos(PointD p)
         {
             List<LineD> llist = toLineList();
             double length = double.MaxValue;
