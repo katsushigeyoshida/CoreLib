@@ -302,12 +302,32 @@ namespace CoreLib
                 ep = pe;
             } else if (le.length() < mEps) {
                 ep = ps;
-            } else if (ls.angle2(lp) < Math.PI / 2 || Math.PI * 3 / 2 < ls.angle2(lp)) {
+            } else if (ls.sameDirect(lp)) {
                 ep = ps;
             } else {
                 ep = pe;
             }
             return ep;
+        }
+
+        /// <summary>
+        /// 同じ方向の線分か
+        /// </summary>
+        /// <param name="lp"></param>
+        /// <returns></returns>
+        public bool sameDirect(LineD lp)
+        {
+            return (angle2(lp) < Math.PI / 2 || Math.PI * 3 / 2 < angle2(lp));
+        }
+
+        /// <summary>
+        /// 水平と垂直に2分した時の水平化の判定
+        /// </summary>
+        /// <returns></returns>
+        public bool directHorizontal()
+        {
+            double ang = Math.Abs(angle());
+            return ang < Math.PI * 0.25 || ang > Math.PI * 0.75;
         }
 
         /// <summary>
