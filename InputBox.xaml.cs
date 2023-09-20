@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace CoreLib
@@ -30,8 +32,8 @@ namespace CoreLib
         {
             InitializeComponent();
 
-            mWindowWidth = this.Width;
-            mWindowHeight = this.Height;
+            mWindowWidth = Width;
+            mWindowHeight = Height;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -54,7 +56,9 @@ namespace CoreLib
                     WindowFormLoad();
                 else {
                     Width = mWindowWidth;
-                    Height = mWindowHeight;
+                    int rowCount = mEditText.Count(p => p == '\n') + 1;
+                    Height = rowCount * mFontSize * 1.2 + 100;
+                    Height = Math.Max(Height, mWindowHeight);
                 }
                 OK.IsDefault = false;
             }
@@ -133,10 +137,10 @@ namespace CoreLib
                 Properties.Settings.Default.InputBoxWindowWidth = mWindowWidth;
                 Properties.Settings.Default.InputBoxWindowHeight = mWindowHeight;
             } else {
-                this.Top = Properties.Settings.Default.InputBoxWindowTop;
-                this.Left = Properties.Settings.Default.InputBoxWindowLeft;
-                this.Width = Properties.Settings.Default.InputBoxWindowWidth;
-                this.Height = Properties.Settings.Default.InputBoxWindowHeight;
+                Top = Properties.Settings.Default.InputBoxWindowTop;
+                Left = Properties.Settings.Default.InputBoxWindowLeft;
+                Width = Properties.Settings.Default.InputBoxWindowWidth;
+                Height = Properties.Settings.Default.InputBoxWindowHeight;
             }
         }
 
@@ -146,10 +150,10 @@ namespace CoreLib
         private void WindowFormSave()
         {
             //  Windowの位置とサイズを保存(登録項目をPropeties.settingsに登録して使用する)
-            Properties.Settings.Default.InputBoxWindowTop = this.Top;
-            Properties.Settings.Default.InputBoxWindowLeft = this.Left;
-            Properties.Settings.Default.InputBoxWindowWidth = this.Width;
-            Properties.Settings.Default.InputBoxWindowHeight = this.Height;
+            Properties.Settings.Default.InputBoxWindowTop = Top;
+            Properties.Settings.Default.InputBoxWindowLeft = Left;
+            Properties.Settings.Default.InputBoxWindowWidth = Width;
+            Properties.Settings.Default.InputBoxWindowHeight = Height;
             Properties.Settings.Default.Save();
         }
     }
