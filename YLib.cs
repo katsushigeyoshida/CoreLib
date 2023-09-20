@@ -1606,11 +1606,12 @@ namespace CoreLib
         /// <param name="filePath">ファイル名パス</param>
         /// <param name="title">タイトルの配列</param>
         /// <param name="firstTitle">1列目の整合性確認</param>
+        /// <param name="comment">false:文字列の先頭が'#'だと取得しない</param>
         /// <returns>取得データ(タイトル行なし)</returns>
-        public List<string[]> loadCsvData(string filePath, string[] title, bool firstTitle = false)
+        public List<string[]> loadCsvData(string filePath, string[] title, bool firstTitle = false, bool comment = true)
         {
             //	ファイルデータの取り込み
-            List<string[]> fileData = loadCsvData(filePath);
+            List<string[]> fileData = loadCsvData(filePath, false, comment);
             if (fileData == null)
                 return null;
             if (fileData.Count == 0)
@@ -1664,8 +1665,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="filePath">ファイルパス</param>
         /// <param name="tabSep">Tabセパレート</param>
+        /// <param name="comment">false: 文字列の先頭が'#'だと取得しない</param>
         /// <returns>データリスト</returns>
-        public List<string[]> loadCsvData(string filePath, bool tabSep = false)
+        public List<string[]> loadCsvData(string filePath, bool tabSep = false, bool comment = true)
         {
             List<string[]> csvData = new List<string[]>();
             if (!File.Exists(filePath))
@@ -1676,6 +1678,8 @@ namespace CoreLib
                         csvData.Clear();
                         string line;
                         while ((line = dataFile.ReadLine()) != null) {
+                            if (!comment && 0 < line.Length && line[0] == '#')
+                                continue;
                             string[] buf;
                             if (tabSep) {
                                 buf = line.Split('\t');
@@ -1698,26 +1702,30 @@ namespace CoreLib
 
         /// <summary>
         /// タイトルをつけてCSV形式でListデータをファイルに保存
+        /// コメントリストが設定されている場合、ファイルの先頭に# commentの形式で出力される
         /// </summary>
         /// <param name="path">ファイル名パス</param>
         /// <param name="format">タイトル列</param>
         /// <param name="data">Listデータ</param>
-        public void saveCsvData(string path, string[] format, List<string[]> data)
+        /// <param name="comment">コメントリスト</param>
+        public void saveCsvData(string path, string[] format, List<string[]> data, List<string> comment = null)
         {
             List<string[]> dataList = new List<string[]>();
             dataList.Add(format);
             foreach (string[] v in data)
                 dataList.Add(v);
 
-            saveCsvData(path, dataList);
+            saveCsvData(path, dataList, comment);
         }
 
         /// <summary>
         /// データをCSV形式でファイルに書き込む
+        /// コメントリストが設定されている場合、ファイルの先頭に# commentの形式で出力される
         /// </summary>
         /// <param name="path">ファイルパス</param>
         /// <param name="csvData">データリスト</param>
-        public void saveCsvData(string path, List<string[]> csvData)
+        /// <param name="comment">コメントリスト</param>
+        public void saveCsvData(string path, List<string[]> csvData, List<string> comment = null)
         {
             if (0 < csvData.Count) {
                 string folder = Path.GetDirectoryName(path);
@@ -1725,6 +1733,10 @@ namespace CoreLib
                     Directory.CreateDirectory(folder);
 
                 using (StreamWriter dataFile = new StreamWriter(path, false, mEncoding[mEncordingType])) {
+                    if (comment != null) {
+                        foreach (var buf in comment)
+                            dataFile.WriteLine("# " + buf);
+                    }
                     foreach (string[] data in csvData) {
                         string buf = "";
                         for (int i = 0; i < data.Length; i++) {
