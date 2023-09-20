@@ -21,6 +21,8 @@
                     <MenuItem Name="lbChkListMenuMove" Header="移動" Click="lbChkListMenu_Click" />
                     <MenuItem Name="lbChkListMenuAllCheck" Header="すべてにチェックを入れる" Click="lbChkListMenu_Click" />
                     <MenuItem Name="lbChkListMenuAllUnCheck" Header="すべてのチェックを外す" Click="lbChkListMenu_Click" />
+                    <MenuItem Name="lbChkListMenuAllNotCheck" Header="選択以外のすべてのチェックを外す" Click="lbChkListMenu_Click" />
+                    <MenuItem Name="lbChkListMenuReverseCheck" Header="チェックを反転する" Click="lbChkListMenu_Click" />
                 </ContextMenu>
             </ListBox.ContextMenu>
         </ListBox>

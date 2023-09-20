@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -37,6 +38,9 @@ namespace CoreLib
         public bool mDeleteMenuEnable = false;
         public bool mMoveMenuEnable = false;
 
+        public bool mCallBackOn = false;                        //  コールバック有り
+        public Action callback;                                 //  コールバック関数
+
         public Window mMainWindow;
 
         private YLib ylib = new YLib();
@@ -59,6 +63,9 @@ namespace CoreLib
             lbChkListMenuMove.Visibility = mMoveMenuEnable ? Visibility.Visible : Visibility.Collapsed;
             if (0 < mTitle.Length)
                 Title = mTitle;
+            if (mCallBackOn) {
+                btCancel.Visibility = Visibility.Hidden;
+            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -122,14 +129,18 @@ namespace CoreLib
                         }
                     }
                 }
+                return;
             } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuEdit") == 0) {
                 //  編集
+                return;
             } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuDelete") == 0) {
                 //  リストボックスから項目削除
                 CheckBoxListItem item = (CheckBoxListItem)lbChkList.Items[index];
+                return;
             } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuMove") == 0) {
                 //  移動
                 CheckBoxListItem item = (CheckBoxListItem)lbChkList.Items[index];
+                return;
             } else if (menuItem.Name.CompareTo("lbChkListMenuAllCheck") == 0) {
                 //  すべてにチェックを入れる
                 visibleDataAllSet(true);
@@ -138,20 +149,40 @@ namespace CoreLib
                 //  すべてのチェックを外す
                 visibleDataAllSet(false);
                 listDataSet();
+            } else if (menuItem.Name.CompareTo("lbChkListMenuAllNotCheck") == 0) {
+                //  選択以外のすべてのチェックを外す
+                visibleAllNotCheck(index);
+            } else if (menuItem.Name.CompareTo("lbChkListMenuReverseCheck") == 0) {
+                //  チェックを反転する
+                visibleReverseCheck();
             } else {
                 return;
             }
-
+            listDataSet();
+            if (mCallBackOn)
+                callback();
         }
 
+        /// <summary>
+        /// チェックの追加
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-
+            if (mCallBackOn)
+                callback();
         }
 
+        /// <summary>
+        /// チェックの解除
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-
+            if (mCallBackOn)
+                callback();
         }
 
         /// <summary>
@@ -166,6 +197,30 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 選択以外のチェックを解除
+        /// </summary>
+        /// <param name="select"></param>
+        private void visibleAllNotCheck(int select)
+        {
+            for (int i = 0; i < mChkList.Count; i++) {
+                if (i == select)
+                    mChkList[i].Checked = true;
+                else
+                    mChkList[i].Checked = false;
+            }
+        }
+
+        /// <summary>
+        /// チェックを反転
+        /// </summary>
+        private void visibleReverseCheck()
+        {
+            for (int i = 0; i < mChkList.Count; i++) {
+                mChkList[i].Checked = !mChkList[i].Checked;
+            }
+        }
+
+        /// <summary>
         /// リストボックスにデータを設定する
         /// </summary>
         private void listDataSet()
@@ -176,15 +231,27 @@ namespace CoreLib
             }
         }
 
+        /// <summary>
+        /// [OK]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btOK_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = true;
+            if (!mCallBackOn)
+                DialogResult = true;
             Close();
         }
 
+        /// <summary>
+        /// [Cancel]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btCancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            if (!mCallBackOn)
+                DialogResult = false;
             Close();
         }
     }
