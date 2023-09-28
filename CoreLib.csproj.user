@@ -23,6 +23,9 @@
     <Compile Update="InputSelect.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="InputSelect2.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="MenuDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -56,6 +59,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="InputSelect.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="InputSelect2.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="MenuDialog.xaml">

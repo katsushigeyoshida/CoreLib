@@ -1,58 +1,58 @@
-### CoreLib  
-## .NET—p‚Ìƒ‰ƒCƒuƒ‰ƒŠ  
+ï»¿### CoreLib  
+## .NETç”¨ã®ãƒ©ã‚¤ãƒ–ãƒ©ãƒª  
 
-### Šô‰½ŒvŽZ—p  
-PointD    : 2DÀ•WAŠô‰½ŒvŽZ—p  
-LineD.cs  : ü•ª‚ÌŠô‰½ŒvŽZ—p  
-ArcD      : ‰~ŒÊ‚ÌŠô‰½ŒvŽZ—p  
-EllipseD  : ‘È‰~‚ÌŠô‰½ŒvŽZ—p  
-PolygonD  : ƒ|ƒŠƒSƒ“‚ÌŠô‰½ŒvŽZ—p  
-PolylineD : ƒ|ƒŠƒ‰ƒCƒ“‚ÌŠô‰½ŒvŽZ—p  
-TextD.cs  : •¶Žš—ñ‚ÌŠô‰½ŒvŽZ—p  
-PartsD    : ƒVƒ“ƒ{ƒ‹‚ÌŠô‰½ŒvŽZ—p  
-Box       : Rect‚Ì‘ã‘Ö‚¦Šô‰½ƒ‰ƒCƒuƒ‰ƒŠ  
-Shigensu  : 4Œ³”  
+### å¹¾ä½•è¨ˆç®—ç”¨  
+PointD    : 2Dåº§æ¨™ã€å¹¾ä½•è¨ˆç®—ç”¨  
+LineD.cs  : ç·šåˆ†ã®å¹¾ä½•è¨ˆç®—ç”¨  
+ArcD      : å††å¼§ã®å¹¾ä½•è¨ˆç®—ç”¨  
+EllipseD  : æ¥•å††ã®å¹¾ä½•è¨ˆç®—ç”¨  
+PolygonD  : ãƒãƒªã‚´ãƒ³ã®å¹¾ä½•è¨ˆç®—ç”¨  
+PolylineD : ãƒãƒªãƒ©ã‚¤ãƒ³ã®å¹¾ä½•è¨ˆç®—ç”¨  
+TextD.cs  : æ–‡å­—åˆ—ã®å¹¾ä½•è¨ˆç®—ç”¨  
+PartsD    : ã‚·ãƒ³ãƒœãƒ«ã®å¹¾ä½•è¨ˆç®—ç”¨  
+Box       : Rectã®ä»£æ›¿ãˆå¹¾ä½•ãƒ©ã‚¤ãƒ–ãƒ©ãƒª  
+Shigensu  : 4å…ƒæ•°  
 
-### Šg’£‹@”\  
-ArrayExtension : ”z—ñ‚ÌŠg’£‹@”\  
-StringExtensions : •¶Žš—ñ‚ÌŠg’£‹@”\  
+### æ‹¡å¼µæ©Ÿèƒ½  
+ArrayExtension : é…åˆ—ã®æ‹¡å¼µæ©Ÿèƒ½  
+StringExtensions : æ–‡å­—åˆ—ã®æ‹¡å¼µæ©Ÿèƒ½  
 
-### ƒtƒ@ƒCƒ‹ŠÖ˜A
-DiffFolder    : ƒtƒHƒ‹ƒ_”äŠrƒ_ƒCƒ„ƒƒO  
-DirectoryDiff : ƒtƒHƒ‹ƒ_”äŠrƒNƒ‰ƒX  
-HashCode      : ƒnƒbƒVƒ…ƒR[ƒh  
+### ãƒ•ã‚¡ã‚¤ãƒ«é–¢é€£
+DiffFolder    : ãƒ•ã‚©ãƒ«ãƒ€æ¯”è¼ƒãƒ€ã‚¤ãƒ¤ãƒ­ã‚°  
+DirectoryDiff : ãƒ•ã‚©ãƒ«ãƒ€æ¯”è¼ƒã‚¯ãƒ©ã‚¹  
+HashCode      : ãƒãƒƒã‚·ãƒ¥ã‚³ãƒ¼ãƒ‰  
 
-### ƒhƒLƒ…ƒƒ“ƒg‰ðÍ  
-DxfReader    : DXFƒtƒ@ƒCƒ‹“ÇžƒNƒ‰ƒX(’´ŠÈˆÕ”Å)  
-HtmlLib      : HTML‰ðÍ—p  
-WikiData     : Wikipedia‚ÌHTMLƒf[ƒ^’Šo‰ðÍ—p  
-WikiDataList : Wikipedia’Šoƒf[ƒ^ŠÇ——p  
+### ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆè§£æž  
+DxfReader    : DXFãƒ•ã‚¡ã‚¤ãƒ«èª­è¾¼ã‚¯ãƒ©ã‚¹(è¶…ç°¡æ˜“ç‰ˆ)  
+HtmlLib      : HTMLè§£æžç”¨  
+WikiData     : Wikipediaã®HTMLãƒ‡ãƒ¼ã‚¿æŠ½å‡ºè§£æžç”¨  
+WikiDataList : WikipediaæŠ½å‡ºãƒ‡ãƒ¼ã‚¿ç®¡ç†ç”¨  
 
-### ŠeŽíƒ_ƒCƒ„ƒƒO  
-ChkListDialog : ƒ`ƒFƒbƒNƒŠƒXƒgƒ_ƒCƒ„ƒƒO  
-ColorDialog   : ƒJƒ‰[‘I‘ðƒ_ƒCƒ„ƒƒO  
-FullView      : ƒCƒ[ƒW‘S‰æ–Ê•\Ž¦ƒ_ƒCƒ„ƒƒO  
-InputBox      : •¶Žš“ü—Íƒ_ƒCƒ„ƒƒO   
-InputBox2     : •¶Žš“ü—Íƒ_ƒCƒ„ƒƒO(2’i)  
-InputSelect   : ƒƒjƒ…[‘I‘ðA•¶Žš—ñ“ü—Íƒ_ƒCƒ„ƒƒO  
-MenuDialog    : ƒƒjƒ…[‘I‘ðƒ_ƒCƒ„ƒƒO(ListBox)  
-MessageBoxEx  : MessageBoxŠg’£ƒ_ƒCƒ„ƒƒO  
-SelectMenu    : ƒƒjƒ…[‘I‘ðƒ_ƒCƒ„ƒƒO(ConboBox)  
-SelectMenu2   : ƒƒjƒ…[‘I‘ðƒ_ƒCƒ„ƒƒO(ConboBox+ListBox)  
+### å„ç¨®ãƒ€ã‚¤ãƒ¤ãƒ­ã‚°  
+ChkListDialog : ãƒã‚§ãƒƒã‚¯ãƒªã‚¹ãƒˆãƒ€ã‚¤ãƒ¤ãƒ­ã‚°  
+ColorDialog   : ã‚«ãƒ©ãƒ¼é¸æŠžãƒ€ã‚¤ãƒ¤ãƒ­ã‚°  
+FullView      : ã‚¤ãƒ¡ãƒ¼ã‚¸å…¨ç”»é¢è¡¨ç¤ºãƒ€ã‚¤ãƒ¤ãƒ­ã‚°  
+InputBox      : æ–‡å­—å…¥åŠ›ãƒ€ã‚¤ãƒ¤ãƒ­ã‚°   
+InputBox2     : æ–‡å­—å…¥åŠ›ãƒ€ã‚¤ãƒ¤ãƒ­ã‚°(2æ®µ)  
+InputSelect   : ãƒ¡ãƒ‹ãƒ¥ãƒ¼é¸æŠžã€æ–‡å­—åˆ—å…¥åŠ›ãƒ€ã‚¤ãƒ¤ãƒ­ã‚°  
+MenuDialog    : ãƒ¡ãƒ‹ãƒ¥ãƒ¼é¸æŠžãƒ€ã‚¤ãƒ¤ãƒ­ã‚°(ListBox)  
+MessageBoxEx  : MessageBoxæ‹¡å¼µãƒ€ã‚¤ãƒ¤ãƒ­ã‚°  
+SelectMenu    : ãƒ¡ãƒ‹ãƒ¥ãƒ¼é¸æŠžãƒ€ã‚¤ãƒ¤ãƒ­ã‚°(ConboBox)  
+SelectMenu2   : ãƒ¡ãƒ‹ãƒ¥ãƒ¼é¸æŠžãƒ€ã‚¤ãƒ¤ãƒ­ã‚°(ConboBox+ListBox)  
 
-### ƒOƒ‰ƒtƒBƒbƒN•\Ž¦‹@”\  
-YDraw      : 2DƒOƒ‰ƒtƒBƒbƒN  
-YWorldDraw : 2Dƒ[ƒ‹ƒhÀ•WƒOƒ‰ƒtƒBƒbƒN   
+### ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯è¡¨ç¤ºæ©Ÿèƒ½  
+YDraw      : 2Dã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯  
+YWorldDraw : 2Dãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯   
 
-### 3DƒOƒ‰ƒtƒBƒbƒN•\Ž¦‹@”\  
-Point3D     : 3DÀ•W  
-Y3DDraw     : 3D•\Ž¦  
-Y3DGraphics : 3D•\Ž¦  
-Y3DParts    : 3D•”•i•\Ž¦  
+### 3Dã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯è¡¨ç¤ºæ©Ÿèƒ½  
+Point3D     : 3Dåº§æ¨™  
+Y3DDraw     : 3Dè¡¨ç¤º  
+Y3DGraphics : 3Dè¡¨ç¤º  
+Y3DParts    : 3Déƒ¨å“è¡¨ç¤º  
 
-### ‚»‚Ì‘¼ 
-YCalc : ”Ž®ˆ—  
-YLib  : ŽíXŽG‘½‚ÈŠÖ”  
+### ãã®ä»– 
+YCalc : æ•°å¼å‡¦ç†  
+YLib  : ç¨®ã€…é›‘å¤šãªé–¢æ•°  
 
 <BR>
 
