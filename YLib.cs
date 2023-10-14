@@ -5,12 +5,15 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -21,6 +24,9 @@ namespace CoreLib
     /// 汎用ライブラリ
     /// 
     /// ---  API関数  ------
+    /// List<string> getSystemFontFamilyName(bool languageSelect = false)   フォント名リストの取得
+    /// FontStyle convFontStyle(string style)           文字列をFontStyleに変換して変換
+    /// FontWeight convFontWeight(string weight)        文字列をFontWeightに変換して変換
     /// int GetWindowRect(IntPtr hWnd, out iRect rect)  ウインドウの外側のサイズを取得
     /// IntPtr GetForegroundWindow()                    フォアグラウンドウィンドウ(ActiveWindow)の取得
     /// short GetKeyState(int nVirtkey)                 クリックされているか判定用
@@ -55,7 +61,7 @@ namespace CoreLib
     ///  int indexOf(string text, string val, int count = 1)        文字列を前から指定位置を検索
     ///  int lastIndexOf(string text, string val, int count = 1)    文字列を後から指定位置を検索
     ///  string stripBrackets(string text, char sb = '[', char eb = ']')    文字列から括弧で囲まれた領域を取り除く
-    ///   List<string> extractBrackets(string text, char sb = '{', char eb = '}', bool withBracket = false) 括弧で囲まれた文字列を抽出
+    ///  List<string> extractBrackets(string text, char sb = '{', char eb = '}', bool withBracket = false) 括弧で囲まれた文字列を抽出
     ///  string trimControllCode(string buf)                        文字列内のコントロールコードを除去
     ///  bool IsNumberString(string num, bool allNum = false)       数値文字列かを判定
     ///  string double2StrZeroSup(double val, string form = "f1")   数値をゼロサプレスして文字列に変化
@@ -423,6 +429,49 @@ namespace CoreLib
         //  ---  システム関連  ------
 
         /// <summary>
+        /// フォント名リストの取得(en-us,ja-jp)
+        /// </summary>
+        /// <param name="languageSelect">日本語フォントのみ</param>
+        /// <returns></returns>
+        public List<string> getSystemFontFamilyName(bool languageSelect = false)
+        {
+            var language = XmlLanguage.GetLanguage(Thread.CurrentThread.CurrentCulture.Name);   //  カレントの言語
+            var lang_en = XmlLanguage.GetLanguage("en-us");                                     //  英語
+            var lang_jp = XmlLanguage.GetLanguage("ja-jp");                                     //  日本語
+            List<string> fontFamiles = new List<string>();
+            //  すべてのフォントからフォント名を抽出
+            foreach (System.Windows.Media.FontFamily fontFamily in Fonts.SystemFontFamilies) {
+                if (fontFamily.FamilyNames.FirstOrDefault(j => j.Key == lang_jp).Value != null ||
+                    !languageSelect)
+                    fontFamiles.Add(fontFamily.Source);
+            }
+            fontFamiles.Sort();
+            return fontFamiles;
+        }
+
+        /// <summary>
+        /// 文字列をFontStyleに変換して変換
+        /// Normal/Italic/Oblique
+        /// </summary>
+        /// <param name="style">FontStyle文字列</param>
+        public System.Windows.FontStyle convFontStyle(string style)
+        {
+            return style == "Italic" ? FontStyles.Italic :
+                style == "Oblique" ? FontStyles.Oblique : FontStyles.Normal;
+        }
+
+        /// <summary>
+        /// 文字列をFontWeightに変換して変換
+        /// Normal/Thin/Bold
+        /// </summary>
+        /// <param name="weight">FontWeight文字列</param>
+        public System.Windows.FontWeight convFontWeight(string weight)
+        {
+            return weight == "Bold" ? FontWeights.Bold :
+                 weight == "Thin" ? FontWeights.Thin : FontWeights.Normal;
+        }
+
+        /// <summary>
         /// コントロールを明示的に更新するコード
         /// 参考: https://www.ipentec.com/document/csharp-wpf-implement-application-doevents
         /// </summary>
@@ -554,7 +603,6 @@ namespace CoreLib
                 }
             }
         }
-
 
         /// <summary>
         /// ジェネリックによるswap関数
@@ -1245,6 +1293,42 @@ namespace CoreLib
                 buf = "";
             }
             return data.ToArray();
+        }
+
+        /// <summary>
+        /// 文字列を指定文字列で分ける
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <param name="sep">分割文字列配列</param>
+        /// <returns>分割リスト</returns>
+        public List<string> splitString(string str, string[] sep)
+        {
+            List<String> strList = new List<string>();
+            int i = 0;
+            String buf = "";
+            while (i < str.Length) {
+                bool find = false;
+                for (int j = 0; j < sep.Length; j++) {
+                    int len = sep[j].Length;
+                    if (len <= str.Length - i) {
+                        if (sep[j].CompareTo(str.Substring(i, len)) == 0) {
+                            if (0 < buf.Length)
+                                strList.Add(buf);
+                            strList.Add(str.Substring(i, len));
+                            i += len;
+                            buf = "";
+                            find = true;
+                            break;
+                        }
+                    }
+                }
+                if (find)
+                    continue;
+                buf += str[i++];
+            }
+            if (0 < buf.Length)
+                strList.Add(buf);
+            return strList;
         }
 
         /// <summary>
