@@ -208,6 +208,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 自点を中心とした2点の角度
+        /// </summary>
+        /// <param name="p1">点座標1</param>
+        /// <param name="p2">点座標2</param>
+        /// <returns>角度(rad)</returns>
+        public double angle(PointD p1, PointD p2)
+        {
+            double angle1 = p1.angle(toCopy());
+            double angle2 = p2.angle(toCopy());
+            return Math.Abs(angle1 - angle2);
+        }
+
+        /// <summary>
         /// 原点からの距離
         /// </summary>
         /// <returns>距離</returns>
