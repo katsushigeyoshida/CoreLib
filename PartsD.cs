@@ -66,6 +66,9 @@ namespace CoreLib
         public double mLinePitchRate = 1.2;
         public double mTextRotate    = 0;
         public string mDimValForm    = "f1";
+        public string mFontFamily    = "";                  //  フォント種別(Yu Gothic UI)
+        public FontStyle mFontStyle  = FontStyles.Normal;   //  斜体 Normal,Italic
+        public FontWeight mFontWeight = FontWeights.Normal; //  太字 Thin,Normal,Bold
 
         private double mEps = 1e-8;
         private YLib ylib = new YLib();
@@ -81,6 +84,7 @@ namespace CoreLib
             mRefString = new List<string>();
             mRefPoints = new List<PointD>();
             mRefValue = new List<double>();
+            mFontFamily = SystemFonts.MessageFontFamily.Source;
         }
 
         /// <summary>
@@ -121,6 +125,9 @@ namespace CoreLib
             parts.mArrowSize  = mArrowSize;
             parts.mArrowAngle = mArrowAngle;
             parts.mDimValForm = mDimValForm;
+            parts.mFontFamily = mFontFamily;
+            parts.mFontStyle  = mFontStyle;
+            parts.mFontWeight = mFontWeight;
             return parts;
         }
 
@@ -1053,6 +1060,43 @@ namespace CoreLib
                 if (text.insideChk(pos))
                     return true;
             return false;
+        }
+
+        /// <summary>
+        /// ピック位置の文字列を取得
+        /// </summary>
+        /// <param name="pos">ピック位置</param>
+        /// <returns>(文字No,文字列)</returns>
+        public (int no, string text) getPickText(PointD pos)
+        {
+            if (0 < mTexts.Count) {
+                for (int i = 0; i < mTexts.Count; i++) {
+                    if (mTexts[i].insideChk(pos))
+                        return (i, mTexts[i].mText);
+                }
+            }
+            return (-1, "");
+        }
+
+        /// <summary>
+        /// 指定位置に最も近い文字列を取得
+        /// </summary>
+        /// <param name="pos">指定位置</param>
+        /// <returns>(文字No,文字列)</returns>
+        public (int no, string text) getNearText(PointD pos)
+        {
+            if (mTexts.Count == 0)
+                return (-1, "");
+            double dis = double.MaxValue;
+            int nearNo = -1;
+            for (int i = 0; i < mTexts.Count; i++) {
+                double len = mTexts[i].getBox().getCenter().length(pos);
+                if (len < dis) {
+                    dis = len;
+                    nearNo = i;
+                }
+            }
+            return (nearNo, mTexts[nearNo].mText);
         }
     }
 }
