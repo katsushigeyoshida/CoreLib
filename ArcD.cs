@@ -819,27 +819,92 @@ namespace CoreLib
         /// <summary>
         /// 点からの接線の接点リスト
         /// </summary>
-        /// <param name="pos"></param>
-        /// <returns></returns>
+        /// <param name="pos">点座標</param>
+        /// <returns>座標リスト</returns>
         public List<PointD> tangentPoint(PointD p)
         {
             PointD pos = p.toCopy();
             pos.translate(mCp.inverse());
+            PointD p1 = new PointD();
+            PointD p2 = new PointD();
+#if false
+            //  円を原点に移動し点をX軸上に並べて求める
+            double rotate = pos.angle();
+            pos.rotate(-rotate);
+            double l = pos.x;
+            double al = Math.Sqrt(l * l - mR * mR);
+            if (l < mR)
+                return null;
+            p1.x = mR * mR / l;
+            p1.y = al / l * mR;
+            p2.x = p1.x;
+            p2.y = -p1.y;
+            p1.rotate(rotate);
+            p2.rotate(rotate);
+            p1.translate(mCp);
+            p2.translate(mCp);
+#else
+            //  円を原点に移動した相対的位置関係で求める
             double di = Math.Sqrt(pos.x * pos.x + pos.y * pos.y - mR * mR);
             double ai = pos.x * pos.x + pos.y * pos.y;
             
-            PointD p1 = new PointD();
             p1.x = mR * (pos.x * mR + pos.y * di) / ai;
             p1.y = mR * (pos.y * mR - pos.x * di) / ai;
             p1.translate(mCp);
             
-            PointD p2 = new PointD();
             p2.x = mR * (pos.x * mR - pos.y * di) / ai;
             p2.y = mR * (pos.y * mR + pos.x * di) / ai;
             p2.translate(mCp);
+#endif
+            List<PointD> plist = new List<PointD>() { p1, p2 };
+            return plist;
+        }
 
-            List<PointD> plits = new List<PointD>() { p1, p2 };
-            return plits;
+        /// <summary>
+        /// 円と円との接線リスト
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <returns>線分リスト</returns>
+        public List<LineD> tangentArc(ArcD arc)
+        {
+            List<LineD> llist = new List<LineD>();
+            ArcD a = arc.toCopy();
+            a.translate(mCp.inverse());
+            double rotate = a.mCp.angle();
+            a.mCp.rotate(-rotate);
+            double l = mCp.length(arc.mCp);
+            if (l == 0)
+                return llist;
+            double xs = mR * (mR - a.mR) / l;
+            double ys = Math.Sqrt(mR * mR - xs * xs);
+            double xe = l + a.mR * (mR - a.mR) / l;
+            double ye = Math.Sqrt(a.mR * a.mR - (xe - l) * (xe - l));
+            LineD line = new LineD(xs, ys, xe, ye);
+            LineD line2 = line.toCopy();
+            line.rotate(rotate);
+            line.translate(mCp);
+            llist.Add(line);
+            line2.mirror(new PointD(0, 0), a.mCp);
+            line2.rotate(rotate);
+            line2.translate(mCp);
+            llist.Add(line2);
+            if (l < mR + a.mR)
+                return llist;
+            xs = mR * (mR + a.mR) / l;
+            ys = Math.Sqrt(mR * mR - xs * xs);
+            xe = l - a.mR * (mR + a.mR) / l;
+            ye = -Math.Sqrt(a.mR * a.mR - (xe - l) * (xe - l));
+            line = new LineD(xs, ys, xe, ye);
+            line2 = line.toCopy();
+            line.rotate(rotate);
+            line.translate(mCp);
+            llist.Add(line);
+            line2.mirror(new PointD(0, 0), a.mCp);
+            line2.rotate(rotate);
+            line2.translate(mCp);
+            llist.Add(line2);
+
+            return llist;
         }
     }
 }
