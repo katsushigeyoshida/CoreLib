@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace CoreLib
@@ -237,6 +239,10 @@ namespace CoreLib
         public int mLineType = 0;                   //  線種(0:solid 1:dash 2:center 3:phantom)
         public SweepDirection mSweepDirection = SweepDirection.Clockwise;   //  描画の回転方向
         public int mLastIndex;                      //  最終登録要素番号
+
+        public string mFontFamily = "Yu Gothic UI";         //  フォント種別
+        public FontStyle mFontStyle = FontStyles.Normal;    //  斜体 Normal,Italic
+        public FontWeight mFontWeight = FontWeights.Normal; //  太字 Thin,Normal,Bold
 
         public YDraw()
         {
@@ -591,7 +597,7 @@ namespace CoreLib
         public void drawEllipse(Point center, Size size, Point startPoint, Point endPoint, bool isLarge, SweepDirection sweepDirection, double rotate = 0.0)
         {
             //  Pathオブジェクトの生成(Path→PathGeometry→PathFigure→ArcSegment)
-            Path path = new Path();                     //  Pathオブジェクト(System.Windows.Shapes.Path )
+            System.Windows.Shapes.Path path = new System.Windows.Shapes.Path();                     //  Pathオブジェクト(System.Windows.Shapes.Path )
             PathGeometry pathGeometry = new PathGeometry();
             PathFigure pathFigure = new PathFigure();
             pathFigure.StartPoint = startPoint;         //  始点
@@ -772,6 +778,13 @@ namespace CoreLib
             //  文字列のパラメータ設定
             TextBlock textBlock = new TextBlock();
             textBlock.Text = text;
+
+            if (0 < mFontFamily.Length)
+                textBlock.FontFamily = new FontFamily(mFontFamily);
+            //textBlock.FontStretch = FontStretches.UltraExpanded;
+            textBlock.FontStyle = mFontStyle;      //  Normal,Italic
+            textBlock.FontWeight = mFontWeight;    //  Normal,Thin,Bold
+
             textBlock.Foreground = mTextColor;
             //double width = mTextSize * text.Length;
             //double height = mTextSize;
@@ -833,6 +846,8 @@ namespace CoreLib
             textBlock.Foreground = mTextColor;
             textBlock.FontSize = mTextSize;             //  文字サイズ
             //  auto sized (https://code.i-harness.com/ja-jp/q/8d5d0e)
+            if (0 < mFontFamily.Length)
+                textBlock.FontFamily = new FontFamily(mFontFamily);
             textBlock.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
             textBlock.Arrange(new Rect(textBlock.DesiredSize));
 
@@ -854,6 +869,65 @@ namespace CoreLib
             textBlock.Arrange(new Rect(textBlock.DesiredSize));
 
             return textBlock.ActualHeight / textBlock.ActualWidth;
+        }
+
+        /// <summary>
+        /// イメージファイルをCanvasに表示する
+        /// </summary>
+        /// <param name="filePath">イメージファイルパス</param>
+        /// <param name="ox">左上原点X</param>
+        /// <param name="oy">左上原点Y</param>
+        /// <param name="width">幅</param>
+        /// <param name="height">高さ</param>
+        public void drawImageFile(string filePath, Rect rect)
+        {
+            var bitmapImage = cnvImageFile2BitmapImage(filePath);
+            setCanvasBitmapImage(mCanvas, bitmapImage, rect.X, rect.Y, rect.Width, rect.Height);
+        }
+
+        /// <summary>
+        /// BitmapImageをCanvasに登録する
+        /// </summary>
+        /// <param name="canvas">Canvas</param>
+        /// <param name="bitmapImage">BitmapImage</param>
+        /// <param name="ox">原点(左上)</param>
+        /// <param name="oy">原点(左上)</param>
+        /// <param name="width">イメージの幅</param>
+        /// <param name="height">イメージの高さ</param>
+        public void setCanvasBitmapImage(Canvas canvas, BitmapImage bitmapImage, double ox, double oy, double width, double height)
+        {
+            Image img = new Image();
+            img.Source = bitmapImage;
+            img.Width = width;
+            img.Height = height;
+            img.Margin = new Thickness(ox, oy, 0, 0);
+            mLastIndex = canvas.Children.Add(img);
+        }
+
+        /// <summary>
+        /// イメージファイルをBitmapImageに変換する
+        /// </summary>
+        /// <param name="filePath">ファイルパス</param>
+        /// <returns>BitmapImage</returns>
+        public BitmapImage cnvImageFile2BitmapImage(string filePath)
+        {
+            //  ファイルから解放可能なBitmapImageを読み込む
+            //  http://neareal.net/index.php?Programming%2F.NetFramework%2FWPF%2FWriteableBitmap%2FLoadReleaseableBitmapImage
+            FileStream stream = File.OpenRead(filePath);
+            //  イメージデータをStream化してBitmapImageに使用
+            BitmapImage bitmap = new BitmapImage();
+            try {
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;  //  作成に使用されたストリームを閉じる
+                bitmap.StreamSource = stream;
+                bitmap.EndInit();
+                stream.Close();
+                Image img = new Image();
+            } catch (Exception e) {
+                //MessageBox.Show(e.Message);
+                return null;
+            }
+            return bitmap;
         }
     }
 }
