@@ -186,6 +186,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定のタイトルのチェックを入れる
+        /// </summary>
+        /// <param name="title">タイトル名</param>
+        public void visibleDataSet(string title)
+        {
+            foreach (CheckBoxListItem item in mChkList) {
+                if (item.Text == title)
+                    item.Checked = true;
+            }
+            listDataSet();
+        }
+
+        /// <summary>
         /// 表示しているリストにすべてのチェックの入り切り
         /// </summary>
         /// <param name="check"></param>
