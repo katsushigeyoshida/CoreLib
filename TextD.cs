@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace CoreLib
 {
@@ -46,13 +47,16 @@ namespace CoreLib
         public double mRotate = 0;
         public HorizontalAlignment mHa = HorizontalAlignment.Left;
         public VerticalAlignment mVa = VerticalAlignment.Top;
+        public string mFontFamily = "";                     //  フォント種別(Yu Gothic UI)
+        public FontStyle mFontStyle = FontStyles.Normal;    //  斜体 Normal,Italic
+        public FontWeight mFontWeight = FontWeights.Normal; //  太字 Thin,Normal,Bold
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
         public TextD()
         {
-
+            mFontFamily = SystemFonts.MessageFontFamily.Source;
         }
 
         /// <summary>
@@ -83,7 +87,11 @@ namespace CoreLib
         /// <returns>TextD</returns>
         public TextD toCopy()
         {
-            return new TextD(mText, mPos.toCopy(), mTextSize, mRotate, mHa, mVa, mLinePitchRate);
+            TextD text = new TextD(mText, mPos.toCopy(), mTextSize, mRotate, mHa, mVa, mLinePitchRate);
+            text.mFontFamily = mFontFamily;
+            text.mFontStyle = mFontStyle;
+            text.mFontWeight = mFontWeight;
+            return text;
         }
 
         /// <summary>
@@ -93,7 +101,7 @@ namespace CoreLib
         public override string ToString()
         {
             return $"{mText},{mPos.ToString("F2")},{mTextSize.ToString("F2")},{mLinePitchRate.ToString("F2")}," +
-                $"{mRotate.ToString("F2")},{mHa},{mVa}";
+                $"{mRotate.ToString("F2")},{mHa},{mVa},{mFontFamily},{mFontStyle},{mFontWeight}";
         }
 
         /// <summary>
@@ -359,6 +367,8 @@ namespace CoreLib
             textBlock.Foreground = System.Windows.Media.Brushes.Black;
             textBlock.FontSize = textSize;             //  文字サイズ
             //  auto sized (https://code.i-harness.com/ja-jp/q/8d5d0e)
+            if (0 < mFontFamily.Length)
+                textBlock.FontFamily = new FontFamily(mFontFamily);
             textBlock.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
             textBlock.Arrange(new Rect(textBlock.DesiredSize));
 
