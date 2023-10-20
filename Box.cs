@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 
 namespace CoreLib
@@ -16,6 +17,7 @@ namespace CoreLib
     ///     Width,Height
     ///     Location,Size,
     /// コンストラクタ
+    ///     Box()
     ///     Box(PointD p)
     ///     Box(LineD l)
     ///     Box(Size size)                                  コンストラクタ(Sizeから)
@@ -38,19 +40,27 @@ namespace CoreLib
     ///     Box toCopy()                        コピーを作る
     ///     override string ToString()
     ///     string ToString(string form)        書式指定で文字列に変換
-    ///     List<PointD> ToPointDList()         頂点リストに変換
-    ///     List<LineD> ToLineDList()           LineDのリストに変換
+    ///     List<PointD> ToPointList()          頂点リストに変換
+    ///     List<LineD> ToLineList()            LineDのリストに変換
     ///     Rect ToRect()                       RECTに変換
     ///     void zoom(PointD cp, double zoom, bool inverse = false) 指定した座標を中心にスケーリング
     ///     void zoom(double zoom)              領域を中心からスケーリング
     ///     void offset(PointD dp)              指定した距離を移動
     ///     void offset(double dx, double dy)   指定した距離を移動
     ///     PointD getOffset(PointD p)          指定した点とのオフセット量を求める
+    ///     void translate(PointD sp, PointD ep)    始点から終点の距離を移動する
+    ///     void rotate(PointD cp, PointD mp)   指定点を中心に回転移動(Box自体は回転しない)
+    ///     void mirror(PointD sp, PointD ep)   定線分に対してミラー(Box自体は回転しない)
+    ///     void scale(PointD cp, double scale) 原点を指定して拡大縮小
     ///     void setCenter(PointD ctr)          指定点を領域の中心に移動
     ///     PointD getCenter()                  中心座標を求める
     ///     List<PointD> getRoate(PointD org, double rotate)    回転したできた領域の座標リスト
     ///     void rotateArea(PointD org, double rotate)  回転したできた領域をBoxに設定
     ///     List<PointD> getRotateBox(PointD org, double rotate)    指定点を中心に回転させたBoxの頂点リスト
+    ///     PointD onPoint(PointD pos)          指定点に対する枠線上の垂点
+    ///     PointD nearPoint(PointD pos, int divideNo = 4)  点座標リストから指定点にもっと近い点枠線の座標を取得
+    ///     PointD nearPoint(PointD pos)        指定点に最も近い頂点ほ求める
+    ///     LineD nearLine(PointD pos)          指定点に最も近いBoxの枠線を求める
     ///     bool outsideChk(Box b)              Boxの外側判定(要素同士がお互いに外側、重なりもなし)
     ///     bool insideChk(double x, double y)  座標の内外判定
     ///     bool insideChk(PointD p)            Pointの内外判定
@@ -77,6 +87,7 @@ namespace CoreLib
     ///     List<PointD> clipPolygonList(List<Point> polygon)    ポリゴンをクリッピングしたポリゴン座標点リストを求める
     ///     List<PointD> innerPolygonList(List<Point> polygon)   ポリゴン内に存在する頂点リスト     [うまくいかない]
     ///     bool isInnerPolygon(List<Point> polygon, Point p)   点座標がポリゴン内かの内外判定
+    ///     Box andBox(Box b)                   Box同士のANDをとったBoxを求める
     ///     void extension(PointD p)            領域を拡張
     ///     void extension(LineD l)             領域を拡張
     ///     void extension(List<PointD> plist)  領域を拡張する
@@ -171,6 +182,14 @@ namespace CoreLib
                 Right = Left + value.Width;
                 Bottom = Top + value.Height;
             }
+        }
+
+        public Box()
+        {
+            Left   = 0;
+            Right  = 0;
+            Top    = 0;
+            Bottom = 0;
         }
 
         /// <summary>
@@ -448,7 +467,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="rotate">回転角</param>
         /// <returns>Pointリスト</returns>
-        public List<PointD> ToPointDList(double rotate = 0)
+        public List<PointD> ToPointList(double rotate = 0)
         {
             List<PointD> pList = new List<PointD>();
             pList.Add(TopLeft);
@@ -467,7 +486,7 @@ namespace CoreLib
         /// LineDのリストに変換
         /// </summary>
         /// <returns>LindのList</returns>
-        public List<LineD> ToLineDList()
+        public List<LineD> ToLineList()
         {
             List<LineD> lines = new List<LineD>();
             lines.Add(new LineD(TopLeft, BottomLeft));
@@ -551,7 +570,57 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定点を領域の中心に移動する
+        /// 始点から終点の距離を移動する
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="ep"></param>
+        public void translate(PointD sp, PointD ep)
+        {
+            PointD vec = new PointD(ep.x - sp.x, ep.y - sp.y);
+            offset(vec);
+        }
+
+        /// <summary>
+        /// 指定点を中心に回転移動(Box自体は回転しない)
+        /// </summary>
+        /// <param name="cp"></param>
+        /// <param name="mp"></param>
+        public void rotate(PointD cp, PointD mp)
+        {
+            PointD v = getCenter();
+            v.rotate(cp, mp);
+            translate(getCenter(), v);
+        }
+
+        /// <summary>
+        /// 指定線分に対してミラー(Box自体は回転しない)
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void mirror(PointD sp, PointD ep)
+        {
+            PointD v = getCenter();
+            v.mirror(sp, ep);
+            translate(getCenter(), v);
+        }
+
+        /// <summary>
+        /// 原点を指定して拡大縮小
+        /// </summary>
+        /// <param name="cp">原点</param>
+        /// <param name="scale">倍率</param>
+        public void scale(PointD cp, double scale)
+        {
+            PointD p = TopLeft;
+            p.scale(cp, scale);
+            TopLeft = p.toCopy();
+            p = BottomRight;
+            p.scale(cp, scale);
+            BottomRight = p.toCopy();
+        }
+
+        /// <summary>
+        /// 指定点に領域の中心を移動する
         /// </summary>
         /// <param name="ctr">指定座標点</param>
         public void setCenter(PointD ctr)
@@ -576,7 +645,7 @@ namespace CoreLib
         /// <returns></returns>
         public List<PointD> getRoate(PointD org, double rotate)
         {
-            List<PointD> plist = ToPointDList();
+            List<PointD> plist = ToPointList();
             for (int i = 0; i < plist.Count; i++) {
                 plist[i].rotate(org, rotate);
             }
@@ -590,7 +659,7 @@ namespace CoreLib
         /// <param name="rotate">回転角(rad)</param>
         public void rotateArea(PointD org, double rotate)
         {
-            List<PointD> plist = ToPointDList();
+            List<PointD> plist = ToPointList();
             for (int i = 0; i< plist.Count; i++) {
                 plist[i].rotate(org, rotate);
                 //plist[i] = ylib.rotatePoint(org, plist[i], rotate);
@@ -615,11 +684,63 @@ namespace CoreLib
         /// <returns>頂点リスト</returns>
         public List<PointD> getRotateBox(PointD org, double rotate)
         {
-            List<PointD> plist = ToPointDList();
+            List<PointD> plist = ToPointList();
             for (int i = 0; i < plist.Count; i++) {
                 plist[i].rotate(org, rotate);
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 指定点に対する枠線上の垂点
+        /// </summary>
+        /// <param name="pos">指定点</param>
+        /// <returns>点座標</returns>
+        public PointD onPoint(PointD pos)
+        {
+            LineD l = nearLine(pos);
+            return l.intersection(pos);
+        }
+
+        /// <summary>
+        /// 点座標リストから指定点にもっと近い点枠線の座標を取得
+        /// </summary>
+        /// <param name="pos">最小点</param>
+        /// <param name="divideNo">分割数</param>
+        /// <returns>座標</returns>
+        public PointD nearPoint(PointD pos, int divideNo = 4)
+        {
+            List<PointD> plist = new List<PointD>();
+            List<LineD> llist = ToLineList();
+            for (int i = 0; i < llist.Count; i++)
+                plist.AddRange(llist[i].dividePoints(divideNo));
+
+            if (0 < plist.Count)
+                return plist.MinBy(p => p.length(pos));
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// 指定点に最も近い頂点ほ求める
+        /// </summary>
+        /// <param name="pos">指定点</param>
+        /// <returns>点座標</returns>
+        public PointD nearPoint(PointD pos)
+        {
+            List<PointD> plist = ToPointList();
+            return plist.MinBy(p => p.length(pos));
+        }
+
+        /// <summary>
+        /// 指定点に最も近いBoxの枠線を求める
+        /// </summary>
+        /// <param name="pos">指定点</param>
+        /// <returns>線分</returns>
+        public LineD nearLine(PointD pos)
+        {
+            List<LineD> lines = ToLineList();
+            return lines.MinBy(l => l.distance(pos));
         }
 
         /// <summary>
@@ -807,7 +928,7 @@ namespace CoreLib
         public bool polygonInsideChk(List<PointD> polygon)
         {
             List<PointD> hlist = new List<PointD>();
-            List<PointD> plist = ToPointDList();
+            List<PointD> plist = ToPointList();
             for (int i = 0; i < plist.Count; i++) {
                 if (isInnerPolygon(polygon, plist[i]))
                     hlist.Add(plist[i]);
@@ -823,7 +944,7 @@ namespace CoreLib
         public List<PointD> intersection(LineD l)
         {
             List<PointD> pointList = new List<PointD>();
-            List<LineD> lines = ToLineDList();
+            List<LineD> lines = ToLineList();
             foreach (LineD line in lines) {
                 PointD p = line.intersection(l);
                 if (p != null && line.onPoint(p) && l.onPoint(p))
@@ -840,8 +961,8 @@ namespace CoreLib
         public List<PointD> intersection(Box b)
         {
             List<PointD> plist = new List<PointD>();
-            List<LineD> lines = ToLineDList();
-            List<LineD> blines = b.ToLineDList();
+            List<LineD> lines = ToLineList();
+            List<LineD> blines = b.ToLineList();
             foreach (LineD line in lines) {
                 for (int j = 0; j < blines.Count; j++) {
                     PointD p = blines[j].intersection(line);
@@ -863,7 +984,7 @@ namespace CoreLib
         public List<PointD> intersection(PointD c, double r)
         {
             List<PointD> pointList = new List<PointD>();
-            List<LineD> lines = ToLineDList();
+            List<LineD> lines = ToLineList();
             foreach (LineD line in lines) {
                 List<PointD> plist = line.intersection(c, r);
                 if (0 < plist.Count)
@@ -880,7 +1001,7 @@ namespace CoreLib
         public List<PointD> intersection(ArcD arc)
         {
             List<PointD> pointList = new List<PointD>();
-            List<LineD> boxLine = ToLineDList();                           //  Boxの線分リスト
+            List<LineD> boxLine = ToLineList();                           //  Boxの線分リスト
             foreach (LineD line in boxLine) {
                 List<PointD> plist = arc.intersection(line);    //  円弧との交点リスト
                 if (0 < plist.Count)
@@ -901,7 +1022,7 @@ namespace CoreLib
         public List<PointD> intersection(PointD c, double r, double sa, double ea)
         {
             List<PointD> pointList = new List<PointD>();
-            List<LineD> boxLine = ToLineDList();                           //  Boxの線分リスト
+            List<LineD> boxLine = ToLineList();                           //  Boxの線分リスト
             foreach (LineD line in boxLine) {
                 List<PointD> plist = line.intersection(c, r, sa, ea);    //  円弧との交点リスト
                 if (0 < plist.Count)
@@ -920,7 +1041,7 @@ namespace CoreLib
         public List<PointD> intersection(List<PointD> polyline, bool close = false, bool abort = false)
         {
             List<PointD> plist = new List<PointD>();
-            List<LineD> ll = ToLineDList();
+            List<LineD> ll = ToLineList();
             for (int i = 0; i < polyline.Count; i++) {
                 if (!close && i == polyline.Count - 1)
                     break;
@@ -954,7 +1075,7 @@ namespace CoreLib
         public List<PointD> intersection(PartsD parts, bool abort = false)
         {
             List<PointD> plist = new List<PointD>();
-            List<LineD> ll = ToLineDList();
+            List<LineD> ll = ToLineList();
             for (int i = 0; i < ll.Count; i++) {
                 plist.AddRange(parts.intersection(ll[i]));
                 if (abort && 0 < plist.Count)
@@ -1036,7 +1157,7 @@ namespace CoreLib
         public List<LineD> clipPolyline2LineList(List<PointD> polyline)
         {
             List<LineD> llist = new List<LineD>();
-            List<LineD> ll = ToLineDList();
+            List<LineD> ll = ToLineList();
             for (int i = 0; i < polyline.Count - 1; i++) {
                 LineD l = new LineD(polyline[i], polyline[i + 1]);
                 if (insideChk(l)) {
@@ -1072,7 +1193,7 @@ namespace CoreLib
         public List<PointD> clipCircle2PolygonList(PointD c, double r, int div = 32)
         {
             List<PointD> plist = intersection(c, r);      //  BOXと円の交点リスト
-            List<PointD> blist = ToPointDList();              //  BOXの頂点リスト
+            List<PointD> blist = ToPointList();              //  BOXの頂点リスト
             //  円の範囲内の点座標
             foreach (PointD p in blist) {                    //  交点とBOX頂点とのマージ
                 double l = c.length(p);
@@ -1120,7 +1241,7 @@ namespace CoreLib
         public List<PointD> innerPolygonList(List<PointD> polygon)
         {
             List<PointD> hlist = new List<PointD>();
-            List<PointD> plist = ToPointDList();
+            List<PointD> plist = ToPointList();
             polygon = ylib.pointSort(polygon);
             for (int i = 0; i < plist.Count; i++) {
                 if (isInnerPolygon(polygon, plist[i]))
@@ -1160,6 +1281,35 @@ namespace CoreLib
                     return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Box同士のANDをとったBoxを求める
+        /// </summary>
+        /// <param name="b">Box</param>
+        /// <returns>AND Box</returns>
+        public Box andBox(Box b)
+        {
+            if (insideChk(b))
+                return new Box(b);
+            if (b.insideChk(this))
+                return this;
+            List<PointD> plist = intersection(b);
+            List<PointD> list = ToPointList();
+            foreach (PointD p in list)
+                if (b.insideChk(p))
+                    plist.Add(p);
+            list = b.ToPointList();
+            foreach (PointD p in list)
+                if (insideChk(p))
+                    plist.Add(p);
+            if (plist.Count == 0)
+                return null;
+            Box box = new Box(plist[0]);
+            for (int i = 1; i < plist.Count; i++)
+                box.extension(plist[i]);
+            box.normalize();
+            return box;
         }
 
         /// <summary>
