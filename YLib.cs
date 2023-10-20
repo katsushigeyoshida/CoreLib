@@ -144,6 +144,7 @@ namespace CoreLib
     ///  ---  ビットマップ処理  ----
     ///  Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe) 画面の指定領域をキャプチャする
     ///  Bitmap getActiveWindowCapture()                                    アクティブウィンドウの画面をキャプチャする
+    ///  Bitmap getFullScreenCapture()                                      全画面をキャプチャする
     ///  BitmapImage cnvBitmap2BitmapImage(Bitmap bitmap, ImageFormat imageFormat)  BitmapをBitmapImageに変換
     ///  Bitmap cnvBitmapImage2Bitmap(BitmapImage bitmapImage)              BitmapImageをBitmapに変換
     ///  Bitmap cnvBitmapSource2Bitmap(BitmapSource bitmapSource)           BitmapSourceをBitmapに変換
@@ -152,7 +153,8 @@ namespace CoreLib
     ///  int setCanvasBitmapImage(Canvas canvas, BitmapImage bitmapImage, double ox, double oy, double width, double height)    BitmapImageをCanvasに登録する
     ///  Bitmap verticalCombineImage(System.Drawing.Bitmap[] src)           画像を縦方向に連結
     ///  Bitmap horizontalCombineImage(System.Drawing.Bitmap[] src)         画像の水平方向に連結
-    ///  void SaveBitmapSourceToFile(BitmapSource bitmapSource, string filePath)    画像データをファイルに保存
+    ///  void saveBitmapImage(BitmapSource bitmapSource, string filePath)   画像データをファイルに保存
+    ///  BitmapSource canvas2Bitmap(System.Windows.Controls.Canvas canvas)  Canvas を BitmapSourceに変換する
     ///  Media.Color Draw2MediaColor(Drawing.Color color)                   Drawing.Color から Media.Color に変換
     ///  Drawing.Color Media2DrawColor(Windows.Media.Color color)           Media.Color から Drawing.Color に変換
     ///  
@@ -2671,16 +2673,19 @@ namespace CoreLib
         /// 全画面をキャプチャする
         /// </summary>
         /// <returns>Bitmapデータ</returns>
-        //public System.Drawing.Bitmap getFullScreenCapture()
-        //{
-        //    System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(
-        //        System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width,
-        //        System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height);
-        //    System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(bitmap);
-        //    graphics.CopyFromScreen(new System.Drawing.Point(0, 0), new System.Drawing.Point(0, 0), bitmap.Size);
-        //    graphics.Dispose();
-        //    return bitmap;
-        //}
+        public System.Drawing.Bitmap getFullScreenCapture()
+        {
+            System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(
+                (int)SystemParameters.VirtualScreenWidth,   //  すべての画面の合計サイズ
+                (int)SystemParameters.VirtualScreenHeight
+                //(int)SystemParameters.FullPrimaryScreenWidth, //  プライマリモニターのサイズ
+                //(int)SystemParameters.FullPrimaryScreenHeight //  (タスクバーが含まれない?)
+                );
+            System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(bitmap);
+            graphics.CopyFromScreen(new System.Drawing.Point(0, 0), new System.Drawing.Point(0, 0), bitmap.Size);
+            graphics.Dispose();
+            return bitmap;
+        }
 
         /// <summary>
         /// BitmapをBitmapImageに変換
