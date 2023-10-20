@@ -871,18 +871,91 @@ namespace CoreLib
             return textBlock.ActualHeight / textBlock.ActualWidth;
         }
 
+        //  ----------  イメージデータ  --------------
+
         /// <summary>
-        /// イメージファイルをCanvasに表示する
+        /// Bitmapとしてイメージファイルを読み込む
         /// </summary>
-        /// <param name="filePath">イメージファイルパス</param>
-        /// <param name="ox">左上原点X</param>
-        /// <param name="oy">左上原点Y</param>
-        /// <param name="width">幅</param>
-        /// <param name="height">高さ</param>
-        public void drawImageFile(string filePath, Rect rect)
+        /// <param name="filePath">ファイルパス</param>
+        /// <returns>Bitmapデータ</returns>
+        public System.Drawing.Bitmap getBitmapFile(string filePath)
         {
-            var bitmapImage = cnvImageFile2BitmapImage(filePath);
-            setCanvasBitmapImage(mCanvas, bitmapImage, rect.X, rect.Y, rect.Width, rect.Height);
+            if (!File.Exists(filePath))
+                return null;
+            //  Bitmapでファイルから読み込む
+            return new System.Drawing.Bitmap(filePath);
+        }
+
+        /// <summary>
+        /// Bitmapデータを表示する
+        /// </summary>
+        /// <param name="bitmap">Bitmapデータ</param>
+        /// <param name="rect">表示領域</param>
+        public void drawBitmap(System.Drawing.Bitmap bitmap, Rect rect)
+        {
+            if (bitmap == null) return;
+            BitmapImage bitmapImage = bitmap2BitmapImage(bitmap);
+            drawImage(bitmapImage, rect);
+        }
+
+        /// <summary>
+        /// BitmapをBitmapImageに変換
+        /// </summary>
+        /// <param name="bitmap">Bitmap</param>
+        /// <returns>BitmapImage</returns>
+        public BitmapImage bitmap2BitmapImage(System.Drawing.Bitmap bitmap)
+        {
+            using (MemoryStream memory = new MemoryStream()) {
+                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                memory.Position = 0;
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = memory;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+                memory.Close();
+                return bitmapImage;
+            }
+        }
+
+        /// <summary>
+        /// Bitmapデータをトリミングする
+        /// </summary>
+        /// <param name="bitmap">Bitmapデータ</param>
+        /// <param name="sp">領域の始点</param>
+        /// <param name="ep">領域の終点</param>
+        /// <returns>切り取ったBitmapデータ</returns>
+        public System.Drawing.Bitmap trimingBitmap(System.Drawing.Bitmap bitmap, Point sp, Point ep)
+        {
+            return trimingBitmap(bitmap, new Rect(sp, ep));
+        }
+
+        /// <summary>
+        /// Bitmapデータをトリミングする
+        /// </summary>
+        /// <param name="bitmap">Bitmapデータ</param>
+        /// <param name="rect">トリミング領域</param>
+        /// <returns>切り取ったBitmapデータ</returns>
+        public System.Drawing.Bitmap trimingBitmap(System.Drawing.Bitmap bitmap, Rect rect)
+        {
+            if (1 < rect.Width && 1 < rect.Height) {
+                //  画像をトリミングする
+                System.Drawing.Rectangle rectAngle = new System.Drawing.Rectangle((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
+                System.Drawing.Bitmap resultImg = bitmap.Clone(rectAngle, bitmap.PixelFormat);
+                bitmap.Dispose();
+                return resultImg;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// BitmapImageを表示する
+        /// </summary>
+        /// <param name="bitmapImage">イメージデータ</param>
+        /// <param name="rect">表示位置とサイズ</param>
+        public void drawImage(BitmapImage bitmapImage, Rect rect)
+        {
+            setCanvasBitmapImage(mCanvas, bitmapImage, rect);
         }
 
         /// <summary>
@@ -890,44 +963,54 @@ namespace CoreLib
         /// </summary>
         /// <param name="canvas">Canvas</param>
         /// <param name="bitmapImage">BitmapImage</param>
-        /// <param name="ox">原点(左上)</param>
-        /// <param name="oy">原点(左上)</param>
-        /// <param name="width">イメージの幅</param>
-        /// <param name="height">イメージの高さ</param>
-        public void setCanvasBitmapImage(Canvas canvas, BitmapImage bitmapImage, double ox, double oy, double width, double height)
+        /// <param name="rect">表示位置とサイズ</param>
+        public void setCanvasBitmapImage(Canvas canvas, BitmapImage bitmapImage, Rect rect)
         {
-            Image img = new Image();
+            Image img  = new Image();
             img.Source = bitmapImage;
-            img.Width = width;
-            img.Height = height;
-            img.Margin = new Thickness(ox, oy, 0, 0);
+            img.Width  = rect.Width;
+            img.Height = rect.Height;
+            img.Margin = new Thickness(rect.X, rect.Y, 0, 0);
             mLastIndex = canvas.Children.Add(img);
         }
 
         /// <summary>
-        /// イメージファイルをBitmapImageに変換する
+        /// イメージファイルをCanvasに表示する
         /// </summary>
-        /// <param name="filePath">ファイルパス</param>
-        /// <returns>BitmapImage</returns>
-        public BitmapImage cnvImageFile2BitmapImage(string filePath)
+        /// <param name="filePath">イメージファイルパス</param>
+        /// <param name="rect">イメージの位置と領域</param>
+        public void drawImageFile(string filePath, Rect rect)
         {
-            //  ファイルから解放可能なBitmapImageを読み込む
-            //  http://neareal.net/index.php?Programming%2F.NetFramework%2FWPF%2FWriteableBitmap%2FLoadReleaseableBitmapImage
+            var bitmapImage = getImageFile(filePath);
+            setCanvasBitmapImage(mCanvas, bitmapImage, rect);
+        }
+
+        /// <summary>
+        /// ファイルから解放可能なBitmapImageを読み込み
+        /// http://neareal.net/index.php?Programming%2F.NetFramework%2FWPF%2FWriteableBitmap%2FLoadReleaseableBitmapImage
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns>BitmapImage</returns>
+        public BitmapImage getImageFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+                return null;
+            //  ファイルからBitmapImageを読み込む
             FileStream stream = File.OpenRead(filePath);
             //  イメージデータをStream化してBitmapImageに使用
-            BitmapImage bitmap = new BitmapImage();
+            BitmapImage bitmapImage = new BitmapImage();
             try {
-                bitmap.BeginInit();
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;  //  作成に使用されたストリームを閉じる
-                bitmap.StreamSource = stream;
-                bitmap.EndInit();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;  //  作成に使用されたストリームを閉じる
+                bitmapImage.StreamSource = stream;
+                bitmapImage.EndInit();
                 stream.Close();
                 Image img = new Image();
             } catch (Exception e) {
                 //MessageBox.Show(e.Message);
                 return null;
             }
-            return bitmap;
+            return bitmapImage;
         }
     }
 }
