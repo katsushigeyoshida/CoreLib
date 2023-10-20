@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 using System.Windows;
 
 namespace CoreLib
@@ -17,11 +16,12 @@ namespace CoreLib
     /// bool isEmpty()                              値が空(0,0)かどうかを確認
     /// bool isNaN()                                x,yのどちらかに非数があるかを確認
     /// void setNaN()                               値に非数を設定する
-    /// void invert()                               符号を反転する
+    /// bool isEqual(PointD p)                      同じ値かの判定
     /// Point toPoint()                             Pointクラスに変換
     /// PointD toCopy()                             PointDへコピー
     /// double angle()                              原点に対する角度(rad)
     /// double angle(PointD p)                      指定点を原点とした角度(rad)
+    /// double angle(PointD p1, PointD p2)          自点を中心とした2点の角度
     /// double length()                             原点からの距離
     /// double length(PointD p)                     指定点との距離
     /// void setLength(double l)                    原点からのベクトルの長さを設定する
@@ -149,6 +149,15 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 値に非数を設定する
+        /// </summary>
+        public void setNaN()
+        {
+            x = double.NaN;
+            y = double.NaN;
+        }
+
+        /// <summary>
         /// 同じ値かの判定
         /// </summary>
         /// <param name="p"></param>
@@ -157,15 +166,6 @@ namespace CoreLib
         {
             if (x == p.x && y == p.y) return true;
             return false;
-        }
-
-        /// <summary>
-        /// 値に非数を設定する
-        /// </summary>
-        public void setNaN()
-        {
-            x = double.NaN;
-            y = double.NaN;
         }
 
         /// <summary>
