@@ -109,6 +109,7 @@ namespace CoreLib
             return crc2;
         }
 
+        //  CRC16L
         public uint GetCrcCCITT(string path)
         {
             uint crc = 0xFFFFU;
@@ -123,6 +124,7 @@ namespace CoreLib
             return crc;
         }
 
+        //  CRC16R
         public uint GetCrc16R(string path)
         {
             uint crc = 0xFFFFU;
@@ -179,7 +181,7 @@ namespace CoreLib
         }
 
         //	CRC32の左送り計算
-        ulong CRC321(ulong crc321, byte[] buf, int fs)
+        public ulong CRC321(ulong crc321, byte[] buf, int fs)
         {
             ulong c;
             for (int i = 0; i < fs; i++) {
@@ -191,7 +193,7 @@ namespace CoreLib
         }
 
         //	CRC32の右送り計算
-        ulong CRC322(ulong crc322, byte[] buf, int fs)
+        public ulong CRC322(ulong crc322, byte[] buf, int fs)
         {
             ulong c;
             for (int i = 0; i < fs; i++) {
@@ -202,6 +204,7 @@ namespace CoreLib
             return crc322;
         }
 
+        //  CRC32
         public ulong GetCrc32L(string path)
         {
             ulong crc = 0xFFFFFFFFUL;
@@ -231,6 +234,23 @@ namespace CoreLib
             return crc;
         }
 
+        public ulong GetCrc32L(byte[] bytes)
+        {
+            ulong crc = 0xFFFFFFFFUL;
+            crc = CRC321(crc, bytes, bytes.Length);
+            crc = ~crc & 0xFFFFFFFFUL;
+            return crc;
+        }
+
+        public ulong GetCrc32R(byte[] bytes)
+        {
+            ulong crc = 0xFFFFFFFFUL;
+            crc = CRC322(crc, bytes, bytes.Length);
+            crc = ~crc & 0xFFFFFFFFUL;
+            return crc;
+        }
+
+        //  MD5
         public string GetMD5(string path)
         {
             System.IO.FileStream fs = new System.IO.FileStream(
@@ -257,6 +277,7 @@ namespace CoreLib
             //string result = BitConverter.ToString(bs).ToLower().Replace("-","");
         }
 
+        //  SHA1
         public string GetSHA1(string path)
         {
             System.IO.FileStream fs = new System.IO.FileStream(
@@ -273,6 +294,7 @@ namespace CoreLib
             return BitConverter.ToString(bs).Replace("-", "");
         }
 
+        //  SHA256
         public string GetSHA256(string path)
         {
             System.IO.FileStream fs = new System.IO.FileStream(
@@ -289,6 +311,7 @@ namespace CoreLib
             return BitConverter.ToString(bs).Replace("-", "");
         }
 
+        //  SHA384
         public string GetSHA384(string path)
         {
             System.IO.FileStream fs = new System.IO.FileStream(
@@ -305,6 +328,7 @@ namespace CoreLib
             return BitConverter.ToString(bs).Replace("-", "");
         }
 
+        //  SHA512
         public string GetSHA512(string path)
         {
             System.IO.FileStream fs = new System.IO.FileStream(
