@@ -525,7 +525,7 @@ namespace CoreLib
         /// <returns>判定</returns>
         public bool insideChk(Box b)
         {
-            List<PointD> plist = b.ToPointDList();
+            List<PointD> plist = b.ToPointList();
             for (int i = 0; i < plist.Count; i++)
                 if (!insideChk(plist[i]))
                 return false;
@@ -819,7 +819,7 @@ namespace CoreLib
         {
             List<PointD> plist = new List<PointD>();
             PointD ip;
-            List<LineD> lines = b.ToLineDList();
+            List<LineD> lines = b.ToLineList();
             foreach (var line in lines) {
                 plist.AddRange(intersection(line, on));
             }
