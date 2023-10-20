@@ -33,7 +33,9 @@ namespace CoreLib
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             lbMenuList.ItemsSource = mMenuList;
-            Height = Math.Min((mMenuList.Count + 1) * 28 + 25, Height);
+            double menuHeight = (mMenuList.Count + 1) * 24 + 25;
+            Height = Math.Min(menuHeight, 300);
+            Height = Math.Max(menuHeight, 100);
 
             if (mMainWindow != null) {
                 //  親ウィンドウに対しての表示位置
