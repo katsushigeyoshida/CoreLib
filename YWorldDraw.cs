@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace CoreLib
 {
@@ -308,6 +309,28 @@ namespace CoreLib
             arc.mSa = mInvert ? warc.mSa : Math.PI * 2 - warc.mEa;
             arc.mEa = mInvert ? warc.mEa : Math.PI * 2 - warc.mSa;
             return arc;
+        }
+
+        /// <summary>
+        /// 論理座標(ワールド座標)をスクリーン座標に変換する
+        /// </summary>
+        /// <param name="wrect">ワールド座標</param>
+        /// <returns>スクリーン座標</returns>
+        public Rect cnvWorld2Screen(Rect wrect)
+        {
+            return new Rect(cnvWorld2ScreenX(wrect.X), cnvWorld2ScreenY(wrect.Y),
+                world2screenXlength(wrect.Width), world2screenYlength(wrect.Height));
+        }
+
+        /// <summary>
+        /// 論理座標(ワールド座標)をスクリーン座標に変換する
+        /// </summary>
+        /// <param name="wbox">ワールド座標</param>
+        /// <returns>スクリーン座標</returns>
+        public Rect cnvWorld2Screen(Box wbox)
+        {
+            return new Rect(cnvWorld2Screen(wbox.TopLeft).toPoint(),
+                                cnvWorld2Screen(wbox.BottomRight).toPoint());
         }
 
         /// <summary>
@@ -621,7 +644,7 @@ namespace CoreLib
         {
             Box b = new Box(ps, pe);
             PointD ctr = b.getCenter();
-            List<PointD> plist = b.ToPointDList();
+            List<PointD> plist = b.ToPointList();
             for (int i = 0; i < plist.Count; i++)
                 plist[i].rotate(ctr, rotate);
             return plist;
@@ -683,7 +706,7 @@ namespace CoreLib
                     pointList = mClipBox.intersection(wpList);
                     if (pointList.Count == 0 && mClipBox.polygonInsideChk(wpList)) {
                         //  Boxがポリゴン領域内(Boxの頂点リストに変換)
-                        pointList = mClipBox.ToPointDList();
+                        pointList = mClipBox.ToPointList();
                         pointList = pointList.ConvertAll(p => cnvWorld2Screen(p));
                     } else {
                         //  Boxとポリゴンが交点を持っている
@@ -750,6 +773,54 @@ namespace CoreLib
                 rotate *= -1;
             //mTextColor = mBrush;
             drawText(text, cnvWorld2Screen(p), rotate, ha, va);
+        }
+
+        /// <summary>
+        /// ワールド座標にイメージ表示(左上原点)
+        /// </summary>
+        /// <param name="bitmapImage">イメージデータ(BitmapImage)</param>
+        /// <param name="box">表示領域</param>
+        public void drawWImage(BitmapImage bitmapImage, Box box)
+        {
+            drawImage(bitmapImage, new Rect(cnvWorld2Screen(box.TopLeft).toPoint(),
+                                        cnvWorld2Screen(box.BottomRight).toPoint()));
+        }
+
+        /// <summary>
+        /// ワールド座標にイメージ表示(左上原点)
+        /// </summary>
+        /// <param name="bitmap">イメージデータ(Bitmap)</param>
+        /// <param name="imageBox">表示領域</param>
+        public void drawWBitmap(System.Drawing.Bitmap bitmap, Box imageBox, bool clipping = true)
+        {
+            if (mClipping) {
+                if (!mClipBox.insideChk(imageBox) && clipping) {
+                    //  Bitmapのトリミングを繰り返すと例外エラーが発生 原因不明
+                    imageBox.normalize();
+                    imageBox.Bottom = imageBox.Top - imageBox.Width * bitmap.Height / bitmap.Width;
+                    Rect imageRect = cnvWorld2Screen(imageBox);
+                    Box trimBox = mClipBox.andBox(imageBox);
+                    if (trimBox == null) return;
+                    Rect trimRect = cnvWorld2Screen(trimBox);
+                    double rateW = bitmap.Width / imageRect.Width;
+                    double rateH = bitmap.Height / imageRect.Height;
+                    double sx = trimRect.X - imageRect.X;
+                    double sy = trimRect.Y - imageRect.Y;
+                    trimRect.X = (sx > 0 ? sx : 0) * rateW;
+                    trimRect.Y = (sy > 0 ? sy : 0) * rateH;
+                    trimRect.Width = 0 < sx ? bitmap.Width - trimRect.X : trimRect.Width * rateW;
+                    trimRect.Height = 0 < sy ? bitmap.Height - trimRect.Y : trimRect.Height * rateH;
+                    System.Drawing.Bitmap clipBitmap = trimingBitmap(bitmap, trimRect);
+                    if (clipBitmap == null) return;
+                    drawBitmap(clipBitmap, cnvWorld2Screen(trimBox));
+                    clipBitmap.Dispose();
+                }
+                if (!mClipBox.outsideChk(imageBox) && !clipping) {
+                    drawBitmap(bitmap, cnvWorld2Screen(imageBox));
+                }
+                return;
+            }
+            drawBitmap(bitmap, cnvWorld2Screen(imageBox));
         }
 
         //  ---  文字列パラメータ処理
