@@ -52,7 +52,8 @@ namespace CoreLib
     ///  List<PointD> intersection(PolylineD polyline, bool on = true)  ポリラインとの交点を求める
     ///  List<PointD> intersection(PolygonD polygon, bool on = true)    ポリゴンとの交点を求める
     ///  List<PointD> tangentPoint(PointD p)                点からの接線の接点リスト
-    /// 
+    ///  List<LineD> tangentArc(ArcD arc)                   円と円との接線リスト
+    ///  
     /// </summary>
 
     public class ArcD
