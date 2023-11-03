@@ -198,7 +198,7 @@ namespace CoreLib
         {
             mSa = ylib.mod(mSa, Math.PI * 2);
             mEa = ylib.mod(mEa, Math.PI * 2);
-            if (mEa <= mSa)
+            if (mEa <= mSa + mEps)
                 mEa += Math.PI * 2;
         }
 
@@ -367,8 +367,8 @@ namespace CoreLib
         /// <summary>
         /// 指定成分でミラーする
         /// </summary>
-        /// <param name="sp"></param>
-        /// <param name="ep"></param>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
         public void mirror(PointD sp, PointD ep)
         {
             PointD ps = startPoint();
