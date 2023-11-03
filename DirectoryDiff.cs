@@ -71,7 +71,7 @@ namespace CoreLib
             }
             foreach (FileInfo destFile in mDestFiles) {
                 string destRelPath = destFile.FullName.Substring(mDestDir.Length + 1);
-                int n = mFiles.FindIndex(x => x.mRelPath == destRelPath);
+                int n = mFiles.FindIndex(x => x.mRelPath.ToLower() == destRelPath.ToLower());
                 if (0 <= n) {
                     mFiles[n].mDstFile = destFile;
                     if (mHashChk)
@@ -218,12 +218,14 @@ namespace CoreLib
         /// コピー元にコピー先を同期させる
         /// コピー元にないファイルは削除する
         /// </summary>
+        /// <param name="noExistFileRemove">ソースにないファイルの削除</param>
         /// <returns>コピーファイル数+削除ファイル数</returns>
-        public int syncFolder()
+        public int syncFolder(bool noExistFileRemove = true)
         {
             int count = 0;
             count += updateCopy();
-            count += noExistDestFileRemove();
+            if (noExistFileRemove)
+                count += noExistDestFileRemove();
             return count;
         }
 
@@ -231,7 +233,7 @@ namespace CoreLib
         /// ファイルコピー
         /// </summary>
         /// <param name="srcPath">コピー元ファイル名</param>
-        /// <param name="dstPath"><コピー先ファイル名/param>
+        /// <param name="dstPath">コピー先ファイル名</param>
         /// <returns>コピーの可否</returns>
         public bool fileCopy(string srcPath, string dstPath)
         {
