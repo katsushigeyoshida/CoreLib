@@ -65,6 +65,20 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
             </DataGrid.Columns>
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="削除" Name="dgRemoveMenu">
+                        <MenuItem Header="比較元" Name="dgSrcRemoveMune" Click="dgOpeMune_Click" />
+                        <MenuItem Header="比較先" Name="dgDestRemoveMenu" Click="dgOpeMune_Click" />
+                        <MenuItem Header="両方" Name="dgBothRemoveMenu" Click="dgOpeMune_Click" />
+                    </MenuItem>
+                    <MenuItem Header="開く" Name="dgOpenMenu">
+                        <MenuItem Header="比較元" Name="dgSrcOpenMenu" Click="dgOpeMune_Click" />
+                        <MenuItem Header="比較先" Name="dgDestOpenMenu" Click="dgOpeMune_Click" />
+                        <MenuItem Header="両方" Name="dgBothOpenMenu" Click="dgOpeMune_Click" />
+                    </MenuItem>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
         </DataGrid>
     </DockPanel>
 </Window>

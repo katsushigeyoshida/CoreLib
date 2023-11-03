@@ -84,6 +84,7 @@ namespace CoreLib
         {
             InitializeComponent();
 
+            dgRemoveMenu.Visibility = Visibility.Visible;
             WindowFormLoad();
         }
 
@@ -280,6 +281,67 @@ namespace CoreLib
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// コンテキストメニューからの選択ファイル操作
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgOpeMune_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)e.Source;
+            IList selItems = dgDiffFolder.SelectedItems;
+            if (selItems.Count == 0)
+                return;
+            DiffFile selFileData = (DiffFile)dgDiffFolder.Items[dgDiffFolder.SelectedIndex];
+            if (menuItem.Name.CompareTo("dgSrcRemoveMune") == 0) {
+                if (ylib.messageBox(this, $"比較元 {selItems.Count}ファイルを削除します", "", "確認",
+                    MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+                    foreach (DiffFile fileData in selItems) {
+                        string srcPath = fileData.getPath(mSrcFolder);
+                        if (File.Exists(srcPath))
+                            File.Delete(srcPath);
+                    }
+                }
+            } else if (menuItem.Name.CompareTo("dgDestRemoveMenu") == 0) {
+                if (ylib.messageBox(this, $"比較先 {selItems.Count}ファイルを削除します", "", "確認",
+                    MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+                    foreach (DiffFile fileData in selItems) {
+                        string destPath = fileData.getPath(mDestFolder);
+                        if (File.Exists(destPath))
+                            File.Delete(destPath);
+                    }
+                }
+            } else if (menuItem.Name.CompareTo("dgBothRemoveMenu") == 0) {
+                if (ylib.messageBox(this, $"両方の {selItems.Count}ファイルを削除します", "", "確認",
+                    MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+                    foreach (DiffFile fileData in selItems) {
+                        string srcPath = fileData.getPath(mSrcFolder);
+                        string destPath = fileData.getPath(mDestFolder);
+                        if (File.Exists(srcPath))
+                            File.Delete(srcPath);
+                        if (File.Exists(destPath))
+                            File.Delete(destPath);
+                    }
+                }
+            } else if (menuItem.Name.CompareTo("dgSrcOpenMenu") == 0) {
+                string srcPath = selFileData.getPath(mSrcFolder);
+                if (File.Exists(srcPath))
+                    ylib.openUrl(srcPath);
+            } else if (menuItem.Name.CompareTo("dgDestOpenMenu") == 0) {
+                string destPath = selFileData.getPath(mDestFolder);
+                if (File.Exists(destPath))
+                    ylib.openUrl(destPath);
+            } else if (menuItem.Name.CompareTo("dgBothOpenMenu") == 0) {
+                string srcPath = selFileData.getPath(mSrcFolder);
+                string destPath = selFileData.getPath(mDestFolder);
+                if (File.Exists(srcPath))
+                    ylib.openUrl(srcPath);
+                if (File.Exists(destPath))
+                    ylib.openUrl(destPath);
+            }
+            setDiffFolder(mSrcFolder, mDestFolder);
         }
     }
 }
