@@ -268,9 +268,11 @@ namespace CoreLib
         public void trim(PointD sp, PointD ep)
         {
             List<PointD> plist = dropPoint(sp);
-            mSa = getAngle(plist.MinBy(p => p.length(sp)));
+            if (0 < plist.Count)
+                mSa = getAngle(plist.MinBy(p => p.length(sp)));
             plist = dropPoint(ep);
-            mEa = getAngle(plist.MinBy(p => p.length(ep)));
+            if (0 < plist.Count)
+                mEa = getAngle(plist.MinBy(p => p.length(ep)));
             normalize();
         }
 
@@ -560,9 +562,34 @@ namespace CoreLib
         /// <returns>座標点リスト</returns>
         public List<PointD> dropPoint(PointD pos)
         {
+            List<PointD> plist = new List<PointD>();
             PointD p = pos.toCopy();
             p.translate(mCp.inverse());
             p.rotate(-mRotate);
+
+            //  4次方程式でエラーとなるケース
+            if (p.x == 0) {
+                PointD ip = new PointD(0, mRy);
+                ip.rotate(mRotate);
+                ip.translate(mCp);
+                plist.Add(ip);
+                ip = new PointD(0, -mRy);
+                ip.rotate(mRotate);
+                ip.translate(mCp);
+                plist.Add(ip);
+                return plist;
+            } else if (p.y == 0) {
+                PointD ip = new PointD(mRx, 0);
+                ip.rotate(mRotate);
+                ip.translate(mCp);
+                plist.Add(ip);
+                ip = new PointD(-mRx, 0);
+                ip.rotate(mRotate);
+                ip.translate(mCp);
+                plist.Add(ip);
+                return plist;
+            }
+            //  方程式から垂点を求める
             double wa = mRx * mRx;
             double wb = mRy * mRy;
             double k1 = wa - wb;
@@ -574,7 +601,6 @@ namespace CoreLib
             double d = -2 * wa * wb * k1 * k2;
             double e = -wa * wb * k2 * k2;
             List<double> ylist = ylib.solveQuarticEquation(a, b, c, d, e);
-            List<PointD> plist = new List<PointD>();
             for (int i = 0; i < ylist.Count; i++) {
                 PointD ip = new PointD();
                 if (mEps < Math.Abs((k1 * ylist[i] + k2))) {
@@ -594,6 +620,7 @@ namespace CoreLib
                     }
                 }
             }
+
             return plist;
         }
 
