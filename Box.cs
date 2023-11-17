@@ -398,10 +398,15 @@ namespace CoreLib
         /// <param name="plist"></param>
         public Box(List<PointD> plist)
         {
-            Right  = Left = plist[0].x;
-            Bottom = Top  = plist[0].y;
-            for (int i = 1; i < plist.Count; i++) {
-                extension(plist[i]);
+            if (plist != null && 0 < plist.Count) {
+                Right = Left = plist[0].x;
+                Bottom = Top = plist[0].y;
+                for (int i = 1; i < plist.Count; i++) {
+                    extension(plist[i]);
+                }
+            } else {
+                Left = Right = 0;
+                Top = Bottom = 0;
             }
         }
 
@@ -886,6 +891,17 @@ namespace CoreLib
         public bool insideChk(PointD c, double r, double sa, double ea)
         {
             Box b = new Box(c, r, sa, ea);
+            return insideChk(b);
+        }
+
+        /// <summary>
+        /// 楕円の内外判定
+        /// </summary>
+        /// <param name="ellipse">楕円データ</param>
+        /// <returns></returns>
+        public bool insideChk(EllipseD ellipse)
+        {
+            Box b = ellipse.getArea();
             return insideChk(b);
         }
 
