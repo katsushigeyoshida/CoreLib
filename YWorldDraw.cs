@@ -454,33 +454,57 @@ namespace CoreLib
                     //  クリッピングあり
                     if (mClipBox.insideChk(arc)) {
                         //  クリッピング処理なし
-                        if (mLineType == 0)
-                            drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa, close);
-                        else
+                        if (mLineType == 0) {
+                            if (close)
+                                drawWPolygonArc(arc);
+                            else
+                                drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa, close);
+                        } else
                             drawArc(cnvWorld2Screen(arc));
                     } else {
                         //  クリッピング処理あり
-                        double sr = world2screenXlength(arc.mR);
-                        if (2 < sr) {
-                            if (close) {
-                                int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
-                                List<PointD> plist = arc.toAnglePointList(Math.PI * 2 / div);
-                                plist = mClipBox.clipPolygonList(plist);
-                                drawWPolygon(plist);
-                            } else {
-                                Brush tmpFillColor = mFillColor;
-                                if (!close)
-                                    mFillColor = null;
-                                List<ArcD> alist = mClipBox.clipArcList(arc);
-                                for (int i = 0; i < alist.Count; i++) {
-                                    drawArc(cnvWorld2Screen(alist[i]));
-                                }
-                                mFillColor = tmpFillColor;
-                            }
+                        if (close) {
+                            drawWPolygonArc(arc);
+                        } else {
+                            Brush tmpFillColor = mFillColor;
+                            if (!close)
+                                mFillColor = null;
+                            drawWDivArc(arc);
+                            mFillColor = tmpFillColor;
                         }
                     }
                 } else {
                     drawWArcSub(arc.mCp, arc.mR, arc.mSa, arc.mEa, close);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 円弧をポリゴンで表示(塗潰し可)
+        /// </summary>
+        /// <param name="arc">円弧データ</param>
+        private void drawWPolygonArc(ArcD arc)
+        {
+            double sr = world2screenXlength(arc.mR);
+            if (2 < sr) {
+                int div = sr < 20 ? 8 : (sr < 50 ? 32 : (sr < 150 ? 64 : 128));  //円弧をポリゴンに変換する時の分割数
+                List<PointD> plist = arc.toPointList(div);
+                plist = mClipBox.clipPolygonList(plist);
+                drawWPolygon(plist);
+            }
+        }
+
+        /// <summary>
+        /// 円弧を実線以外の対応して複数の円弧で表示(塗潰し不可)
+        /// </summary>
+        /// <param name="arc">円弧データ</param>
+        private void drawWDivArc(ArcD arc)
+        {
+            double sr = world2screenXlength(arc.mR);
+            if (2 < sr) {
+                List<ArcD> alist = mClipBox.clipArcList(arc);
+                for (int i = 0; i < alist.Count; i++) {
+                    drawArc(cnvWorld2Screen(alist[i]));
                 }
             }
         }
@@ -534,7 +558,7 @@ namespace CoreLib
                         drawArc(new ArcD(cnvWorld2Screen(ctr), world2screenXlength(radius)));
                 } else if (mClipBox.circleInsideChk(ctr, radius)) {
                     // Boxが円の内側
-                    if (close)          //  Boxないすべて塗潰し
+                    if (close)          //  Box内すべて塗潰し
                         drawWRectangle(mClipBox.ToRect());
                 } else {
                     double sr = world2screenXlength(radius);
@@ -563,9 +587,12 @@ namespace CoreLib
         /// 楕円の描画
         /// </summary>
         /// <param name="ellipse">EllipseD</param>
-        public void drawWEllipse(EllipseD ellipse)
+        public void drawWEllipse(EllipseD ellipse, bool close = false)
         {
-            if (mLineType == 0 && (mClipping && ellipse.insideChk(mClipBox))) {
+            Brush tmpFillColor = mFillColor;
+            if (!close)
+                mFillColor = null;
+            if (mLineType == 0 && (mClipping && mClipBox.insideChk(ellipse))) {
                 if (Math.PI * 2 <= ellipse.mOpenAngle) {
                     //  楕円
                     Box b = ellipse.getBox();
@@ -581,17 +608,52 @@ namespace CoreLib
                     double sa = Math.PI * 2 - ellipse.mEa;
                     ea += ea < sa ? Math.PI * 2 : 0;
                     double rotate = Math.PI * 2 - ellipse.mRotate;
-                    drawEllipse(cp.x, cp.y, rx, ry, sa, ea, rotate);
+                    if (close) {
+                        drawWPolygonEllipse(ellipse);
+                    } else {
+                        drawEllipse(cp.x, cp.y, rx, ry, sa, ea, rotate);
+                    }
                 }
+            } else if (ellipse.insideChk(mClipBox)) {
+                if (close)          //  Box内すべて塗潰し
+                    drawWRectangle(mClipBox.ToRect());
             } else {
                 //  実線以外またはクリッピング有
-                double sr = world2screenXlength(ellipse.mRx > ellipse.mRy ? ellipse.mRx : ellipse.mRy);
-                int div = sr < 20 ? 8 : (sr < 50 ? 16 : (sr < 150 ? 32 : (sr < 300 ? 64 : 128)));  //円弧をポリゴンに変換する時の分割数
+                if (close)
+                    drawWPolygonEllipse(ellipse);
+                else
+                    drawWPolylineEllipse(ellipse);
+            }
+            mFillColor = tmpFillColor;
+        }
+
+        /// <summary>
+        /// 楕円をポリゴンで表示(塗潰し可)
+        /// </summary>
+        /// <param name="ellipse">楕円データ</param>
+        private void drawWPolygonEllipse(EllipseD ellipse)
+        {
+            double sr = world2screenXlength(ellipse.mRx > ellipse.mRy ? ellipse.mRx : ellipse.mRy);
+            if (2 < sr) {
+                int div = sr < 20 ? 16 : (sr < 50 ? 32 : (sr < 150 ? 64 : 128));  //円弧をポリゴンに変換する時の分割数
+                List<PointD> plist = ellipse.toPointList(div);
+                drawWPolygon(plist);
+            }
+        }
+
+        /// <summary>
+        /// 楕円をポリラインで表示(塗潰し不可)
+        /// </summary>
+        /// <param name="ellipse">楕円データ</param>
+        private void drawWPolylineEllipse(EllipseD ellipse)
+        {
+            double sr = world2screenXlength(ellipse.mRx > ellipse.mRy ? ellipse.mRx : ellipse.mRy);
+            if (2 < sr) {
+                int div = sr < 20 ? 16 : (sr < 50 ? 32 : (sr < 150 ? 64 : 128));  //円弧をポリゴンに変換する時の分割数
                 List<PointD> plist = ellipse.toPointList(div);
                 drawWPolyline(plist);
             }
         }
-
 
         /// <summary>
         /// 四角形の描画
