@@ -253,7 +253,7 @@ namespace CoreLib
                         point.y = ylib.string2double(mDxfList[i].mData);
                         dxfEntity.mPoints.Add(point);
                         break;
-                    case 30:            //  Y座標
+                    case 30:            //  Z座標
                         //point.z = ylib.string2double(mDxfList[i].mData);
                         //dxfEntity.mPoints.Add(point);
                         break;
