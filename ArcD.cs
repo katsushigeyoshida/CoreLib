@@ -18,9 +18,6 @@ namespace CoreLib
     ///  string ToString()
     ///  string ToString(string format)                     書式付き文字列変換
     ///  ArcD toCopy()                                      コピーを作成
-    ///  List<ArcD> tangentCircle(LineD lf, LineD ls, double r) 2線分に接する円のリスト
-    ///  List<ArcD> tangentCircle(LineD lf, ArcD af, double r)  線分と円に接する円
-    ///  List<ArcD> tangentCircle(ArcD a1, ArcD a2, double r)   2円に接する円
     ///  void translate(PointD vec)                         ベクトル分移動させる
     ///  void rotate(double angle)                          円弧の回転
     ///  void rotate(PointD cp, double ang)                 指定点を中心に回転
@@ -53,6 +50,10 @@ namespace CoreLib
     ///  List<PointD> intersection(PolygonD polygon, bool on = true)    ポリゴンとの交点を求める
     ///  List<PointD> tangentPoint(PointD p)                点からの接線の接点リスト
     ///  List<LineD> tangentArc(ArcD arc)                   円と円との接線リスト
+    ///  List<ArcD> tangentCircle(LineD la, LineD lb, LineD lc) 3線分に接する円リスト
+    ///  List<ArcD> tangentCircle(LineD lf, LineD ls, double r) 2線分に接する円のリスト
+    ///  List<ArcD> tangentCircle(LineD lf, ArcD af, double r)  線分と円に接する円
+    ///  List<ArcD> tangentCircle(ArcD a1, ArcD a2, double r)   2円に接する円
     ///  
     /// </summary>
 
@@ -224,102 +225,6 @@ namespace CoreLib
         public ArcD toCopy()
         {
             return new ArcD(mCp.toCopy(), mR, mSa, mEa);
-        }
-
-        /// <summary>
-        /// 2線分に接する円のリスト
-        /// </summary>
-        /// <param name="lf">線分</param>
-        /// <param name="ls">線分</param>
-        /// <param name="r">半径</param>
-        /// <returns>円リスト</returns>
-        public List<ArcD> tangentCircle(LineD lf, LineD ls, double r)
-        {
-            List<LineD> llf = new List<LineD>();
-            llf.Add(lf.toCopy());
-            llf[0].offset(r);
-            llf.Add(lf.toCopy());
-            llf[1].offset(-r);
-
-            List<LineD> lls = new List<LineD>();
-            lls.Add(ls.toCopy());
-            lls[0].offset(r);
-            lls.Add(ls.toCopy());
-            lls[1].offset(-r);
-
-            List<ArcD> arcs = new List<ArcD>();
-            for (int i = 0; i < llf.Count; i++) {
-                for (int j = 0; j < lls.Count; j++) {
-                    PointD cp = llf[i].intersection(lls[j]);
-                    if (cp != null && 0 < r) {
-                        ArcD arc = new ArcD(cp, r);
-                        arcs.Add(arc);
-                    }
-                }
-            }
-            return arcs;
-        }
-
-        /// <summary>
-        /// 線分と円に接する円
-        /// </summary>
-        /// <param name="lf">線分</param>
-        /// <param name="af">円</param>
-        /// <param name="r">半径</param>
-        /// <returns>円リスト</returns>
-        public List<ArcD> tangentCircle(LineD lf, ArcD af, double r)
-        {
-            List<LineD> llf = new List<LineD>();
-            llf.Add(lf.toCopy());
-            llf[0].offset(r);
-            llf.Add(lf.toCopy());
-            llf[1].offset(-r);
-
-            List<ArcD> afl = new List<ArcD>();
-            afl.Add(new ArcD(af.mCp, af.mR + r));
-            if (0 < af.mR - r)
-                afl.Add(new ArcD(af.mCp, af.mR - r));
-
-            List<ArcD> arcs = new List<ArcD>();
-            ArcD arc = new ArcD(af.mCp, af.mR + r);
-            for (int i = 0; i < llf.Count; i++) {
-                for (int j = 0; j < afl.Count; j++) {
-                    List<PointD> cplist = afl[j].intersection(llf[i]);
-                    for (int k = 0; k < cplist.Count; k++) {
-                        arcs.Add(new ArcD(cplist[k], r));
-                    }
-                }
-            }
-            return arcs;
-        }
-
-        /// <summary>
-        /// 2円に接する円
-        /// </summary>
-        /// <param name="a1">円1</param>
-        /// <param name="a2">円2</param>
-        /// <param name="r">半径</param>
-        /// <returns>円リスト</returns>
-        public List<ArcD> tangentCircle(ArcD a1, ArcD a2, double r)
-        {
-            List<ArcD> a1l = new List<ArcD>();
-            a1l.Add(new ArcD(a1.mCp, a1.mR + r));
-            if (0 < a1.mR - r)
-                a1l.Add(new ArcD(a1.mCp, a1.mR - r));
-            List<ArcD> a2l = new List<ArcD>();
-            a2l.Add(new ArcD(a2.mCp, a2.mR + r));
-            if (0 < a2.mR - r)
-                a2l.Add(new ArcD(a2.mCp, a2.mR - r));
-            List<ArcD> arcs = new List<ArcD>();
-            for (int i = 0; i < a1l.Count; i++) {
-                for (int j = 0;  j < a2l.Count; j++) {
-                    List<PointD> cplist = a1l[i].intersection(a2l[j]);
-                    for (int k = 0; k < cplist.Count; k++) {
-                        arcs.Add(new ArcD(cplist[k], r));
-                    }
-                }
-            }
-            return arcs;
         }
 
         /// <summary>
@@ -906,6 +811,220 @@ namespace CoreLib
             llist.Add(line2);
 
             return llist;
+        }
+
+        /// <summary>
+        /// 3線分に接する円リスト
+        /// </summary>
+        /// <param name="lf">線分</param>
+        /// <param name="ls">線分</param>
+        /// <param name="lt">線分</param>
+        /// <returns>円リスト</returns>
+        public List<ArcD> tangentCircle(LineD la, LineD lb, LineD lc)
+        {
+            if (la.isParalell(lb) || lb.isParalell(lc) || lc.isParalell(la))
+                return tangentCircleParalell(la, lb, lc);
+            //  三角形の頂点
+            PointD ap = lb.intersection(lc);
+            PointD bp = lc.intersection(la);
+            PointD cp = la.intersection(lb);
+            //  三角形の辺の長さ
+            double a = bp.length(cp);
+            double b = cp.length(ap);
+            double c = ap.length(bp);
+            //  三角形の面積
+            double s = (a + b + c) / 2;
+            double A = Math.Sqrt(s * (s - a) * (s - b) * (s - c));
+
+            List<ArcD> arcs = new List<ArcD>();
+            //  内接円
+            double r = 2 * A / (a + b + c);
+            PointD ctr = tangentCircleCenter(r, la, ap, lb, bp);
+            arcs.Add(new ArcD(ctr, r));
+
+            //  頂点apに対する傍接円
+            r = 2 * A / (b + c - a);
+            ctr = tangentCircleCenter(r, lb, bp, lc, cp);
+            arcs.Add(new ArcD(ctr, r));
+
+            //  頂点bpに対する傍接円
+            r = 2 * A / (c + a - b);
+            ctr = tangentCircleCenter(r, lc, cp, la, ap);
+            arcs.Add(new ArcD(ctr, r));
+
+            //  頂点cpに対する傍接円
+            r = 2 * A / (a + b - c);
+            ctr = tangentCircleCenter(r, la, ap, lb, bp);
+            arcs.Add(new ArcD(ctr, r));
+
+            return arcs;
+        }
+
+        /// <summary>
+        /// 半径と2辺から接円の中心点を求める
+        /// </summary>
+        /// <param name="r">半径</param>
+        /// <param name="la">線分</param>
+        /// <param name="ap">laの対頂点</param>
+        /// <param name="lb">線分</param>
+        /// <param name="bp">lbの対頂点</param>
+        /// <returns>中心点</returns>
+        private PointD tangentCircleCenter(double r, LineD la, PointD ap, LineD lb, PointD bp)
+        {
+            LineD laa = la.toCopy();
+            laa.offset(r, ap);
+            LineD lbb = lb.toCopy();
+            lbb.offset(r, bp);
+            return laa.intersection(lbb);
+        }
+
+        /// <summary>
+        /// 平行な線分を含む3線分から接円リストを求める
+        /// </summary>
+        /// <param name="la">線分</param>
+        /// <param name="lb">線分</param>
+        /// <param name="lc">線分</param>
+        /// <returns>円リスト</returns>
+        private List<ArcD> tangentCircleParalell(LineD la, LineD lb, LineD lc)
+        {
+            if (la.isParalell(lb) && lb.isParalell(lc))
+                return null;
+            List<ArcD> arcs = new List<ArcD>();
+            double r;
+            PointD ctr;
+            if (la.isParalell(lb)) {
+                r = la.distance(lb) / 2;
+                ctr = tangentCircleParalellCenter(r, la, lb.ps, lc);
+                arcs.Add(new ArcD(ctr, r));
+                ctr = tangentCircleParalellCenter(-r, la, lb.ps, lc);
+                arcs.Add(new ArcD(ctr, r));
+            } else if (lb.isParalell(lc)) {
+                r = lb.distance(lc) / 2;
+                ctr = tangentCircleParalellCenter(r, lb, lc.ps, la);
+                arcs.Add(new ArcD(ctr, r));
+                ctr = tangentCircleParalellCenter(-r, lb, lc.ps, la);
+                arcs.Add(new ArcD(ctr, r));
+            } else if (lc.isParalell(la)) {
+                r = lc.distance(la) / 2;
+                ctr = tangentCircleParalellCenter(r, lc, la.ps, lb);
+                arcs.Add(new ArcD(ctr, r));
+                ctr = tangentCircleParalellCenter(-r, lc, la.ps, lb);
+                arcs.Add(new ArcD(ctr, r));
+            }
+            return arcs;
+        }
+
+        /// <summary>
+        /// 平行な線分を含む3線分から接円の中心点を求める
+        /// </summary>
+        /// <param name="r">半径</param>
+        /// <param name="la">平行線分</param>
+        /// <param name="ps">もう一つの平行線分の端点</param>
+        /// <param name="lc">平行でない線分</param>
+        /// <returns>中心点</returns>
+        private PointD tangentCircleParalellCenter(double r, LineD la, PointD ps, LineD lc)
+        {
+            LineD laa = la.toCopy();
+            laa.offset(Math.Abs(r), ps);
+            LineD lcc = lc.toCopy();
+            lcc.offset(r);
+            return laa.intersection(lcc);
+        }
+
+        /// <summary>
+        /// 2線分に接する円のリスト
+        /// </summary>
+        /// <param name="lf">線分</param>
+        /// <param name="ls">線分</param>
+        /// <param name="r">半径</param>
+        /// <returns>円リスト</returns>
+        public List<ArcD> tangentCircle(LineD lf, LineD ls, double r)
+        {
+            List<LineD> llf = new List<LineD>();
+            llf.Add(lf.toCopy());
+            llf[0].offset(r);
+            llf.Add(lf.toCopy());
+            llf[1].offset(-r);
+
+            List<LineD> lls = new List<LineD>();
+            lls.Add(ls.toCopy());
+            lls[0].offset(r);
+            lls.Add(ls.toCopy());
+            lls[1].offset(-r);
+
+            List<ArcD> arcs = new List<ArcD>();
+            for (int i = 0; i < llf.Count; i++) {
+                for (int j = 0; j < lls.Count; j++) {
+                    PointD cp = llf[i].intersection(lls[j]);
+                    if (cp != null && 0 < r) {
+                        ArcD arc = new ArcD(cp, r);
+                        arcs.Add(arc);
+                    }
+                }
+            }
+            return arcs;
+        }
+
+        /// <summary>
+        /// 線分と円に接する円リスト
+        /// </summary>
+        /// <param name="lf">線分</param>
+        /// <param name="af">円</param>
+        /// <param name="r">半径</param>
+        /// <returns>円リスト</returns>
+        public List<ArcD> tangentCircle(LineD lf, ArcD af, double r)
+        {
+            List<LineD> llf = new List<LineD>();
+            llf.Add(lf.toCopy());
+            llf[0].offset(r);
+            llf.Add(lf.toCopy());
+            llf[1].offset(-r);
+
+            List<ArcD> afl = new List<ArcD>();
+            afl.Add(new ArcD(af.mCp, af.mR + r));
+            if (0 < af.mR - r)
+                afl.Add(new ArcD(af.mCp, af.mR - r));
+
+            List<ArcD> arcs = new List<ArcD>();
+            ArcD arc = new ArcD(af.mCp, af.mR + r);
+            for (int i = 0; i < llf.Count; i++) {
+                for (int j = 0; j < afl.Count; j++) {
+                    List<PointD> cplist = afl[j].intersection(llf[i]);
+                    for (int k = 0; k < cplist.Count; k++) {
+                        arcs.Add(new ArcD(cplist[k], r));
+                    }
+                }
+            }
+            return arcs;
+        }
+
+        /// <summary>
+        /// 2円に接する円リスト
+        /// </summary>
+        /// <param name="a1">円1</param>
+        /// <param name="a2">円2</param>
+        /// <param name="r">半径</param>
+        /// <returns>円リスト</returns>
+        public List<ArcD> tangentCircle(ArcD a1, ArcD a2, double r)
+        {
+            List<ArcD> a1l = new List<ArcD>();
+            a1l.Add(new ArcD(a1.mCp, a1.mR + r));
+            if (0 < a1.mR - r)
+                a1l.Add(new ArcD(a1.mCp, a1.mR - r));
+            List<ArcD> a2l = new List<ArcD>();
+            a2l.Add(new ArcD(a2.mCp, a2.mR + r));
+            if (0 < a2.mR - r)
+                a2l.Add(new ArcD(a2.mCp, a2.mR - r));
+            List<ArcD> arcs = new List<ArcD>();
+            for (int i = 0; i < a1l.Count; i++) {
+                for (int j = 0; j < a2l.Count; j++) {
+                    List<PointD> cplist = a1l[i].intersection(a2l[j]);
+                    for (int k = 0; k < cplist.Count; k++) {
+                        arcs.Add(new ArcD(cplist[k], r));
+                    }
+                }
+            }
+            return arcs;
         }
     }
 }
