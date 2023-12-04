@@ -10,6 +10,8 @@ namespace CoreLib
     {
         public string mText = "";
         public List<string> mTextList = new List<string>();
+        public int mListIndex = 0;
+
 
         public InputSelect()
         {
@@ -20,6 +22,8 @@ namespace CoreLib
         {
             cbText.Text = mText;
             cbText.ItemsSource = mTextList;
+            if (0 < mListIndex && mListIndex <  mTextList.Count)
+                cbText.SelectedIndex = mListIndex;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
