@@ -1027,5 +1027,43 @@ namespace CoreLib
             pList.Add(pe.toCopy());
             return pList;
         }
+
+        /// <summary>
+        /// 線分間を分割する線分を求める
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="divNo"></param>
+        /// <returns></returns>
+        public List<LineD> divideLine(LineD line, int divNo = 2)
+        {
+            List<LineD> dline = new List<LineD>();
+            if (divNo < 2)
+                return dline;
+            if (isParalell(line)) {
+                //  平行線
+                double dis = distance(line);
+                if (0 < dis) {
+                    double offset = dis / divNo;
+                    while (offset < dis) {
+                        LineD l = toCopy();
+                        l.offset(dis / divNo, line.ps);
+                        dline.Add(l);
+                        offset += dis / divNo;
+                    }
+                }
+            } else {
+                //  角度分割
+                double ang = angle2(line);
+                PointD cp = intersection(line);
+                double offsetAng = ang / divNo;
+                while (offsetAng < ang) {
+                    LineD l = toCopy();
+                    l.rotate(cp, offsetAng);
+                    dline.Add(l);
+                    offsetAng += ang / divNo;
+                }
+            }
+            return dline;
+        }
     }
 }
