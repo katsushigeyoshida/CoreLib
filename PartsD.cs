@@ -52,6 +52,7 @@ namespace CoreLib
         //  パーツ名
         public string mName = "";
         //  表示データ
+        public List<PointD> mPoints;
         public List<LineD> mLines;
         public List<ArcD>  mArcs;
         public List<TextD> mTexts;
@@ -78,6 +79,7 @@ namespace CoreLib
         /// </summary>
         public PartsD()
         {
+            mPoints = new List<PointD>();
             mLines = new List<LineD>();
             mArcs = new List<ArcD>();
             mTexts = new List<TextD>();
@@ -106,6 +108,26 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="name">パーツ名</param>
+        /// <param name="points">点リスト</param>
+        /// <param name="lines">線分リスト</param>
+        /// <param name="arcs">円弧リスト</param>
+        /// <param name="texts">文字リスト</param>
+        public PartsD(string name,List<PointD> points, List<LineD> lines, List<ArcD> arcs, List<TextD> texts)
+        {
+            mName = name;
+            mPoints = points;
+            mLines = lines;
+            mArcs = arcs;
+            mTexts = texts;
+            mRefString = new List<string>();
+            mRefPoints = new List<PointD>();
+            mRefValue = new List<double>();
+        }
+
+        /// <summary>
         /// コピーの作成
         /// </summary>
         /// <returns></returns>
@@ -113,6 +135,7 @@ namespace CoreLib
         {
             PartsD parts = new PartsD();
             parts.mName = mName;
+            parts.mPoints = mPoints.ConvertAll(p => p.toCopy());
             parts.mLines = mLines.ConvertAll(p => p.toCopy());
             parts.mArcs  = mArcs.ConvertAll(p => p.toCopy());
             parts.mTexts = mTexts.ConvertAll(p => p.toCopy());
@@ -138,6 +161,12 @@ namespace CoreLib
         public Box getBox()
         {
             Box box = null;
+            if (mPoints != null && 0 < mPoints.Count) {
+                if (box == null)
+                    box = new Box(mPoints[0]);
+                for (int i = 0; i < mPoints.Count; i++)
+                    box.extension(mPoints[i]);
+            }
             if (mLines != null && 0 < mLines.Count) {
                 if (box == null)
                     box = new Box(mLines[0]);
@@ -165,6 +194,10 @@ namespace CoreLib
         /// <param name="vec">移動ベクトル</param>
         public void translate(PointD vec)
         {
+            if (mPoints != null) {
+                foreach (var point in mPoints)
+                    point.translate(vec);
+            }
             if (mLines != null) {
                 foreach (var line in mLines)
                     line.translate(vec);
@@ -190,6 +223,10 @@ namespace CoreLib
         /// <param name="mp">回転位置</param>
         public void rotate(PointD cp, PointD mp)
         {
+            if (mPoints != null) {
+                foreach (var point in mPoints)
+                    point.rotate(cp, mp);
+            }
             if (mLines != null) {
                 foreach (var line in mLines)
                     line.rotate(cp, mp);
@@ -215,6 +252,10 @@ namespace CoreLib
         /// <param name="ep">終点</param>
         public void mirror(PointD sp, PointD ep)
         {
+            if (mPoints != null) {
+                foreach (var point in mPoints)
+                    point.mirror(sp, ep);
+            }
             if (mLines != null) {
                 foreach (var line in mLines)
                     line.mirror(sp, ep);
@@ -240,6 +281,10 @@ namespace CoreLib
         /// <param name="scale">拡大率</param>
         public void scale(PointD cp, double scale)
         {
+            if (mPoints != null) {
+                foreach (var point in mPoints)
+                    point.scale(cp, scale);
+            }
             if (mLines != null) {
                 foreach (var line in mLines)
                     line.scale(cp, scale);
@@ -667,6 +712,11 @@ namespace CoreLib
         {
             PointD np = new();
             double dis = double.MaxValue;
+            if (mPoints != null) {
+                foreach (var point in mPoints) {
+
+                }
+            }
             if (mLines != null) {
                 foreach (var line in mLines) {
                     PointD ip = line.intersection(pos);
@@ -838,6 +888,9 @@ namespace CoreLib
         public List<PointD> getPointList(int divideNo = 4)
         {
             List<PointD> plist = new List<PointD>();
+            foreach (var ppoint in mPoints) {
+                plist.Add(ppoint);
+            }
             foreach (var pline in mLines) {
                 List<PointD> points = pline.dividePoints(divideNo);
                 foreach (var point in points) {
