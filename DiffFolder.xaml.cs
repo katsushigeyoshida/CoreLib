@@ -208,7 +208,8 @@ namespace CoreLib
                 DiffFile fileData = (DiffFile)dgDiffFolder.Items[index];
                 string srcPath = fileData.getPath(mSrcFolder);
                 string destPath = fileData.getPath(mDestFolder);
-                ylib.processStart(mDiffTool, $"\"{srcPath}\" \"{destPath}\"");
+                if (File.Exists(srcPath) && File.Exists(destPath))
+                    ylib.processStart(mDiffTool, $"\"{srcPath}\" \"{destPath}\"");
             }
         }
 
@@ -230,8 +231,9 @@ namespace CoreLib
                     foreach (DiffFile fileData in selItems) {
                         string srcPath = fileData.getPath(srcFolder);
                         string destPath = fileData.getPath(destFolder);
-                        System.Diagnostics.Debug.WriteLine($"{srcPath} {destPath}");
-                        ylib.fileCopy(srcPath, destPath, copyType);pbCopyCount.Value++;
+                        if (File.Exists(srcPath))
+                            ylib.fileCopy(srcPath, destPath, copyType);
+                        pbCopyCount.Value++;
                     }
                 }
             }

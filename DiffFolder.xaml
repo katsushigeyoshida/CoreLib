@@ -19,8 +19,8 @@
         </StackPanel>
         <StatusBar DockPanel.Dock="Bottom" Height="25" >
             <Button x:Name="btCompar" Content="表示更新" Width="50" Click="btCompar_Click" />
-            <Button x:Name="btRightUpdate" Content="右へコピー" Width="50" Click="btRightUpdate_Click" />
-            <Button x:Name="btLeftUpdate" Content="左へコピー" Width="50" Click="btLeftUpdate_Click" />
+            <Button x:Name="btRightUpdate" Content="更新 >>" Width="50" Click="btRightUpdate_Click" />
+            <Button x:Name="btLeftUpdate" Content="&lt;&lt; 更新" Width="50" Click="btLeftUpdate_Click" />
             <CheckBox x:Name="cbOverWriteForce" Content="強制上書" />
             <ProgressBar x:Name="pbCopyCount" Width="70" />
             <Separator/>
