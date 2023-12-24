@@ -16,14 +16,14 @@ namespace CoreLib
     ///     void addScale(Point3D v)        拡大・縮小をマトリックスに追加
     ///     void addVertex(List<Point3D> ps, ELEMENTTYPE elementType, List<Brush> colors)   各エレメントデータをLineまたはPolygonにして座標データを登録
     ///     void setDrawData(Y3DDraw y3Ddraw, double[,] addMatrix)  要素データ(サーフェス)をY3DDrawに登録
+    ///     List<Surface> cnvDrawData(double[,] addMatrix)  要素データをSurfaceデータに変換
+    ///     
     /// Y3DParts    パーツクラス　エレメントとパーツの集合クラス
     ///     Y3DParts()
     ///     void clear()                    データのクリア
     ///     void add(PartsElement element)  要素の追加
     ///     void add(Y3DParts part)         パーツの追加
-    ///     void drawDataClear(Y3DDraw draw)    Y3DDrawの表示データを初期化(クリア)
-    ///     void setDrawData(Y3DDraw draw, double[,] addMatrix) Y3DDrawに表示データの登録
-    ///     void draw(Y3DDraw draw)         データの描画
+    ///     List<Surface> cnvDrawData(double[,] addMatrix)  要素データにSurfaceデータに変換
     ///     void matrixClear()              マトリックス(配置と姿勢)クリア
     ///     void addMatrix(double[,] mp)    マトリックスの追加
     ///     void addTranslate(Point3D v)    配置をマトリックスに追加
@@ -36,7 +36,8 @@ namespace CoreLib
 
     public enum ELEMENTTYPE
     {
-        LINES, TRIANGLES, QUADS, POLYGON, TRIANGLE_STRIP, 
+        LINES, LINE_STRIP, LINE_LOOP,
+        TRIANGLES, QUADS, POLYGON, TRIANGLE_STRIP, 
         QUAD_STRIP, TRIANGLE_FAN, PARTS
     };
 
@@ -48,6 +49,7 @@ namespace CoreLib
     {
         private List<Surface> mSurfaceList;     //  サーフェスデータリスト
         private double[,] mMatrix;              //  配置と姿勢設定マトリックス
+        private string mName;                   //  エレメント名称
 
         private YLib ylib = new YLib();
 
@@ -145,6 +147,25 @@ namespace CoreLib
                         mSurfaceList.Add(surface);
                         buf = new List<Point3D>();
                     }
+                } else if (elementType == ELEMENTTYPE.LINE_STRIP) {
+                    if (buf.Count == 2) {
+                        Surface surface = new Surface(buf, colors[colorCount++ % colors.Count]);
+                        mSurfaceList.Add(surface);
+                        buf = new List<Point3D>();
+                        buf.Add(ps[i]);
+                    }
+                } else if (elementType == ELEMENTTYPE.LINE_LOOP) {
+                    if (buf.Count == 2) {
+                        Surface surface = new Surface(buf, colors[colorCount++ % colors.Count]);
+                        mSurfaceList.Add(surface);
+                        buf = new List<Point3D>();
+                        buf.Add(ps[i]);
+                        if (i == ps.Count - 1) {
+                            buf.Add(ps[0]);
+                            surface = new Surface(buf, colors[colorCount++ % colors.Count]);
+                            mSurfaceList.Add(surface);
+                        }
+                    }
                 } else if (elementType == ELEMENTTYPE.TRIANGLES) {
                     if (buf.Count == 3) {
                         Surface surface = new Surface(buf, colors[colorCount++ % colors.Count]);
@@ -207,6 +228,25 @@ namespace CoreLib
                 y3Ddraw.addSurfaceList(plist, mSurfaceList[i].mFillColor);
             }
         }
+
+        /// <summary>
+        /// 要素データをSurfaceデータに変換
+        /// </summary>
+        /// <param name="addMatrix">変換マトリックス</param>
+        /// <returns>Surfaceリスト</returns>
+        public List<Surface> cnvDrawData(double[,] addMatrix)
+        {
+            List<Surface> surfaceList = new List<Surface>();
+            double[,] matrix = ylib.matrixMulti(mMatrix, addMatrix);
+            for (int i = 0; i < mSurfaceList.Count; i++) {
+                List<Point3D> plist = new List<Point3D>();
+                for (int j = 0; j < mSurfaceList[i].mCoordList.Count; j++) {
+                    plist.Add(mSurfaceList[i].mCoordList[j].toMatrix(matrix));
+                }
+                surfaceList.Add(new Surface(plist, mSurfaceList[i].mFillColor));
+            }
+            return surfaceList;
+        }
     }
 
     /// <summary>
@@ -215,21 +255,19 @@ namespace CoreLib
     /// </summary>
     public class Y3DParts
     {
-        private List<PartsElement> mPartsElements = new List<PartsElement>();   //  要素リスト
-        private List<Y3DParts> mParts = new List<Y3DParts>();                   //  パーツリスト
-        private double[,] mMatrix;              //  配置と姿勢設定マトリックス
+        public List<PartsElement> mPartsElements { get; set; }  //  要素リスト
+        public List<Y3DParts> mParts { set; get; }              //  パーツリスト
+        public double[,] mMatrix;              //  配置と姿勢設定マトリックス
+        public string mName;                    //  パーツ名称
+
 
         private YLib ylib = new YLib();
-        private Y3DDraw mDraw;
 
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        /// <param name="draw">Y3DDraw</param>
-        public Y3DParts(Y3DDraw draw)
+        public Y3DParts()
         {
             mMatrix = ylib.unitMatrix(4);
-            mDraw = draw; 
+            mPartsElements = new List<PartsElement>();
+            mParts = new List<Y3DParts>();
         }
 
         /// <summary>
@@ -261,37 +299,22 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// Y3DDrawの表示データを初期化(クリア)
-        /// </summary>
-        public void drawDataClear()
-        {
-            mDraw.clearSurfaceList();
-            mDraw.clear3DMatrix();
-        }
-
-        /// <summary>
-        /// Y3DDrawに表示データの登録
+        /// 要素データを表示用のSurfaceデータに座標変換
         /// </summary>
         /// <param name="addMatrix">変換マトリックス</param>
-        public void setDrawData(double[,] addMatrix)
+        /// <returns>Surfaceリスト</returns>
+        public List<Surface> cnvDrawData(double[,] addMatrix)
         {
+            List<Surface> surfaceList = new List<Surface>();
             double[,] matrix = ylib.matrixMulti(mMatrix, addMatrix);
             for (int i = 0; i < mPartsElements.Count; i++) {
-                mPartsElements[i].setDrawData(mDraw, matrix);
+                surfaceList.AddRange(mPartsElements[i].cnvDrawData(matrix));
             }
             for (int i = 0; i < mParts.Count; i++) {
-                mParts[i].setDrawData(matrix);
+                surfaceList.AddRange(mParts[i].cnvDrawData(matrix));
             }
+            return surfaceList;
         }
-
-        /// <summary>
-        /// データの描画
-        /// </summary>
-        public void draw()
-        {
-            mDraw.drawSurfaceList();
-        }
-
 
         /// <summary>
         /// マトリックス(配置と姿勢)クリア
