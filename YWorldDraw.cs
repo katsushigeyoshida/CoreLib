@@ -97,6 +97,15 @@ namespace CoreLib
             mWorld = new Box(mView);
         }
 
+        public YWorldDraw(Canvas c, Size viewSize, double worldSize)
+        {
+            mCanvas = c;
+            setViewSize(viewSize.Width, viewSize.Height);
+            mAspectFix = true;
+            mClipping = true;
+            setWorldWindow(-worldSize * 1.1, worldSize * 1.1, worldSize * 1.1, -worldSize * 1.1);
+        }
+
         //  ---  ViewとWorldの領域設定
 
         /// <summary>
@@ -115,6 +124,18 @@ namespace CoreLib
             if (mAspectFix)
                 aspectFix();
             mClipBox = mWorld.toCopy();
+        }
+
+        public void setViewSize(Size viewSize)
+        {
+            setViewSize(viewSize.Width, viewSize.Height);
+            setWorldWindow();
+        }
+
+        public void setViewSize(Size viewSize, Box worldSize)
+        {
+            setViewSize(viewSize.Width, viewSize.Height);
+            setWorldWindow(worldSize);
         }
 
         /// <summary>
