@@ -448,7 +448,7 @@ namespace CoreLib
         public void dataClear()
         {
             mDataList.Clear();
-            m3DDraw.clearSurfaceList();
+            m3DDraw.clearData();
         }
 
         /// <summary>
@@ -465,7 +465,7 @@ namespace CoreLib
         /// </summary>
         public void setDrawData()
         {
-            m3DDraw.clearSurfaceList();
+            m3DDraw.clearData();
             m3DDraw.clear3DMatrix();
 
             foreach (var part in mDataList) {
