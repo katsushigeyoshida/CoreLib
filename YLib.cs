@@ -8,11 +8,13 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -141,6 +143,7 @@ namespace CoreLib
     ///  List<Point> divideCircleList(Point c, double r, int div = 32)      円を分割した点座標リストを作成
     ///  Point averagePoint(List<Point> pList)                              一種の中心点(点リストの平均位置)
     ///  PointD nearPoint(List<PointD> plist, PointD pos)                   座標点リストで指定点に最も近い点
+    ///  
     ///  ---  ビットマップ処理  ----
     ///  Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe) 画面の指定領域をキャプチャする
     ///  Bitmap getActiveWindowCapture()                                    アクティブウィンドウの画面をキャプチャする
@@ -154,10 +157,11 @@ namespace CoreLib
     ///  Bitmap verticalCombineImage(System.Drawing.Bitmap[] src)           画像を縦方向に連結
     ///  Bitmap horizontalCombineImage(System.Drawing.Bitmap[] src)         画像の水平方向に連結
     ///  void saveBitmapImage(BitmapSource bitmapSource, string filePath)   画像データをファイルに保存
-    ///  BitmapSource canvas2Bitmap(System.Windows.Controls.Canvas canvas)  Canvas を BitmapSourceに変換する
     ///  Media.Color Draw2MediaColor(Drawing.Color color)                   Drawing.Color から Media.Color に変換
     ///  Drawing.Color Media2DrawColor(Windows.Media.Color color)           Media.Color から Drawing.Color に変換
-    ///  
+    ///  BitmapSource canvas2Bitmap(Canvas canvas, double offsetX = 0, double offsetY = 0)  CanvasをBitmapに変換
+    ///  void moveImage(Canvas canvas, BitmapSource bitmapSource, double dx, double dy, int offset = 0) Bitmap 図形を移動
+    /// 
     ///  ---  数値処理関連  ------
     ///  double mod(double a, double b)                                     2点間の距離
     ///  int mod(int a, int b)                                              剰余関数 (負数の剰余を正数で返す)
@@ -199,6 +203,7 @@ namespace CoreLib
     /// </summary>
     public class YLib
     {
+        //  色名と色(Brush)のrecord
         public record ColorTitle(string colorTitle, System.Windows.Media.Brush brush);
         //  140色の色パターン
         public List<ColorTitle> mColorList = new List<ColorTitle>() {
@@ -354,6 +359,7 @@ namespace CoreLib
 
         System.Diagnostics.Stopwatch mSw;       //  ストップウォッチクラス
         private TimeSpan mStopWatchTotalTime;   //  mSwの経過時間
+        public ColorTitle[] mBrushList;
 
         private Encoding[] mEncoding;
         public int mEncordingType = 0;
@@ -370,6 +376,7 @@ namespace CoreLib
             mEncoding = new Encoding[] {
                 Encoding.UTF8, Encoding.GetEncoding("shift_jis"), Encoding.GetEncoding("euc-jp") 
             };
+            mBrushList = getColorList();
         }
 
         public void test()
@@ -2321,6 +2328,51 @@ namespace CoreLib
 
         //  ---  グラフィック処理関連  ------
 
+        /// <summary>
+        /// Media.ColorsよりColor Listを取得
+        /// ColorSet { Color Name }
+        /// </summary>
+        /// <returns></returns>
+        public ColorTitle[] getColorList()
+        {
+            return typeof(Colors).GetProperties(BindingFlags.Public | BindingFlags.Static)
+                .Select(i => new ColorTitle (
+                    i.Name,
+                    new SolidColorBrush((System.Windows.Media.Color)i.GetValue(null))
+                )).ToArray();
+        }
+
+        /// <summary>
+        /// BrushListからListNoの取得
+        /// </summary>
+        /// <param name="color">Brush値</param>
+        /// <returns>ColorListNo</returns>
+        public int getBrushNo(System.Windows.Media.Brush color)
+        {
+            return mBrushList.FindIndex(x => x.brush.ToString() == color.ToString());
+        }
+
+        /// <summary>
+        /// Brush を色名に変換
+        /// </summary>
+        /// <param name="color">Brush値</param>
+        /// <returns>色名</returns>
+        public string getBrushName(System.Windows.Media.Brush color)
+        {
+            int index = mBrushList.FindIndex(x => x.brush.ToString() == color.ToString());
+            return mBrushList[index < 0 ? 0 : index].colorTitle;
+        }
+
+        /// <summary>
+        /// 色名を Brush値に変換
+        /// </summary>
+        /// <param name="colorName">色名</param>
+        /// <returns>Brush値</returns>
+        public System.Windows.Media.Brush getBrsh(string colorName)
+        {
+            int index = mBrushList.FindIndex(x => x.colorTitle == colorName);
+            return mBrushList[index < 0 ? 0 : index].brush;
+        }
 
         /// <summary>
         /// Brush を色名に変換
@@ -2935,31 +2987,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// Canvas を BitmapSourceに変換する
-        /// </summary>
-        /// <param name="canvas">Canvas</param>
-        /// <returns>BitmapSource</returns>
-        public BitmapSource canvas2Bitmap(System.Windows.Controls.Canvas canvas)
-        {
-            //  Canvasの位置
-            Thickness margin = canvas.Margin;
-            System.Windows.Point offset = new System.Windows.Point(margin.Left, margin.Top);
-            // Window Objectの起点から画像を取得
-            var renderBitmap = new RenderTargetBitmap(
-                (int)(canvas.ActualWidth + offset.X),       // 画像の幅
-                (int)(canvas.ActualHeight + offset.Y),      // 画像の高さ
-                96.0d,                 // 横96.0DPI
-                96.0d,                 // 縦96.0DPI
-                PixelFormats.Pbgra32); // 32bit(RGBA各8bit)
-            renderBitmap.Render(canvas);
-            //  Canvasの領域をトリミングする
-            System.Drawing.Bitmap bitmap = cnvBitmapSource2Bitmap(renderBitmap);
-            bitmap = trimingBitmap(bitmap, offset,
-                new System.Windows.Point(canvas.ActualWidth + offset.X, canvas.ActualHeight + offset.Y));
-            return bitmap2BitmapSource(bitmap);
-        }
-
-        /// <summary>
         /// Drawing.Color から Media.Color に変換
         /// </summary>
         /// <param name="color"></param>
@@ -2977,6 +3004,58 @@ namespace CoreLib
         public System.Drawing.Color Media2DrawColor(System.Windows.Media.Color color)
         {
             return System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+        }
+
+        /// <summary>
+        /// CanvasをBitmapに変換
+        /// 参照  https://qiita.com/tricogimmick/items/894914f6bbe224a45d49
+        /// </summary>
+        /// <param name="canvas"></param>
+        /// <param name="offsetX"></param>
+        /// <param name="offsetY"></param>
+        /// <returns></returns>
+        public BitmapSource canvas2Bitmap(Canvas canvas, double offsetX = 0, double offsetY = 0)
+        {
+            //  位置は CanvasのVisaulOffset値を設定したいが直接取れないので
+            //Point preLoc = new Point(mMainWindow.lbCommand.ActualWidth + 10, 0);
+            System.Windows.Point preLoc = new System.Windows.Point(offsetX, offsetY);
+            // レイアウトを再計算させる
+            var size = new System.Windows.Size(canvas.ActualWidth, canvas.ActualHeight);
+            canvas.Measure(size);
+            canvas.Arrange(new Rect(new System.Windows.Point(0, 0), size));
+
+            // VisualObjectをBitmapに変換する
+            var renderBitmap = new RenderTargetBitmap((int)size.Width,       // 画像の幅
+                                                      (int)size.Height,      // 画像の高さ
+                                                      96.0d,                 // 横96.0DPI
+                                                      96.0d,                 // 縦96.0DPI
+                                                      PixelFormats.Pbgra32); // 32bit(RGBA各8bit)
+            renderBitmap.Render(canvas);
+            //  Canvasの位置を元に戻す(Canvas.VisualOffset値)
+            canvas.Arrange(new Rect(preLoc, size));
+            return renderBitmap;
+        }
+
+        /// <summary>
+        /// Bitmap 図形を移動させる
+        /// Bitmapをdx,dy分移動させてCanvasに貼り付ける(dx,dyのマイナス方向も可)
+        /// オフセットで指定した分Bitmapサイズをカットする(ポリゴンの塗潰しの境界線をカットするために必要)
+        /// </summary>
+        /// <param name="bitmapSource">Bitmap</param>
+        /// <param name="dx">移動量</param>
+        /// <param name="dy">移動量</param>
+        /// <param name="offset">オフセット</param>
+        public void moveImage(Canvas canvas, BitmapSource bitmapSource, double dx, double dy, int offset = 0)
+        {
+            System.Drawing.Bitmap bitmap = cnvBitmapSource2Bitmap(bitmapSource);
+            double width = bitmap.Width - Math.Abs(dx);
+            double height = bitmap.Height - Math.Abs(dy);
+            System.Windows.Point sp = new System.Windows.Point(dx > 0 ? offset : -dx, dy > 0 ? offset : -dy);
+            System.Windows.Point ep = new System.Windows.Point(sp.X + width - offset, sp.Y + height - offset);
+            System.Drawing.Bitmap moveBitmap = trimingBitmap(bitmap, sp, ep);
+            BitmapImage bitmapImage = cnvBitmap2BitmapImage(moveBitmap);
+            setCanvasBitmapImage(canvas, bitmapImage, dx > 0 ? dx + offset : 0, dy > 0 ? dy + offset : 0,
+                width - offset, height - offset);
         }
 
         //  ---  数値処理関連  ------
