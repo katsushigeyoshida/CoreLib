@@ -4,10 +4,22 @@ using System.Linq;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace CoreLib
 {
+    /// ---  コンストラクタ
+    /// Y3DDraw(Canvas c)
+    /// Y3DDraw(Canvas c, double viewWidth, double viewHeight)
+    /// void set3DWorldWindow(Size viewSize, double worldSize, double perspectibeLength = 10)
+    /// 
+    /// ---  サーフェスデータの設定
+    /// void clearData()                                サーフェスデータをクリア
+    /// void setData(List<Surface> surfaceList)         サーフェスデータを設定
+    /// void addData(List<Surface> surfaceList)         サーフェスデータを追加
+    /// void addSurfaceList(List<Point3D> coordList, Brush fillColor)  サーフェスデータの追加
+    /// 
     /// ---  三次元変換表示
     ///  void draw3DWLine(Point3D sp, Point3D ep)       3次元座標での線分の描画
     ///  void draw3DWCircle(Point3D cp, double r)       3次元座標で円を描画
@@ -16,6 +28,7 @@ namespace CoreLib
     ///  List<Point3D> dispConv(List<Point3D> plist)    マトリックスによる座標変換
     ///  Point3D perspective(Point3D p)                 透視変換
     ///  bool shading(List<Point3D> plist)              隠面判定(外積)
+    ///  
     ///  ---  三次元変換マトリックスパラメータの設定
     ///  void void clear3DMatrix()                      座標変換パラメートの初期化
     ///  setTarnslate3DMatrix(double dx, double dy, double dz)  平行移動パラメータ設定
@@ -36,12 +49,16 @@ namespace CoreLib
     ///  double[,] get3DMatrix()                        3D変換マトリックスを取得
     ///  void set3DMarix(double[,] mp)                  3D変換マトリックスを取得
     ///  double[,] conv3DMatrix(Matrix4x4 m4)           Matrix4x4をYWorldDrawの3Dマトリックスに変換
+    ///  
     ///  --  マウス処理
     ///  void mouseMoveStart(bool isRotate, Point pos)  マウスによる座標変換の開始
     ///  void mouseMoveEnd()                            マウスによる座標変換の終了
     ///  bool mouseMove(Point pos)                      マウスの位置移動
+    ///  
+    ///  --  キー操作
+    ///  bool keyMove(Key key, bool ctrl)               キーによる座標変換
+    ///  
     ///  --- 3次元サーフェス表示処理
-    ///  void clearSurfaceList()                        サーフェスデータをクリア
     ///  void addSurfaceList(List<Point3D> coordList, Brush fillColor)  サーフェスデータの追加
     ///  void dispConvSurfaceList()                     サーフェスの座標リストを表示座標変換する
     ///  void drawSurfaceList()                         サーフェスデータの表示(Z方向にソート)
@@ -66,19 +83,85 @@ namespace CoreLib
         private bool mIsRotate = false;                 //  回転
         private bool mIsTranslate = false;              //  移動
         //  サーフェスデータリスト
-        private List<Surface> mSurfaceList = new List<Surface>();
+        public List<Surface> mSurfaceList = new List<Surface>();
 
         private YLib ylib = new YLib();
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="c">Canvas</param>
         public Y3DDraw(Canvas c) : base(c)
         {
         }
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="c">Canvas</param>
+        /// <param name="viewWidth">ビューの幅</param>
+        /// <param name="viewHeight">ビューの高さ</param>
         public Y3DDraw(Canvas c, double viewWidth, double viewHeight) : base(c, viewWidth, viewHeight)
         {
         }
 
-        //  ---  三次元変換表示
+        /// <summary>
+        /// 3D Windowの設定
+        /// </summary>
+        /// <param name="viewSize">ビューの大きさ</param>
+        /// <param name="worldSize">ワールドの大きさ(1辺のサイズ)</param>
+        /// <param name="perspectibeLength">パースペクティブ(奥行)</param>
+        public void set3DWorldWindow(Size viewSize, double worldSize, double perspectibeLength = 10)
+        {
+            setViewSize(viewSize.Width, viewSize.Height);
+            mAspectFix = true;
+            mClipping = true;
+            setWorldWindow(-worldSize * 1.1, worldSize * 1.1, worldSize * 1.1, -worldSize * 1.1);
+            clear3DMatrix();
+            mPerspectivLength = perspectibeLength;
+            mLight = new Point3D(1, 1, 1);
+        }
+
+        //  ---  サーフェスデータの設定
+
+        /// <summary>
+        /// サーフェスデータをクリアする
+        /// </summary>
+        public void clearData()
+        {
+            mSurfaceList.Clear();
+        }
+
+        /// <summary>
+        /// サーフェスデータを設定する
+        /// </summary>
+        /// <param name="surfaceList">Surface List</param>
+        public void setData(List<Surface> surfaceList)
+        {
+            mSurfaceList = surfaceList;
+        }
+
+        /// <summary>
+        /// サーフェスデータを追加する
+        /// </summary>
+        /// <param name="surfaceList"></param>
+        public void addData(List<Surface> surfaceList)
+        {
+            mSurfaceList.AddRange(surfaceList);
+        }
+
+        /// <summary>
+        /// サーフェスデータの追加
+        /// </summary>
+        /// <param name="coordList">3D座標リスト</param>
+        /// <param name="fillColor">色</param>
+        public void addSurfaceList(List<Point3D> coordList, Brush fillColor)
+        {
+            mSurfaceList.Add(new Surface(coordList, fillColor));
+        }
+
+
+        //  ---  三次元変換描画
 
         /// <summary>
         /// 3次元座標での線分の描画
@@ -515,26 +598,88 @@ namespace CoreLib
             return true;
         }
 
+        /// <summary>
+        /// キーによる座標変換
+        /// </summary>
+        /// <param name="key">キー</param>
+        /// <param name="ctrl">Ctrlキー</param>
+        /// <returns></returns>
+        public bool keyMove(Key key, bool ctrl)
+        {
+            double translateStep = mWorld.Width / 20;
+            double rotateStep = 5;
+            double scaleStep = 1.2;
+
+            if (key == Key.Left) {
+                if (ctrl) {
+                    //  左へ移動
+                    setTarnslate3DMatrix(translateStep, 0, 0);
+                } else {
+                    //  左へ回転
+                    setRotateY3DMatrix(ylib.D2R(rotateStep));
+                }
+            } else if (key == Key.Right) {
+                if (ctrl) {
+                    //  右へ移動
+                    setTarnslate3DMatrix(-translateStep, 0, 0);
+                } else {
+                    //  右へ回転
+                    setRotateY3DMatrix(ylib.D2R(-rotateStep));
+                }
+            } else if (key == Key.Up) {
+                if (ctrl) {
+                    //  上に移動
+                    setTarnslate3DMatrix(0, -translateStep, 0);
+                } else {
+                    //  上に回転
+                    setRotateX3DMatrix(ylib.D2R(rotateStep));
+                }
+            } else if (key == Key.Down) {
+                if (ctrl) {
+                    //  下に移動
+                    setTarnslate3DMatrix(0, translateStep, 0);
+                } else {
+                    //  下に回転
+                    setRotateX3DMatrix(ylib.D2R(-rotateStep));
+                }
+            } else if (key == Key.PageUp) {
+                if (ctrl) {
+                    //  手前に移動
+                    setTarnslate3DMatrix(0, 0, translateStep);
+                } else {
+                    //  時計回りに回転
+                    setRotateZ3DMatrix(ylib.D2R(rotateStep));
+                }
+            } else if (key == Key.PageDown) {
+                if (ctrl) {
+                    //  奥に移動
+                    setTarnslate3DMatrix(0, 0, -translateStep);
+                } else {
+                    //  反時計回りに回転
+                    setRotateZ3DMatrix(ylib.D2R(-rotateStep));
+                }
+            } else if (key == Key.Home) {
+                if (ctrl) {
+                    //  拡大
+                    setScale3DMatrix(scaleStep, scaleStep, scaleStep);
+                } else {
+                    //  初期状態
+                    //y3DDraw.addData(PartsDraw.cnvDrawData(ylib.unitMatrix(4)));
+                }
+            } else if (key == Key.End) {
+                if (ctrl) {
+                    //  縮小
+                    setScale3DMatrix(1 / scaleStep, 1 / scaleStep, 1 / scaleStep);
+                }
+            } else {
+                return false;
+            }
+
+            return true;
+        }
+
 
         //  --- 3次元サーフェス表示処理
-
-        /// <summary>
-        /// サーフェスデータをクリア
-        /// </summary>
-        public void clearSurfaceList()
-        {
-            mSurfaceList.Clear();
-        }
-
-        /// <summary>
-        /// サーフェスデータの追加
-        /// </summary>
-        /// <param name="coordList">3D座標リスト</param>
-        /// <param name="fillColor">色</param>
-        public void addSurfaceList(List<Point3D> coordList, Brush fillColor)
-        {
-            mSurfaceList.Add(new Surface(coordList, fillColor));
-        }
 
         /// <summary>
         /// サーフェスの座標リストを表示座標変換する
