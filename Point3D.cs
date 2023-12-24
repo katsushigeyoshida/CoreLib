@@ -36,13 +36,32 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="p">座標</param>
+        /// <param name="p">3D座標</param>
         public Point3D(Point3D p)
         {
             this.x = p.x;
             this.y = p.y;
             this.z = p.z;
-        } 
+        }
+
+        /// <summary>
+        /// コンストラクタ(PointD → Poin3D)
+        /// </summary>
+        /// <param name="p">2D座標</param>
+        /// <param face="p">面の向き(0:XY 1:YZ 2:ZX)</param>
+        public Point3D(PointD p, int face = 0)
+        {
+            if (face == 1) {
+                y = p.x;
+                z = p.y;
+            } else if(face == 2) {
+                z = p.x;
+                x = p.y;
+            } else {
+                x = p.x;
+                y = p.y;
+            }
+        }
 
         public override string ToString()
         {

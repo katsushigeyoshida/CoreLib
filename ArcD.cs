@@ -38,6 +38,7 @@ namespace CoreLib
     ///  double getAngle(PointD p)                          指定座標と中心との角度を求める
     ///  List<PointD> toPeakList()                          円周上の端点リスト(端点+4分割点)
     ///  List<PointD> toPointlist(int divideNo, bool clockwise = false)     円弧の分割点リストを作成
+    ///  List<PointD> toPointList(double da, bool clockwise = false)    円弧の分割点リストを作成
     ///  List<PointD> toAnglePointList(double da, bool clockwise = false)   円弧の角度分割点リストを作成
     ///  PointD nearPoints(PointD p, int divideNo = 4)      円弧の分割点で最も近い点を求める
     ///  bool onPoint(PointD p)                             点が円弧上にあるかの判定
@@ -418,19 +419,19 @@ namespace CoreLib
         /// </summary>
         /// <param name="divNo">分割数</param>
         /// <returns>座標点リスト</returns>
-        public List<PointD> dividePoints(int divNo)
-        {
-            List<PointD> points = new List<PointD>();
-            if (0 < divNo) {
-                double da = mOpenAngle / divNo;
-                double ang = mSa;
-                while (ang <= mEa + mEps) {
-                    points.Add(getPoint(ang));
-                    ang += da;
-                }
-            }
-            return points;
-        }
+        //public List<PointD> dividePoints(int divNo)
+        //{
+        //    List<PointD> points = new List<PointD>();
+        //    if (0 < divNo) {
+        //        double da = mOpenAngle / divNo;
+        //        double ang = mSa;
+        //        while (ang <= mEa + mEps) {
+        //            points.Add(getPoint(ang));
+        //            ang += da;
+        //        }
+        //    }
+        //    return points;
+        //}
 
         /// <summary>
         /// 角度から円周上の座標を求める
@@ -495,7 +496,7 @@ namespace CoreLib
         /// <summary>
         /// 円弧の分割点リストを作成
         /// </summary>
-        /// <param name="divideNo"></param>
+        /// <param name="divideNo">分割数</param>
         /// <param name="clockwise">回転方向</param>
         /// <returns>座標リスト</returns>
         public List<PointD> toPointList(int divideNo, bool clockwise = false)
@@ -517,7 +518,7 @@ namespace CoreLib
         /// <param name="da">分割角度</param>
         /// <param name="clockwise">回転方向</param>
         /// <returns>座標リスト</returns>
-        public List<PointD> toAnglePointList(double da, bool clockwise = false)
+        public List<PointD> toPointList(double da, bool clockwise = false)
         {
             List<PointD> pointList = new List<PointD>();
             double ang = mSa;
@@ -525,9 +526,27 @@ namespace CoreLib
                 pointList.Add(getPoint(ang, clockwise));
                 ang += da;
             }
-            pointList.Add(getPoint(mEa, clockwise));
+            pointList.Add(endPoint());
             return pointList;
         }
+
+        /// <summary>
+        /// 円弧の分割点リストを作成
+        /// </summary>
+        /// <param name="da">分割角度</param>
+        /// <param name="clockwise">回転方向</param>
+        /// <returns>座標リスト</returns>
+        //public List<PointD> toAnglePointList(double da, bool clockwise = false)
+        //{
+        //    List<PointD> pointList = new List<PointD>();
+        //    double ang = mSa;
+        //    while (ang < mEa - mEps) {
+        //        pointList.Add(getPoint(ang, clockwise));
+        //        ang += da;
+        //    }
+        //    pointList.Add(getPoint(mEa, clockwise));
+        //    return pointList;
+        //}
 
         /// <summary>
         /// 円弧の分割点で最も近い点を求める
