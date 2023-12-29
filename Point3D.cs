@@ -341,7 +341,7 @@ namespace CoreLib
         /// <summary>
         /// アフィン変換のマトリックス計算
         /// </summary>
-        /// <param name="mp"></param>
+        /// <param name="mp">変換マトリックス</param>
         /// <returns></returns>
         public Point3D toMatrix(double[,] mp)
         {
@@ -364,6 +364,48 @@ namespace CoreLib
             x = tx;
             y = ty;
             z = tz;
+        }
+
+        /// <summary>
+        /// アフィン変換のマトリックスを3Dから2DXYに変換
+        /// </summary>
+        /// <param name="mp">3Dマトリックス</param>
+        /// <returns>2Dマトリックス</returns>
+        public static double[,] toMatrix2DXY(double[,] mp)
+        {
+            double[,] xym = new double[3, 3];
+            xym[0, 0] = mp[0, 0]; xym[0, 1] = mp[0, 1]; xym[0, 2] = mp[0, 3];
+            xym[1, 0] = mp[1, 0]; xym[1, 1] = mp[1, 1]; xym[1, 2] = mp[1, 3];
+            xym[2, 0] = mp[3, 0]; xym[2, 1] = mp[3, 1]; xym[2, 2] = mp[3, 3];
+            return xym;
+        }
+
+        /// <summary>
+        /// アフィン変換のマトリックスを3Dから2DYZに変換
+        /// </summary>
+        /// <param name="mp">3Dマトリックス</param>
+        /// <returns>2Dマトリックス</returns>
+        public static double[,] toMatrix2DYZ(double[,] mp)
+        {
+            double[,] xym = new double[3, 3];
+            xym[0, 0] = mp[1, 1]; xym[0, 1] = mp[1, 2]; xym[0, 2] = mp[1, 3];
+            xym[1, 0] = mp[2, 1]; xym[1, 1] = mp[2, 2]; xym[1, 2] = mp[2, 3];
+            xym[2, 0] = mp[3, 1]; xym[2, 1] = mp[3, 2]; xym[2, 2] = mp[3, 3];
+            return xym;
+        }
+
+        /// <summary>
+        /// アフィン変換のマトリックスを3Dから2DZXに変換
+        /// </summary>
+        /// <param name="mp">3Dマトリックス</param>
+        /// <returns>2Dマトリックス</returns>
+        public static double[,] toMatrix2DZX(double[,] mp)
+        {
+            double[,] xym = new double[3, 3];
+            xym[0, 0] = mp[2, 2]; xym[0, 1] = mp[2, 0]; xym[0, 2] = mp[2, 3];
+            xym[1, 0] = mp[0, 2]; xym[1, 1] = mp[0, 0]; xym[1, 2] = mp[0, 3];
+            xym[2, 0] = mp[3, 2]; xym[2, 1] = mp[3, 0]; xym[2, 2] = mp[3, 3];
+            return xym;
         }
     }
 }
