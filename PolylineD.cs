@@ -254,7 +254,7 @@ namespace CoreLib
         {
             List<LineD> llist = toLineList();
             llist.ForEach(l => l.offset(d));
-            if (1 < llist.Count) {
+            if (0 < llist.Count) {
                 mPolyline.Clear();
                 mPolyline.Add(llist[0].ps);
                 for (int i = 0; i < llist.Count - 1; i++) {
