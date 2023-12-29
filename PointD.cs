@@ -573,5 +573,30 @@ namespace CoreLib
         {
             return Math.Sqrt(Math.Pow(p1.x - p2.x, 2) + Math.Pow(p1.y - p2.y, 2));
         }
+
+        /// <summary>
+        /// アフィン変換のマトリックス計算
+        /// </summary>
+        /// <param name="mp">変換マトリックス</param>
+        /// <returns></returns>
+        public PointD toMatrix(double[,] mp)
+        {
+            PointD p = new PointD();
+            p.x = mp[0, 0] * x + mp[0, 1] * y + mp[2, 0];
+            p.y = mp[1, 0] * x + mp[1, 1] * y + mp[2, 1];
+            return p;
+        }
+
+        /// <summary>
+        /// アフィン変換のマトリックス計算
+        /// </summary>
+        /// <param name="mp">変換マトリックス</param>
+        public void matrix(double[,] mp)
+        {
+            double tx = mp[0, 0] * x + mp[0, 1] * y + mp[2, 0];
+            double ty = mp[1, 0] * x + mp[1, 1] * y + mp[2, 1];
+            x = tx;
+            y = ty;
+        }
     }
 }
