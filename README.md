@@ -3,6 +3,7 @@
 
 ### 幾何計算用  
 PointD    : 2D座標、幾何計算用  
+Point3D   : 3D座標  幾何計算用  
 LineD.cs  : 線分の幾何計算用  
 ArcD      : 円弧の幾何計算用  
 EllipseD  : 楕円の幾何計算用  
@@ -45,7 +46,6 @@ YDraw      : 2Dグラフィック
 YWorldDraw : 2Dワールド座標グラフィック   
 
 ### 3Dグラフィック表示機能  
-Point3D     : 3D座標  
 Y3DDraw     : 3D表示  
 Y3DGraphics : 3D表示  
 Y3DParts    : 3D部品表示  
