@@ -178,6 +178,19 @@ namespace CoreLib
     ///  double[,] matrixAdd(double[,] A, double[,] B)      行列の和 A+B
     ///  double[,] matrixInverse(double[,] A)               逆行列 A^-1
     ///  double[,] copyMatrix(double[,] A)                  行列のコピー
+    ///  
+    ///  --  座標変換関連  --
+    ///  double[,] translate3DMatrix(double dx, double dy, double dz)       移動量を3D変換マトリックス(4x4)に設定
+    ///  double[,] rotateX3DMatrix(double th)                               X軸回転を3D変換マトリックス(4x4)に設定
+    ///  double[,] rotateY3DMatrix(double th)                               Y軸回転を3D変換マトリックス(4x4)に設定
+    ///  double[,] rotateZ3DMatrix(double th)                               Z軸回転を3D変換マトリックス(4x4)に設定
+    ///  double[,] scale3DMatrix(double sx, double sy, double sz)           拡大縮小のスケール値を3D変換マトリックス(4x4)に設定
+    ///  double[,] translate2DMatrix(double dx, double dy)                  移動量を2D変換マトリックス(3x3)に設定
+    ///  double[,] rotate2DMatrix(double th)                                原点回転を2D変換マトリックス(3x3)に設定
+    ///  double[,] scale2DMatrix(double sx, double sy)                      拡大縮小のスケール値を2D変換マトリックス(3x3)に設定
+    ///  double[,] inverse2DMatrix()                                        原点に対して反転する2D変換マトリックス(3x3)に設定
+    ///  double[,] inverseX2DMatrix()                                       X軸に対して反転する2D変換マトリックス(3x3)に設定
+    ///  double[,] inverseY2DMatrix()                                       Y軸に対して反転する2D変換マトリックス(3x3)に設定
     /// 
     ///  ---  単位変換関連  ------
     ///  string getCoordinatePattern(string coordinate)
@@ -3506,6 +3519,93 @@ namespace CoreLib
             mp[1, 1] = sy;
             mp[2, 2] = sz;
             mp[3, 3] = 1.0;
+            return mp;
+        }
+
+        /// <summary>
+        /// 移動量を2D変換マトリックス(3x3)に設定
+        /// </summary>
+        /// <param name="dx">X軸方向の移動量</param>
+        /// <param name="dy">Y軸方向の移動量</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] translate2DMatrix(double dx, double dy)
+        {
+            double[,] mp = new double[3, 3];
+            mp[0, 0] = 1;
+            mp[1, 1] = 1;
+            mp[2, 0] = dx;
+            mp[2, 1] = dy;
+            mp[2, 2] = 1;
+            return mp;
+        }
+
+        /// <summary>
+        /// 原点回転を2D変換マトリックス(3x3)に設定
+        /// </summary>
+        /// <param name="th">回転角(rad)</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] rotate2DMatrix(double th)
+        {
+            double[,] mp = new double[3, 3];
+            mp[0, 0] = Math.Cos(th);
+            mp[0, 1] = Math.Sin(th);
+            mp[1, 0] = -Math.Sin(th);
+            mp[1, 1] = Math.Cos(th);
+            mp[2, 2] = 1.0;
+            return mp;
+        }
+
+        /// <summary>
+        ///  拡大縮小のスケール値を2D変換マトリックス(3x3)に設定
+        /// </summary>
+        /// <param name="sx">X方向縮尺</param>
+        /// <param name="sy">Y方向縮尺</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] scale2DMatrix(double sx, double sy)
+        {
+            double[,] mp = new double[3, 3];
+            mp[0, 0] = sx;
+            mp[1, 1] = sy;
+            mp[2, 2] = 1.0;
+            return mp;
+        }
+
+        /// <summary>
+        /// 原点に対して反転する2D変換マトリックス(3x3)に設定
+        /// </summary>
+        /// <returns>変換マトリックス</returns>
+        public double[,] inverse2DMatrix()
+        {
+            double[,] mp = new double[3, 3];
+            mp[0, 0] = -1;
+            mp[1, 1] = -1;
+            mp[2, 2] =  1;
+            return mp;
+        }
+
+        /// <summary>
+        /// X軸に対して反転する2D変換マトリックス(3x3)に設定
+        /// </summary>
+        /// <returns>変換マトリックス</returns>
+        public double[,] inverseX2DMatrix()
+        {
+            double[,] mp = new double[3, 3];
+            mp[0, 0] = 1;
+            mp[1, 1] = -1;
+            mp[2, 2] = 1;
+            return mp;
+        }
+
+        /// <summary>
+        /// Y軸に対して反転する2D変換マトリックス(3x3)に設定
+        /// </summary>
+        /// <returns>変換マトリックス</returns>
+        public double[,] inverseY2DMatrix()
+        {
+            double[,] mp = new double[3, 3];
+            mp[0, 0] = -1;
+            mp[1, 1] = 1;
+            mp[2, 2] = 1;
             return mp;
         }
 
