@@ -66,6 +66,7 @@ namespace CoreLib
     ///  ---  サーフェスデータクラス
     /// class Surface
     ///     Surface(List<Point3D> coordList, Brush fillColor)
+    ///     Surface toCopy()
     ///  
 
     /// <summary>
@@ -732,6 +733,17 @@ namespace CoreLib
             mCoordList = coordList;
             mZOrder = mCoordList.Average(p => p.z);
             mFillColor = fillColor;
+        }
+
+        /// <summary>
+        /// コピーを作成
+        /// </summary>
+        /// <returns></returns>
+        public Surface toCopy()
+        {
+            List<Point3D> coordList = mCoordList.ConvertAll(p => p.toCopy());
+            Surface surface = new Surface(coordList, mFillColor);
+            return surface; 
         }
     }
 }
