@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace CoreLib
 {
@@ -27,6 +29,9 @@ namespace CoreLib
         public bool mReadOnly = false;                      //  リードオンリー,OKボタン非表示
         public int mFontSize = 12;                          //  文字サイズ
         public bool mFontZoomButtomVisible = true;          //  文字ズームボタン表示/非表示
+        public bool mCalcButtonVisible = true;              //  計算ボタン表示/非表示
+
+        private YLib ylib = new YLib();
 
         public InputBox()
         {
@@ -75,6 +80,10 @@ namespace CoreLib
                 BtGZoomDown.Visibility = Visibility.Hidden;
                 BtGZoomUp.Visibility = Visibility.Hidden;
             }
+            if (mCalcButtonVisible)
+                BtCalc.Visibility = Visibility.Visible;
+            else
+                BtCalc.Visibility = Visibility.Hidden;
 
             EditText.Focus();
         }
@@ -120,6 +129,8 @@ namespace CoreLib
                 mFontSize--;
             } else if (bt.Name.CompareTo("BtGZoomUp") == 0) {
                 mFontSize++;
+            } else if (bt.Name.CompareTo("BtCalc") == 0) {
+                textCalculate();
             }
             EditText.FontSize = mFontSize;
         }
@@ -155,6 +166,113 @@ namespace CoreLib
             Properties.Settings.Default.InputBoxWindowWidth = Width;
             Properties.Settings.Default.InputBoxWindowHeight = Height;
             Properties.Settings.Default.Save();
+        }
+
+        /// <summary>
+        /// キー入力操作
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            keyCommand(e.Key, e.KeyboardDevice.Modifiers == ModifierKeys.Control, e.KeyboardDevice.Modifiers == ModifierKeys.Shift);
+        }
+
+        /// <summary>
+        /// マウスダブルクリック操作
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            textOpen(lineSelect());
+        }
+
+        /// <summary>
+        /// 選択文字列を計算する
+        /// </summary>
+        private void textCalculate()
+        {
+            YCalc calc = new YCalc();
+            string text = EditText.SelectedText;
+            //  数式文字以外を除く
+            string express = ylib.stripControlCode(text);
+            express = calc.stripExpressData(express);
+            //  計算結果を挿入
+            int pos = EditText.SelectionStart + EditText.SelectionLength;
+            EditText.Select(pos, 0);
+            EditText.SelectedText = " = " + calc.expression(express).ToString();
+        }
+
+        /// <summary>
+        /// 選択文字列を開く
+        /// </summary>
+        private void textOpen(string word = "")
+        {
+            //  選択文字列
+            if (word.Length <= 0)
+                word = EditText.SelectedText;
+            if (0 < word.Length && 0 <= word.IndexOf("http")) {
+                int ps = word.IndexOf("http");
+                if (0 < ps) {
+                    int pe = word.IndexOfAny(new char[] { ' ', '\t', '\n' }, ps);
+                    if (0 < pe) {
+                        word = word.Substring(ps, pe - ps);
+                    } else {
+                        word = word.Substring(ps);
+                    }
+                }
+                ylib.openUrl(word);
+            } else if (0 < word.Length && File.Exists(word)) {
+                ylib.openUrl(word);
+            }
+        }
+
+        /// <summary>
+        /// 一行分を抽出
+        /// </summary>
+        /// <returns></returns>
+        private string lineSelect()
+        {
+            int pos = EditText.SelectionStart;
+            pos = pos >= EditText.Text.Length ? 0 : pos;
+            int sp = EditText.Text.LastIndexOf("\n", pos);
+            int ep = EditText.Text.IndexOf("\n", pos);
+            if (sp == ep) {
+                pos++;
+                ep = EditText.Text.IndexOf("\n", pos);
+            }
+            ep = ep < 0 ? EditText.Text.Length : ep;
+            return EditText.Text.Substring(sp + 1, ep - sp - 1);
+        }
+
+        /// <summary>
+        /// キー入力処理
+        /// </summary>
+        /// <param name="key">キーコード</param>
+        /// <param name="control">Ctrlキーの有無</param>
+        /// <param name="shift">Shiftキーの有無</param>
+        private void keyCommand(Key key, bool control, bool shift)
+        {
+            if (control) {
+                switch (key) {
+                    default:
+                        break;
+                }
+            } else if (shift) {
+                switch (key) {
+                    default: break;
+                }
+            } else {
+                switch (key) {
+                    case Key.Escape: break;                 //  ESCキーでキャンセル
+                    case Key.F11: textCalculate(); break;   //  選択テキストを計算
+                    case Key.F12: textOpen(); break;        //  選択テキストで開く
+                    case Key.Back:                          //  ロケイト点を一つ戻す
+                        break;
+                    default: break;
+                }
+            }
         }
     }
 }
