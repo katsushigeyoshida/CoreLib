@@ -78,6 +78,7 @@ namespace CoreLib
     ///  string strNumZne2Han(string zenStr)                        文字列内の全角数値を半角に変換
     ///  string strControlCodeCnv(string str)                       文字列の中の改行コード、','、'"'を'\'付きコードに置き換える
     ///  string strControlCodeRev(string str)                       文字列の中の'\'付きコードを通常のコードに戻す
+    ///  string stripControlCode(string str)                        文字列からコントロールコードを除外する
     ///  string[] seperateString(string str)                        文字列をカンマセパレータで分解して配列に格納
     ///  List<string> getPattern(string html, string pattern, string group) 正規表現を使ったHTMLデータからパターン抽出
     ///  List<string[]> getPattern(string html, string pattern)     正規表現を使ったHTMLからのパターン抽出
@@ -1249,6 +1250,24 @@ namespace CoreLib
             buffer = buffer.Replace("\"\"", "\"");      //  ""→"
             buffer = buffer.Replace("\\\"", "\"");      //  \"→"
             return buffer;
+        }
+
+        /// <summary>
+        /// 文字列からコントロールコードを除外する
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <returns>除外した文字列</returns>
+        public string stripControlCode(string str)
+        {
+            string buf = "";
+            int pos = 0;
+            while (pos < str.Length) {
+                if (0x20 <= str[pos])
+                    buf += str[pos];
+                pos++;
+            }
+
+            return buf;
         }
 
         /// <summary>

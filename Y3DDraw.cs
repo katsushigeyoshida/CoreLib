@@ -18,7 +18,7 @@ namespace CoreLib
     /// void clearData()                                サーフェスデータをクリア
     /// void setData(List<Surface> surfaceList)         サーフェスデータを設定
     /// void addData(List<Surface> surfaceList)         サーフェスデータを追加
-    /// void addSurfaceList(List<Point3D> coordList, Brush fillColor)  サーフェスデータの追加
+    /// void addSurfaceList(List<Point3D> coordList, Brush fillColor, bool isShading = true)    サーフェスデータの追加
     /// 
     /// ---  三次元変換表示
     ///  void draw3DWLine(Point3D sp, Point3D ep)       3次元座標での線分の描画
@@ -59,13 +59,12 @@ namespace CoreLib
     ///  bool keyMove(Key key, bool ctrl)               キーによる座標変換
     ///  
     ///  --- 3次元サーフェス表示処理
-    ///  void addSurfaceList(List<Point3D> coordList, Brush fillColor)  サーフェスデータの追加
     ///  void dispConvSurfaceList()                     サーフェスの座標リストを表示座標変換する
     ///  void drawSurfaceList()                         サーフェスデータの表示(Z方向にソート)
     ///  
     ///  ---  サーフェスデータクラス
     /// class Surface
-    ///     Surface(List<Point3D> coordList, Brush fillColor)
+    ///     Surface(List<Point3D> coordList, Brush fillColor, bool isShading = true)
     ///     Surface toCopy()
     ///  
 
@@ -78,6 +77,7 @@ namespace CoreLib
         private Point3D mCrossProduct;                  //  陰面判定した時の面の向き
         public double mPerspectivLength = 0.0;          //  視点からスクリーン(z = 0)までの距離
         public Point3D mLight = new Point3D();          //  3Dの光源ベクトル
+        public bool mIsShading = true;                  //  陰面判定の有無
         //  マウス処理
         private PointD mCurrentPos;                     //  現在位置(スクリーン座標)
         private PointD mPreviousPos;                    //  開始位置
@@ -156,9 +156,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="coordList">3D座標リスト</param>
         /// <param name="fillColor">色</param>
-        public void addSurfaceList(List<Point3D> coordList, Brush fillColor)
+        public void addSurfaceList(List<Point3D> coordList, Brush fillColor, bool isShading = true)
         {
-            mSurfaceList.Add(new Surface(coordList, fillColor));
+            mSurfaceList.Add(new Surface(coordList, fillColor, isShading));
         }
 
 
@@ -209,7 +209,7 @@ namespace CoreLib
                 p3List.Add(perspective(wpList[i]));
             }
             //  陰面判定
-            if (!shading(p3List))
+            if (!shading(p3List) && mIsShading)
                 return;
 
             if (!mLight.isEmpty()) {
@@ -706,6 +706,7 @@ namespace CoreLib
             //  サーフェスデータの表示
             for (int i = 0; i < mSurfaceList.Count; i++) {
                 mFillColor = mSurfaceList[i].mFillColor;
+                mIsShading = mSurfaceList[i].mIsShading;
                 draw3DWPolygon(mSurfaceList[i].mCoordList);
             }
         }
@@ -719,20 +720,22 @@ namespace CoreLib
     /// </summary>
     public class Surface
     {
-        public List<Point3D> mCoordList;        //  座標リスト
-        public double mZOrder = 0.0;            //  Z座標の平均値
-        public Brush mFillColor = Brushes.Blue; //  サーフェスの色
+        public List<Point3D> mCoordList;            //  座標リスト
+        public double mZOrder = 0.0;                //  Z座標の平均値
+        public Brush mFillColor = Brushes.Blue;     //  サーフェスの色
+        public bool mIsShading = true;              //  陰面処理
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="coordList">3D座標リスト</param>
         /// <param name="fillColor">色</param>
-        public Surface(List<Point3D> coordList, Brush fillColor)
+        public Surface(List<Point3D> coordList, Brush fillColor, bool isShading = true)
         {
             mCoordList = coordList;
             mZOrder = mCoordList.Average(p => p.z);
             mFillColor = fillColor;
+            mIsShading = isShading;
         }
 
         /// <summary>
