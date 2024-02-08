@@ -49,7 +49,7 @@ namespace CoreLib
     ///  PointD intersectHorizonPoint(PointD p) 指定点の水平線との交点(延長線上も含む)
     ///  PointD centerPoint()                   線分の中点を求める
     ///  bool onPoint(PointD pnt)               点が線分上にあるかを判定
-    ///  PointD nearPoints(PointD p, int  divideNo = 4) 線分の分割点で最も近い点を求める
+    ///  PointD nearPoints(PointD p, int divideNo = 4) 線分の分割点で最も近い点を求める
     ///  byte inOutAreaCode(PointD p, Rect rect)クリッピング領域に対する点の9分割位置の範囲
     ///  byte inOutAreaCode(Point p, Rect rect) クリッピング領域に対する点の9分割位置の範囲
     ///  LineD clippingLine(Rect rect)          矩形領域でクリッピングする
@@ -82,7 +82,7 @@ namespace CoreLib
 
         public PointD ps = new();
         public PointD pe = new();
-        private double mEps = 1E-8;
+        public double mEps = 1E-8;
 
         /// <summary>
         /// コンストラクタ
@@ -620,6 +620,24 @@ namespace CoreLib
                     return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// 点が線分上にあるかを判定
+        /// </summary>
+        /// <param name="p">対象点座標</param>
+        /// <param name="eps">許容誤差</param>
+        /// <returns>判定</returns>
+        public bool onPoint2(PointD p, double eps = -1)
+        {
+            eps = eps < 0 ? mEps : eps;
+            PointD ip = intersection(p);
+            if (eps < ip.length(p))
+                return false;
+            double l = ip.length(ps) + ip.length(pe);
+            if (l <= length() + eps)
+                return true;
+            return false;
         }
 
         /// <summary>

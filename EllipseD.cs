@@ -34,7 +34,7 @@ namespace CoreLib
     /// List<PointD> toPeakList()                               円周上の端点リスト(端点+4分割点)
     /// bool onPoint(PointD p)                                  指定点が楕円上の点かの判定
     /// List<PointD> dividePoints(int divNo)                    楕円を分割した座標点リスト
-    /// List<PointD> toPointList(int divideNo)                  楕円の分割点リストを作成
+    /// List<PointD> toPoint3D(int divideNo)                  楕円の分割点リストを作成
     /// PointD nearPoints(PointD p, int divideNo = 4)           円弧の分割点で最も近い点を求める
     /// bool insideChk(PointD p)                                点が楕円の内側かの判定
     /// bool insideChk(LineD line)                              線分が楕円の内側かの判定

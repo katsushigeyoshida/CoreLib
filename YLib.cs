@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -35,9 +36,14 @@ namespace CoreLib
     /// bool IsClickDownLeft()                          マウス左ボタン(0x01)(VK_LBUTTON)の状態
     /// bool IsClickDownRight()                         マウス右ボタン(0x02)(VK_RBUTTON)の状態
     /// bool isGetKeyState(int nVirtKey)                マウスやキーボードの状態取得
+    /// bool onControlKey()                             コントロールキーの確認
+    /// bool onAltKey()                                 Altキーの確認
+    /// bool onKey(int keyCode)                         キーの確認
     /// 
     /// ---  システム関連  ------
     ///  void DoEvents()                                コントロールを明示的に更新するコード
+    ///  string getLastFolder(string folder)            フルパスのディレクトリから最後のフォルダ名を取り出す
+    ///  string getLastFolder(string folder, int n)     フルパスのディレクトリから最後のフォルダ名を取り出す
     ///  string getAppFolderPath()                      実行ファイルのフォルダを取得(アプリケーションが存在するのディレクトリ)
     ///  string getAppName()                            実行プログラム名をフルパスで取得
     ///  void fileExecute(string path)                  ファイルを実行する
@@ -80,6 +86,8 @@ namespace CoreLib
     ///  string strControlCodeRev(string str)                       文字列の中の'\'付きコードを通常のコードに戻す
     ///  string stripControlCode(string str)                        文字列からコントロールコードを除外する
     ///  string[] seperateString(string str)                        文字列をカンマセパレータで分解して配列に格納
+    ///  List<string> splitString(string str, string[] sep)         文字列を指定文字列で分ける
+    ///  string insertLinefeed(string str, string word, int lineSize)   一行が指定文字数を超えたら改行を入れる
     ///  List<string> getPattern(string html, string pattern, string group) 正規表現を使ったHTMLデータからパターン抽出
     ///  List<string[]> getPattern(string html, string pattern)     正規表現を使ったHTMLからのパターン抽出
     ///  List<string[]> getPattern2(string html, string pattern)    正規表現を使ったHTMLからのパターン抽出
@@ -449,6 +457,35 @@ namespace CoreLib
             return GetKeyState(nVirtKey) < 0;
         }
 
+        /// <summary>
+        /// コントロールキーの確認
+        /// </summary>
+        /// <returns>Ctrlキーの有無</returns>
+        public bool onControlKey()
+        {
+            return (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+        }
+
+        /// <summary>
+        /// Altキーの確認
+        /// </summary>
+        /// <returns>Altキーの有無</returns>
+        public bool onAltKey()
+        {
+            return (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt;
+        }
+
+        /// <summary>
+        /// キーの確認
+        /// </summary>
+        /// <param name="keyCode">キーのコード</param>
+        /// <returns>指定キーの有無</returns>
+        public bool onKey(int keyCode)
+        {
+            return isGetKeyState(keyCode);
+        }
+
+
         //  ---  システム関連  ------
 
         /// <summary>
@@ -523,7 +560,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="folder">ディレクトリ</param>
         /// <returns>抽出フォルダ名</returns>
-        public String getLastFolder(String folder)
+        public string getLastFolder(string folder)
         {
             return getLastFolder(folder, 1);
         }
@@ -534,7 +571,7 @@ namespace CoreLib
         /// <param name="folder">ディレクトリ</param>
         /// <param name="n">後ろから位置 n番目のフォルダ</param>
         /// <returns>抽出フォルダ名</returns>
-        public String getLastFolder(String folder, int n)
+        public string getLastFolder(string folder, int n)
         {
             String[] buf = folder.Split('\\');
             if (0 < buf.Length)
@@ -1370,6 +1407,31 @@ namespace CoreLib
             if (0 < buf.Length)
                 strList.Add(buf);
             return strList;
+        }
+
+        /// <summary>
+        /// 一行が指定文字数を超えたら改行を入れる
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <param name="word">改行対象文字列</param>
+        /// <param name="lineSize">一行の文字数</param>
+        /// <returns></returns>
+        public string insertLinefeed(string str, string word = ",", int lineSize = 80)
+        {
+            string buf = "";
+            int sp = 0, np = 0;
+            int n = str.IndexOf(word, sp);
+            while (sp < str.Length && 0 <= n) {
+                n += word.Length;
+                if (lineSize < n - np) {
+                    buf += str.Substring(np, n - np) + '\n';
+                    np = n;
+                }
+                sp = n + 1;
+                n = str.IndexOf(word, sp);
+            }
+            buf += str.Substring(np);
+            return buf;
         }
 
         /// <summary>
@@ -2381,6 +2443,8 @@ namespace CoreLib
         /// <returns>ColorListNo</returns>
         public int getBrushNo(System.Windows.Media.Brush color)
         {
+            if (color == null)
+                return -1;
             return mBrushList.FindIndex(x => x.brush.ToString() == color.ToString());
         }
 
@@ -2391,6 +2455,8 @@ namespace CoreLib
         /// <returns>色名</returns>
         public string getBrushName(System.Windows.Media.Brush color)
         {
+            if (color == null)
+                return "null";
             int index = mBrushList.FindIndex(x => x.brush.ToString() == color.ToString());
             return mBrushList[index < 0 ? 0 : index].colorTitle;
         }
@@ -3048,6 +3114,8 @@ namespace CoreLib
         /// <returns></returns>
         public BitmapSource canvas2Bitmap(Canvas canvas, double offsetX = 0, double offsetY = 0)
         {
+            if (canvas.ActualWidth == 0 || canvas.ActualHeight == 0)
+                return null;
             //  位置は CanvasのVisaulOffset値を設定したいが直接取れないので
             //Point preLoc = new Point(mMainWindow.lbCommand.ActualWidth + 10, 0);
             System.Windows.Point preLoc = new System.Windows.Point(offsetX, offsetY);
@@ -3523,6 +3591,29 @@ namespace CoreLib
             mp[3, 3] = 1.0;
             return mp;
         }
+
+        /// <summary>
+        /// 任意の軸を中心に回転させる
+        /// </summary>
+        /// <param name="vec">任意の軸(単位ベクトル)</param>
+        /// <param name="th">回転角(rad)</param>
+        /// <returns>変換マトリックス</returns>
+        public double[,] rotate(Point3D vec, double th)
+        {
+            double[,] mp = new double[4, 4];
+            mp[0, 0] = vec.x * vec.x + (1 - vec.x * vec.x) * Math.Cos(th);
+            mp[0, 1] = vec.x * vec.y * (1 - Math.Cos(th)) - vec.z * Math.Sin(th);
+            mp[0, 2] = vec.y * vec.z * (1 - Math.Cos(th)) + vec.y * Math.Sin(th);
+            mp[1, 0] = vec.x * vec.y * (1 - Math.Cos(th)) + vec.z * Math.Sin(th);
+            mp[1, 1] = vec.y * vec.y + (1 - vec.y * vec.y) * Math.Cos(th);
+            mp[1, 2] = vec.y * vec.z * (1 - Math.Cos(th)) - vec.x * Math.Sin(th);
+            mp[2, 0] = vec.y * vec.z * (1 - Math.Cos(th)) - vec.y * Math.Sin(th);
+            mp[2, 1] = vec.y * vec.z * (1 - Math.Cos(th)) + vec.x * Math.Sin(th);
+            mp[2, 2] = vec.z * vec.z + (1 - vec.z * vec.z) * Math.Cos(th);
+            mp[3, 3] = 1.0;
+            return mp;
+        }
+
 
         /// <summary>
         ///  拡大縮小のスケール値を3D変換マトリックス(4x4)に設定

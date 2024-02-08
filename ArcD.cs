@@ -37,7 +37,7 @@ namespace CoreLib
     ///  void setPoint(PointD sp, PointD ep)                指定座標で始角と終角を設定
     ///  double getAngle(PointD p)                          指定座標と中心との角度を求める
     ///  List<PointD> toPeakList()                          円周上の端点リスト(端点+4分割点)
-    ///  List<PointD> toPointlist(int divideNo, bool clockwise = false)     円弧の分割点リストを作成
+    ///  List<PointD> toPointList(int divideNo, bool clockwise = false)     円弧の分割点リストを作成
     ///  List<PointD> toPointList(double da, bool clockwise = false)    円弧の分割点リストを作成
     ///  List<PointD> toAnglePointList(double da, bool clockwise = false)   円弧の角度分割点リストを作成
     ///  PointD nearPoints(PointD p, int divideNo = 4)      円弧の分割点で最も近い点を求める
@@ -46,7 +46,7 @@ namespace CoreLib
     ///  List<PointD> intersection(PointD p, bool on = true)    点との交点リスト
     ///  PointD intersection(PointD p)                      垂点(円に対して)
     ///  List<PointD> intersection(LineD line, bool on = true)  線分との交点
-    ///  List<PointD> intersection(ArcD Arc, bool on = true)    円と円との交点を求める
+    ///  List<PointD> intersection(ArcD arc, bool on = true)    円と円との交点を求める
     ///  List<PointD> intersection(PolylineD polyline, bool on = true)  ポリラインとの交点を求める
     ///  List<PointD> intersection(PolygonD polygon, bool on = true)    ポリゴンとの交点を求める
     ///  List<PointD> tangentPoint(PointD p)                点からの接線の接点リスト

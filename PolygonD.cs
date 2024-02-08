@@ -13,7 +13,7 @@ namespace CoreLib
     /// PolygonD(PolygonD polygon)
     /// 
     /// void Add(PointD p)                              座標点の追加
-    /// void Inset(int index, PointD p)                 座標点の挿入
+    /// void insert(int index, PointD p)                 座標点の挿入
     /// override string ToString()
     /// string ToString(string form)                    座標を書式付きで文字列に変換
     /// PolygonD toCopy()                               コピーを作成
@@ -89,7 +89,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="index">挿入位置</param>
         /// <param name="p">座標</param>
-        public void Inset(int index, PointD p)
+        public void insert(int index, PointD p)
         {
             mPolygon.Insert(index, p);
         }
@@ -367,7 +367,7 @@ namespace CoreLib
             List<LineD> llist = toLineList();
             foreach (LineD line in llist) {
                 PointD ip = line.intersection(l);
-                if (ip != null && line.onPoint(ip))
+                if (ip != null && line.onPoint(ip) && l.onPoint(ip))
                     plist.Add(ip);
             }
             return plist;

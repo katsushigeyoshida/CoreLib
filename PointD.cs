@@ -187,7 +187,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 原点に対する角度(rad)
+        /// 原点に対する角度(rad)(-π～π)
         /// </summary>
         /// <returns>角度(rad)</returns>
         public double angle()
@@ -196,7 +196,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定点を原点とした角度(rad)
+        /// 指定点を原点とした角度(rad)(0～π)
         /// </summary>
         /// <param name="p">PointD</param>
         /// <returns>角度(rad)</returns>
@@ -208,16 +208,36 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 自点を中心とした2点の角度
+        /// 自点を中心とした2点の角度(0～π,-π～π)
+        /// </summary>
+        /// <param name="p1">点座標1</param>
+        /// <param name="p2">点座標2</param>
+        /// <param name="abs">絶対値角度</param>
+        /// <returns>角度(rad)</returns>
+        public double angle(PointD p1, PointD p2, bool abs = true)
+        {
+            double angle1 = p1.angle(toCopy());
+            double angle2 = p2.angle(toCopy());
+            double ang = angle2 - angle1;
+            if (abs) ang = Math.Abs(ang);
+            if (Math.PI < ang) ang -= Math.PI * 2;
+            if (-Math.PI > ang) ang += Math.PI * 2;
+            return ang;
+        }
+
+        /// <summary>
+        /// 自点を中心とした2点の角度(0～2π)
         /// </summary>
         /// <param name="p1">点座標1</param>
         /// <param name="p2">点座標2</param>
         /// <returns>角度(rad)</returns>
-        public double angle(PointD p1, PointD p2)
+        public double angle2(PointD p1, PointD p2)
         {
-            double angle1 = p1.angle(toCopy());
-            double angle2 = p2.angle(toCopy());
-            return Math.Abs(angle1 - angle2);
+            double ang1 = p1.angle(toCopy());
+            double ang2 = p2.angle(toCopy());
+            if (ang2 < ang1)
+                ang2 += Math.PI * 2;
+            return ang2 - ang1;
         }
 
         /// <summary>

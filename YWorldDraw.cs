@@ -48,7 +48,7 @@ namespace CoreLib
     /// void drawWRectangle(Rect rect, double rotate = 0.0) 四角形の描画
     /// void drawWRectangle(Box box, double rotate = 0.0)   四角形の描画
     /// void drawWRectangle(PointD ps, PointD pe, double rotate = 0.0)  四角形の描画
-    /// List<PointD> toPointList(PointD ps, PointD pe, double rotate = 0.0) 2点指定のBoxの頂点リストを求める
+    /// List<PointD> toPoint3D(PointD ps, PointD pe, double rotate = 0.0) 2点指定のBoxの頂点リストを求める
     /// void drawWPolyline(PolylineD polyline)              ポリラインの描画
     /// void drawWPolyline(List<PointD> wpList)             ポリラインの描画
     /// void drawWPolygon(PolygonD polygon, bool fill = true)   ポリゴンの描画(閉領域)
@@ -161,10 +161,16 @@ namespace CoreLib
             mWorld = area.toCopy();
             if (mWorld.Width == 0 && mWorld.Height ==0)
                 mWorld.Size = new Size(1,1);
-            if (mWorld.Width == 0)
+            if (mWorld.Width == 0) {
                 mWorld.Width = mWorld.Height;
-            if (mWorld.Height == 0)
+                mWorld.Left -= mWorld.Width / 2;
+                mWorld.Right = mWorld.Left + mWorld.Width;
+            }
+            if (mWorld.Height == 0) {
                 mWorld.Height = mWorld.Width;
+                mWorld.Top += mWorld.Height/ 2;
+                mWorld.Bottom = mWorld.Top - mWorld.Height;
+            }
             mInvert = mWorld.Top < mWorld.Bottom;   //  上下の向き
             if (mAspectFix)
                 aspectFix();
@@ -428,9 +434,11 @@ namespace CoreLib
         public void drawWLine(LineD l)
         {
             if (mClipping) {
-                List<LineD> lines = mClipBox.clipLineList(l);
-                for (int i = 0; i < lines.Count; i++)
-                    drawLine(cnvWorld2Screen(lines[i]));
+                if (!mClipBox.outsideChk(new Box(l))) {
+                    List<LineD> lines = mClipBox.clipLineList(l);
+                    for (int i = 0; i < lines.Count; i++)
+                        drawLine(cnvWorld2Screen(lines[i]));
+                }
             } else {
                 drawLine(cnvWorld2Screen(l));
             }

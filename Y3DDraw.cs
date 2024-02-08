@@ -77,7 +77,7 @@ namespace CoreLib
         private Point3D mCrossProduct;                  //  陰面判定した時の面の向き
         public double mPerspectivLength = 0.0;          //  視点からスクリーン(z = 0)までの距離
         public Point3D mLight = new Point3D();          //  3Dの光源ベクトル
-        public bool mIsShading = true;                  //  陰面判定の有無
+        public bool mBothShading = true;                //  両面の陰面判定の有無
         //  マウス処理
         private PointD mCurrentPos;                     //  現在位置(スクリーン座標)
         private PointD mPreviousPos;                    //  開始位置
@@ -156,9 +156,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="coordList">3D座標リスト</param>
         /// <param name="fillColor">色</param>
-        public void addSurfaceList(List<Point3D> coordList, Brush fillColor, bool isShading = true)
+        public void addSurfaceList(List<Point3D> coordList, Brush fillColor, bool bothShading = true)
         {
-            mSurfaceList.Add(new Surface(coordList, fillColor, isShading));
+            mSurfaceList.Add(new Surface(coordList, fillColor, bothShading));
         }
 
 
@@ -209,10 +209,10 @@ namespace CoreLib
                 p3List.Add(perspective(wpList[i]));
             }
             //  陰面判定
-            if (!shading(p3List) && mIsShading)
+            if (!shading(p3List, mBothShading))
                 return;
 
-            if (!mLight.isEmpty()) {
+            if (!mLight.isEmpty() && mFillColor != null) {
                 //  光源処理
                 double light = 1 - mCrossProduct.angle(mLight) / Math.PI;
                 SolidColorBrush brush = (SolidColorBrush)mFillColor;
@@ -275,14 +275,20 @@ namespace CoreLib
         /// 隠面判定(外積)
         /// </summary>
         /// <param name="plist">3D座標リスト</param>
+        /// <param name="both">両面隠面処理</param>
         /// <returns>隠面判定(隠面=false)</returns>
-        public bool shading(List<Point3D> plist)
+        public bool shading(List<Point3D> plist, bool both = true)
         {
             if (plist.Count < 3)
                 return true;
-            Point3D v1 = plist[0].vector(plist[1]);
-            Point3D v2 = plist[1].vector(plist[2]);
-            mCrossProduct = v1.crossProduct(v2);
+            mCrossProduct = new Point3D();
+            for (int i = 0; i < plist.Count - 2; i++) {
+                Point3D v1 = plist[i].vector(plist[i + 1]);
+                Point3D v2 = plist[i + 1].vector(plist[i + 2]);
+                mCrossProduct += v1.crossProduct(v2);
+            }
+            if (both && mCrossProduct.z < 0)
+                mCrossProduct.z *= -1;
             return mCrossProduct.z > 0;
         }
 
@@ -706,7 +712,7 @@ namespace CoreLib
             //  サーフェスデータの表示
             for (int i = 0; i < mSurfaceList.Count; i++) {
                 mFillColor = mSurfaceList[i].mFillColor;
-                mIsShading = mSurfaceList[i].mIsShading;
+                mBothShading = mSurfaceList[i].mBothShading;
                 draw3DWPolygon(mSurfaceList[i].mCoordList);
             }
         }
@@ -723,19 +729,20 @@ namespace CoreLib
         public List<Point3D> mCoordList;            //  座標リスト
         public double mZOrder = 0.0;                //  Z座標の平均値
         public Brush mFillColor = Brushes.Blue;     //  サーフェスの色
-        public bool mIsShading = true;              //  陰面処理
+        public bool mBothShading = true;            //  両面の陰面処理
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="coordList">3D座標リスト</param>
         /// <param name="fillColor">色</param>
-        public Surface(List<Point3D> coordList, Brush fillColor, bool isShading = true)
+        /// <param name="bothShading">両面の陰面処理</param>
+        public Surface(List<Point3D> coordList, Brush fillColor, bool bothShading = true)
         {
             mCoordList = coordList;
             mZOrder = mCoordList.Average(p => p.z);
             mFillColor = fillColor;
-            mIsShading = isShading;
+            mBothShading = bothShading;
         }
 
         /// <summary>
