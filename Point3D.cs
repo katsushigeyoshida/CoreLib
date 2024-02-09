@@ -17,7 +17,7 @@ namespace CoreLib
     /// <summary>
     /// 3Dでの表示面
     /// </summary>
-    public enum FACE3D { XY, YX, YZ, ZY, ZX, XZ, NON }
+    public enum FACE3D { XY, YX, YZ, ZY, ZX, XZ, FRONT, TOP, RIGHT, NON }
 
     public class Point3D
     {
@@ -93,6 +93,15 @@ namespace CoreLib
             } else if (face == FACE3D.XZ) {
                 x = p.x;
                 z = p.y;
+            } else if (face == FACE3D.FRONT) {
+                x = p.x;
+                y = p.y;
+            } else if (face == FACE3D.TOP) {
+                x = p.x;
+                z = -p.y;
+            } else if (face == FACE3D.RIGHT) {
+                z = -p.x;
+                y = p.y;
             } else {
                 x = p.x;
                 y = p.y;
@@ -106,12 +115,14 @@ namespace CoreLib
         /// <returns>X軸ベクトル</returns>
         public static Point3D getUVector(FACE3D face)
         {
-            if (face == FACE3D.XY || face == FACE3D.XZ) {
+            if (face == FACE3D.XY || face == FACE3D.XZ || face == FACE3D.FRONT || face == FACE3D.TOP) {
                 return new Point3D(1, 0, 0);
             } else if (face == FACE3D.YZ || face == FACE3D.YX) {
                 return new Point3D(0, 1, 0);
             } else if (face == FACE3D.ZX || face == FACE3D.ZY) {
                 return new Point3D(0, 0, 1);
+            } else if (face == FACE3D.RIGHT) {
+                return new Point3D(0, 0, -1);
             } else {
                 return new Point3D(1, 0, 0);
             }
@@ -124,12 +135,14 @@ namespace CoreLib
         /// <returns>Y軸ベクトル</returns>
         public static Point3D getVVector(FACE3D face)
         {
-            if (face == FACE3D.XY || face == FACE3D.ZY) {
+            if (face == FACE3D.XY || face == FACE3D.ZY || face == FACE3D.FRONT) {
                 return new Point3D(0, 1, 0);
             } else if (face == FACE3D.YZ || face == FACE3D.XZ) {
                 return new Point3D(0, 0, 1);
             } else if (face == FACE3D.ZX || face == FACE3D.YX) {
                 return new Point3D(1, 0, 0);
+            } else if (face == FACE3D.TOP || face == FACE3D.RIGHT) {
+                return new Point3D(0, 1, 0);
             } else {
                 return new Point3D(0, 1, 0);
             }
@@ -296,17 +309,23 @@ namespace CoreLib
         public PointD toPoint(FACE3D face)
         {
             if (face == FACE3D.XY)
-                return toPointXY();
+                return new PointD(x, y);
             else if (face == FACE3D.YZ)
-                return toPointYZ();
+                return new PointD(y, z);
             else if (face == FACE3D.ZX)
-                return toPointZX();
+                return new PointD(z, x);
             else if (face == FACE3D.YX)
-                return toPointYX();
+                return new PointD(y, x);
             else if (face == FACE3D.ZY)
-                return toPointZY();
+                return new PointD(z, y);
             else if (face == FACE3D.XZ)
-                return toPointXZ();
+                return new PointD(x, z);
+            else if (face == FACE3D.FRONT)
+                return new PointD(x, y);
+            else if (face == FACE3D.TOP)
+                return new PointD(x, -z);
+            else if (face == FACE3D.RIGHT)
+                return new PointD(-z, y);
 
             return null;
         }
@@ -624,12 +643,18 @@ namespace CoreLib
         /// <param name="face">表示面</param>
         public void rotate(double th, FACE3D face)
         {
-            if (face == FACE3D.XY)
+            if (face == FACE3D.XY || face == FACE3D.FRONT)
                 rotateZ(th);
-            else if (face == FACE3D.YZ)
+            else if (face == FACE3D.YZ || face == FACE3D.RIGHT)
                 rotateX(th);
-            else if (face == FACE3D.ZX)
+            else if (face == FACE3D.ZX || face == FACE3D.TOP)
                 rotateY(th);
+            else if (face == FACE3D.YX)
+                rotateZ(-th);
+            else if (face == FACE3D.ZY)
+                rotateX(-th);
+            else if (face == FACE3D.XZ)
+                rotateY(-th);
         }
 
         /// <summary>
