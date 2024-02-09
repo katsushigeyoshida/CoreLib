@@ -86,6 +86,18 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="polygon">3Dポリゴン</param>
+        public Polygon3D(Polygon3D polygon)
+        {
+            mPolygon = polygon.mPolygon.ConvertAll(p => p.toCopy());
+            mCp = polygon.mCp.toCopy();
+            mU = polygon.mU.toCopy();
+            mV = polygon.mV.toCopy();
+        }
+
+        /// <summary>
         /// コピーの作成
         /// </summary>
         /// <returns>Polygon3D</returns>
@@ -347,9 +359,8 @@ namespace CoreLib
         /// <summary>
         /// 多角形を三角形の集合に変換(座標リスト = 3座標 x 三角形の数)
         /// </summary>
-        /// <param name="face">2D平面</param>
         /// <returns>3角形の座標リスト</returns>
-        public List<Point3D> cnvTriangles(FACE3D face)
+        public List<Point3D> cnvTriangles()
         {
             PolygonD polygon = new PolygonD(mPolygon);
             int polygonCount = polygon.mPolygon.Count;
