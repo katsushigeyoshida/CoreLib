@@ -29,7 +29,7 @@ namespace CoreLib
         public Polyline3D(List<Point3D> polyline)
         {
             if (2 < polyline.Count) {
-                mCp = polyline[0];
+                mCp = polyline[0].toCopy();
                 mU = polyline[1] - polyline[0];
                 mU.unit();
                 Line3D l = new Line3D(polyline[0], polyline[1]);
@@ -37,7 +37,7 @@ namespace CoreLib
                 mV = polyline[2] - ip;
                 mV.unit();
             } else if (2 == polyline.Count) {
-                mCp = polyline[0];
+                mCp = polyline[0].toCopy();
                 mU = polyline[1] - polyline[0];
                 mU.unit();
                 mV = mU.toCopy();
