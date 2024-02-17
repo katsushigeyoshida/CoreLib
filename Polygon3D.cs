@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows.Shapes;
 
 namespace CoreLib
 {
@@ -126,12 +127,14 @@ namespace CoreLib
         /// 3D座標リストの抽出
         /// </summary>
         /// <returns>3D座標リスト</returns>
-        public List<Point3D> toPoint3D()
+        public List<Point3D> toPoint3D(bool close = false)
         {
             List<Point3D> plist = new List<Point3D>();
             for (int i = 0; i < mPolygon.Count; i++) {
                 plist.Add(Point3D.cnvPlaneLocation(mPolygon[i], mCp, mU, mV));
             }
+            if (close)
+                plist.Add(Point3D.cnvPlaneLocation(mPolygon[0], mCp, mU, mV));
             return plist;
         }
 
@@ -178,6 +181,19 @@ namespace CoreLib
             line.mEps = 1e-4;
             lines.Add(line);
             return lines;
+        }
+
+        /// <summary>
+        /// 2Dポリゴンに変換
+        /// </summary>
+        /// <param name="face">2D平面</param>
+        /// <returns>2Dポリゴン</returns>
+        public PolygonD toPolygonD(FACE3D face)
+        {
+            List<Point3D> plist = toPoint3D();
+            PolygonD polygon = new PolygonD();
+            polygon.mPolygon = plist.ConvertAll(p => p.toPoint(face));
+            return polygon;
         }
 
         /// <summary>
@@ -289,6 +305,23 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(Point3D sp, Point3D ep)
+        {
+            Line3D line = getLine3D(nearLine(sp));
+            PointD spp = Point3D.cnvPlaneLocation(sp, mCp, mU, mV);
+            PointD epp = Point3D.cnvPlaneLocation(ep, mCp, mU, mV);
+            LineD l = line.toLineD(mCp, mU, mV);
+            double dis = l.distance(epp) * Math.Sign(l.crossProduct(epp)) - l.distance(spp) * Math.Sign(l.crossProduct(spp));
+            PolygonD polygon = new PolygonD(mPolygon);
+            polygon.offset(dis);
+            mPolygon = polygon.mPolygon;
+        }
+
+        /// <summary>
         /// ポリゴンの分割(ポリラインに変換)
         /// </summary>
         /// <param name="pos">2D分割座標</param>
@@ -360,8 +393,9 @@ namespace CoreLib
         /// 多角形を三角形の集合に変換(座標リスト = 3座標 x 三角形の数)
         /// </summary>
         /// <returns>3角形の座標リスト</returns>
-        public List<Point3D> cnvTriangles()
+        public (List<Point3D> triangles, bool reverse) cnvTriangles()
         {
+            bool reverse = false;
             PolygonD polygon = new PolygonD(mPolygon);
             int polygonCount = polygon.mPolygon.Count;
             List<PointD> triangles = cnvTriangles(polygon);
@@ -369,9 +403,10 @@ namespace CoreLib
                 polygon = new PolygonD(mPolygon);
                 polygon.mPolygon.Reverse();
                 triangles = cnvTriangles(polygon);
+                reverse = true;
             }
             List<Point3D> triangle3d = triangles.ConvertAll(p => Point3D.cnvPlaneLocation(p, mCp, mU, mV));
-            return triangle3d;
+            return (triangle3d, reverse);
         }
 
         /// <summary>

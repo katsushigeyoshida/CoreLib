@@ -22,6 +22,16 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ
         /// </summary>
+        /// <param name="size">大きさ</param>
+        public Box3D(double size)
+        {
+            mMin = new Point3D(-size / 2, -size / 2, -size / 2);
+            mMax = new Point3D(size / 2, size / 2, size / 2);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
         /// <param name="p">座標</param>
         public Box3D(Point3D p)
         {
@@ -80,6 +90,30 @@ namespace CoreLib
         public string ToString(string form)
         {
             return $"{mMin.ToString(form)} {mMax.ToString(form)}";
+        }
+
+        /// <summary>
+        /// NaNかの判定
+        /// </summary>
+        /// <returns>NaN状態</returns>
+        public bool isNaN()
+        {
+            if (mMax.isNaN() || mMin.isNaN())
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// Empty状態の判定
+        /// </summary>
+        /// <returns></returns>
+        public bool isEmpty()
+        {
+            if (mMax.isEmpty() && mMin.isEmpty())
+                return true;
+            else
+                return false;
         }
 
         /// <summary>

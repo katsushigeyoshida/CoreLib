@@ -15,7 +15,7 @@ namespace CoreLib
     /// </summary>
 
     /// <summary>
-    /// 3Dでの表示面
+    /// 3Dでの表示面(FRONT=XY,TOP=X-Z,RIGHT=-ZY)
     /// </summary>
     public enum FACE3D { XY, YX, YZ, ZY, ZX, XZ, FRONT, TOP, RIGHT, NON }
 
@@ -135,14 +135,14 @@ namespace CoreLib
         /// <returns>Y軸ベクトル</returns>
         public static Point3D getVVector(FACE3D face)
         {
-            if (face == FACE3D.XY || face == FACE3D.ZY || face == FACE3D.FRONT) {
+            if (face == FACE3D.XY || face == FACE3D.ZY || face == FACE3D.FRONT || face == FACE3D.RIGHT) {
                 return new Point3D(0, 1, 0);
             } else if (face == FACE3D.YZ || face == FACE3D.XZ) {
                 return new Point3D(0, 0, 1);
             } else if (face == FACE3D.ZX || face == FACE3D.YX) {
                 return new Point3D(1, 0, 0);
-            } else if (face == FACE3D.TOP || face == FACE3D.RIGHT) {
-                return new Point3D(0, 1, 0);
+            } else if (face == FACE3D.TOP) {
+                return new Point3D(0, 0, -1);
             } else {
                 return new Point3D(0, 1, 0);
             }
@@ -347,6 +347,18 @@ namespace CoreLib
         public bool isEmpty()
         {
             if (x == 0 && y ==0 && z == 0)
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 座標値がNaNかの確認
+        /// </summary>
+        /// <returns>NaN状態</returns>
+        public bool isNaN()
+        {
+            if (double.IsNaN(x) || double.IsNaN(y) || double.IsNaN(z))
                 return true;
             else
                 return false;
@@ -576,7 +588,7 @@ namespace CoreLib
         /// <returns>スカラー値</returns>
         public static double operator *(Point3D v1, Point3D v2)
         {
-            return v1.x * v2.x + v1.y * v2.y + v1.y * v2.y;
+            return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
         }
 
         /// <summary>
@@ -740,15 +752,15 @@ namespace CoreLib
             Point3D vec = v.toCopy();
             vec.unit();
             double[,] mp = new double[4, 4];
-            mp[0, 0] = vec.x * vec.x + (1 - vec.x * vec.x) * Math.Cos(th);
-            mp[0, 1] = vec.x * vec.y * (1 - Math.Cos(th)) - vec.z * Math.Sin(th);
-            mp[0, 2] = vec.y * vec.z * (1 - Math.Cos(th)) + vec.y * Math.Sin(th);
-            mp[1, 0] = vec.x * vec.y * (1 - Math.Cos(th)) + vec.z * Math.Sin(th);
-            mp[1, 1] = vec.y * vec.y + (1 - vec.y * vec.y) * Math.Cos(th);
-            mp[1, 2] = vec.y * vec.z * (1 - Math.Cos(th)) - vec.x * Math.Sin(th);
-            mp[2, 0] = vec.y * vec.z * (1 - Math.Cos(th)) - vec.y * Math.Sin(th);
-            mp[2, 1] = vec.y * vec.z * (1 - Math.Cos(th)) + vec.x * Math.Sin(th);
-            mp[2, 2] = vec.z * vec.z + (1 - vec.z * vec.z) * Math.Cos(th);
+            mp[0, 0] = vec.x * vec.x * (1 - Math.Cos(th)) + Math.Cos(th);
+            mp[0, 1] = vec.x * vec.y * (1 - Math.Cos(th)) + vec.z * Math.Sin(th);
+            mp[0, 2] = vec.x * vec.z * (1 - Math.Cos(th)) - vec.y * Math.Sin(th);
+            mp[1, 0] = vec.y * vec.x * (1 - Math.Cos(th)) - vec.z * Math.Sin(th);
+            mp[1, 1] = vec.y * vec.y * (1 - Math.Cos(th)) + Math.Cos(th);
+            mp[1, 2] = vec.y * vec.z * (1 - Math.Cos(th)) + vec.x * Math.Sin(th);
+            mp[2, 0] = vec.z * vec.x * (1 - Math.Cos(th)) + vec.y * Math.Sin(th);
+            mp[2, 1] = vec.z * vec.y * (1 - Math.Cos(th)) - vec.x * Math.Sin(th);
+            mp[2, 2] = vec.z * vec.z * (1 - Math.Cos(th)) + Math.Cos(th);
             mp[3, 3] = 1.0;
             matrix(mp);
         }

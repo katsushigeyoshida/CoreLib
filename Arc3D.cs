@@ -138,6 +138,16 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ポリラインに変換する
+        /// </summary>
+        /// <param name="divAng"></param>
+        /// <returns></returns>
+        public Polyline3D toPolyline3D(double divAng = Math.PI / 20)
+        {
+            return new Polyline3D(toPoint3D(divAng));
+        }
+
+        /// <summary>
         /// 分割座標点リストを2D平面に変換
         /// </summary>
         /// <param name="divNo">分割数</param>
@@ -215,6 +225,16 @@ namespace CoreLib
             mCp.rotate(cp, ang, face);
             mU.rotate(ang, face);
             mV.rotate(ang, face);
+        }
+
+        /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(Point3D sp, Point3D ep)
+        {
+            mR += ep.length(mCp) - sp.length(mCp);
         }
 
         /// <summary>

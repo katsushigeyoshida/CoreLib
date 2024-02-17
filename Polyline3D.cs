@@ -26,8 +26,11 @@ namespace CoreLib
         /// コンストラクタ
         /// </summary>
         /// <param name="polyline">座標点リスト</param>
-        public Polyline3D(List<Point3D> polyline)
+        /// <param name="squeezeFlg">重複チェック</param>
+        public Polyline3D(List<Point3D> polyline, bool squeezeFlg = true)
         {
+            if (squeezeFlg)
+                polyline = squeeze(polyline);
             if (2 < polyline.Count) {
                 mCp = polyline[0].toCopy();
                 mU = polyline[1] - polyline[0];
@@ -41,7 +44,10 @@ namespace CoreLib
                 mU = polyline[1] - polyline[0];
                 mU.unit();
                 mV = mU.toCopy();
-                mV.rotate(new Point3D(), Math.PI / 2, FACE3D.XY);
+                if (mEps < polyline[1].toPointXY().length(polyline[0].toPointXY()))
+                    mV.rotate(new Point3D(), Math.PI / 2, FACE3D.XY);
+                else
+                    mV.rotate(new Point3D(), Math.PI / 2, FACE3D.YZ);
             }
             mPolyline = new List<PointD>();
             for (int i = 0; i < polyline.Count; i++) {
@@ -68,6 +74,30 @@ namespace CoreLib
         public Polyline3D(List<PointD> polyline, FACE3D face)
         {
             mPolyline = polyline.ConvertAll(p => p.toCopy());
+            mU = Point3D.getUVector(face);
+            mV = Point3D.getVVector(face);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="polyline">ポリライン</param>
+        public Polyline3D(Polyline3D polyline)
+        {
+            mPolyline = polyline.toPointD();
+            mCp = polyline.mCp.toCopy();
+            mU = polyline.mU.toCopy();
+            mV = polyline.mV.toCopy();
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="line">線分</param>
+        /// <param name="face">2D平面</param>
+        public Polyline3D(Line3D line, FACE3D face)
+        {
+            mPolyline = new List<PointD>() { line.mSp.toPoint(face), line.endPoint().toPoint(face) };
             mU = Point3D.getUVector(face);
             mV = Point3D.getVVector(face);
         }
@@ -107,6 +137,15 @@ namespace CoreLib
         public Point3D toPoint3D(int n)
         {
             return Point3D.cnvPlaneLocation(mPolyline[n], mCp, mU, mV);
+        }
+
+        /// <summary>
+        /// 2Dの座標点リストに変換
+        /// </summary>
+        /// <returns></returns>
+        public List<PointD> toPointD()
+        {
+            return mPolyline.ConvertAll(p => p.toCopy());
         }
 
         /// <summary>
@@ -297,6 +336,34 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="d">オフセット値</param>
+        public void offset(double d)
+        {
+            PolylineD polyline = new PolylineD(mPolyline);
+            polyline.offset(d);
+            mPolyline = polyline.mPolyline;
+        }
+
+        /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(Point3D sp, Point3D ep)
+        {
+            Line3D line = getLine3D(nearLine(sp));
+            PointD spp = Point3D.cnvPlaneLocation(sp, mCp, mU, mV);
+            PointD epp = Point3D.cnvPlaneLocation(ep, mCp, mU, mV);
+            LineD l = line.toLineD(mCp, mU, mV);
+            double dis = l.distance(epp) * Math.Sign(l.crossProduct(epp)) - l.distance(spp) * Math.Sign(l.crossProduct(spp));
+            PolylineD polyline = new PolylineD(mPolyline);
+            polyline.offset(dis);
+            mPolyline = polyline.mPolyline;
+        }
+
+        /// <summary>
         /// 移動
         /// </summary>
         /// <param name="v">移動ベクトル</param>
@@ -331,6 +398,24 @@ namespace CoreLib
                 if ((Math.PI - mPolyline[i].angle(mPolyline[i - 1], mPolyline[i + 1])) < mEps)
                     mPolyline.RemoveAt(i);
             }
+        }
+
+        /// <summary>
+        /// 隣り合う座標が同じもの、角度が180°になるものを削除する
+        /// </summary>
+        /// <param name="polyline">3D座標リスト</param>
+        /// <returns>3D座標リスト</returns>
+        public List<Point3D> squeeze(List<Point3D> polyline)
+        {
+            for (int i = polyline.Count - 1; i > 0; i--) {
+                if (polyline[i].length(polyline[i - 1]) < mEps)
+                    polyline.RemoveAt(i);
+            }
+            for (int i = polyline.Count - 2; i > 0; i--) {
+                if ((Math.PI - polyline[i].angle(polyline[i - 1], polyline[i + 1])) < mEps)
+                    polyline.RemoveAt(i);
+            }
+            return polyline;
         }
 
         /// <summary>
@@ -423,8 +508,11 @@ namespace CoreLib
         public Point3D intersection(PointD pos, FACE3D face)
         {
             int n = nearLine(pos, face);
-            Line3D line = getLine3D(n);
-            return line.intersection(pos, face);
+            if (0 <= n) {
+                Line3D line = getLine3D(n);
+                return line.intersection(pos, face);
+            } else
+                return null;
         }
 
         /// <summary>
@@ -443,11 +531,11 @@ namespace CoreLib
             int n = pline.nearCrossLinePos(mp, true);
             Point3D ipp = getLine3D(n).intersection(mp, face);
             PointD ip = Point3D.cnvPlaneLocation(ipp, mCp, mU, mV);
-            Polyline3D polyline = new Polyline3D();
+            Polyline3D polyline = toCopy();
             polyline.mPolyline  = mPolyline.GetRange(0, n + 1);
             polyline.mPolyline.Add(ip);
             polylines.Add(polyline);
-            polyline = new Polyline3D();
+            polyline = toCopy();
             polyline.mPolyline = mPolyline.GetRange(n + 1, mPolyline.Count - n - 1);
             polyline.mPolyline.Insert(0, ip);
             polylines.Add(polyline);

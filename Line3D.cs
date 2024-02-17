@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace CoreLib
 {
@@ -74,12 +73,39 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// LineDに変換する
+        /// </summary>
+        /// <param name="cp"></param>
+        /// <param name="u"></param>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public LineD toLineD(Point3D cp, Point3D u, Point3D v)
+        {
+            PointD sp = Point3D.cnvPlaneLocation(mSp, cp, u, v);
+            PointD ep = Point3D.cnvPlaneLocation((mSp + mV), cp, u, v);
+            return new LineD(sp, ep);
+        }
+
+
+        /// <summary>
         /// 終点座標
         /// </summary>
         /// <returns>終点</returns>
         public Point3D endPoint()
         {
             return mSp + mV;
+        }
+
+        /// <summary>
+        /// 中点
+        /// </summary>
+        /// <returns></returns>
+        public Point3D centerPoint()
+        {
+            double l = mV.length();
+            Point3D v = mV.toCopy();
+            v.length(l / 2);
+            return mSp + v;
         }
 
         /// <summary>
@@ -121,17 +147,19 @@ namespace CoreLib
         }
 
         /// <summary>
-        //  点との交点(垂点)
-        //  https://qiita.com/takenakadx/items/ca137088d3f897bc8b45
+        /// 点との交点(垂点)
+        /// https://qiita.com/takenakadx/items/ca137088d3f897bc8b45
+        /// u = mSp→p , t = v * u / |v|^2
         /// </summary>
         /// <param name="p">点座標</param>
         /// <returns>垂点</returns>
         public Point3D intersection(Point3D p)
         {
-            double t = (mV * (1 / (mV.length() * mV.length()))).innerProduct(p - mSp);
-            mV.length(t);
-            return mSp + mV;
-        }
+            Point3D v = mV.toCopy();
+            double t = (v * (p - mSp)) / (v.length() * v.length());
+            v = v * t;
+            return mSp + v;
+          }
 
         /// <summary>
         /// 表示面で点と交わる位置の線分状の座標を求める
@@ -186,6 +214,18 @@ namespace CoreLib
         {
             mSp.rotate(cp, ang, face);
             mV.rotate(ang, face);
+        }
+
+        /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="v"></param>
+        public void offset(Point3D v)
+        {
+            Point3D p = mSp.toCopy();
+            Line3D l = toCopy();
+            l.translate(v);
+            mSp = l.intersection(mSp);
         }
 
         /// <summary>
