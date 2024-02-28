@@ -1,9 +1,32 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CoreLib
 {
     /// <summary>
     /// 3D 線分
+    /// 
+    /// Line3D()                                                        コンストラクタ
+    /// Line3D(Point3D sp, Point3D ep)                                  コンストラクタ
+    /// Line3D toCopy()                                                 コピーを作成
+    /// string ToString(string form)                                    文字列に変換
+    /// List<Point3D> toPoint3D()                                       座標点リストに変換
+    /// LineD toLineD(FACE3D face)                                      LineDに変換する
+    /// LineD toLineD(Point3D cp, Point3D u, Point3D v)                 LineDに変換する
+    /// Point3D endPoint()                                              終点座標
+    /// Point3D centerPoint()                                           中点
+    /// double length()                                                 線分の長さ
+    /// double length(Point3D pos)                                      指定点との距離
+    /// void length(double l)                                           長さを設定
+    /// void reverse()                                                  始終点を反転する
+    /// Point3D intersection(Point3D p)                                 点との交点(垂点)
+    /// Point3D intersection(PointD pos, FACE3D face)                   表示面で点と交わる位置の線分状の座標
+    /// bool onPoint(Point3D p)                                         線上の点かを判断
+    /// void translate(Point3D v)                                       移動する
+    /// void rotate(Point3D cp, double ang, FACE3D face)                回転
+    /// void offset(Point3D v)                                          オフセット
+    /// List<Line3D> divide(PointD pos, FACE3D face)                    2D座標で分割(表示面で点と交わる座標で線分を分割)
+    /// 
     /// </summary>
     public class Line3D
     {
@@ -159,7 +182,7 @@ namespace CoreLib
             double t = (v * (p - mSp)) / (v.length() * v.length());
             v = v * t;
             return mSp + v;
-          }
+        }
 
         /// <summary>
         /// 表示面で点と交わる位置の線分状の座標を求める
@@ -172,6 +195,8 @@ namespace CoreLib
             LineD line = toLineD(face);
             PointD p = line.intersection(pos);
             double l1 = line.ps.length(p);
+            double ang = line.ps.angle(line.pe, p, true);
+            if (Math.PI / 2 < ang) l1 *= -1;
             Point3D v = mV.toCopy();
             double l = v.length();
             v.length(l * l1 / line.length());
@@ -242,6 +267,61 @@ namespace CoreLib
                 new Line3D(p, mSp + mV)
             };
             return lines;
+        }
+
+        /// <summary>
+        /// 点を線分で反転した座標を求める
+        /// </summary>
+        /// <param name="pos">座標</param>
+        /// <returns>反転座標</returns>
+        public Point3D mirror(Point3D pos)
+        {
+            Point3D p = intersection(pos);
+            Point3D v = p - pos;
+            return p + v;
+        }
+
+        /// <summary>
+        /// 線分を線分で反転した座標を求める
+        /// </summary>
+        /// <param name="line">線分</param>
+        /// <returns>反転線分</returns>
+        public Line3D mirror(Line3D line)
+        {
+            Point3D ps = mirror(line.mSp);
+            Point3D pe = mirror(line.endPoint());
+            return new Line3D(ps, pe);
+        }
+
+        /// <summary>
+        /// トリム
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="ep"></param>
+        /// <param name="face"></param>
+        public void trim(PointD sp, PointD ep, FACE3D face)
+        {
+            Point3D ps = intersection(sp, face);
+            Point3D pe = intersection(ep, face);
+            Line3D l = new Line3D(ps, pe);
+            mSp = l.mSp;
+            mV = l.mV;
+        }
+
+
+        /// <summary>
+        /// トリム
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="ep"></param>
+        /// <param name="face"></param>
+        public void trim(Point3D sp, Point3D ep)
+        {
+            Point3D ps = intersection(sp);
+            Point3D pe = intersection(ep);
+            Line3D l = new Line3D(ps, pe);
+            mSp = l.mSp;
+            mV = l.mV;
         }
     }
 }

@@ -144,7 +144,24 @@ namespace CoreLib
         /// <returns></returns>
         public Polyline3D toPolyline3D(double divAng = Math.PI / 20)
         {
-            return new Polyline3D(toPoint3D(divAng));
+            Polyline3D polyline = new Polyline3D();
+            polyline.mPolyline = toPointD(divAng);
+            polyline.mCp = mCp.toCopy();
+            polyline.mU = mU.toCopy();
+            polyline.mV = mV.toCopy();
+            return polyline;
+            //return new Polyline3D(toPoint3D(divAng));
+        }
+
+        /// <summary>
+        /// 2D座標リストに変換
+        /// </summary>
+        /// <param name="divAng">分割角度</param>
+        /// <returns>2D座標リスト</returns>
+        public List<PointD> toPointD(double divAng = Math.PI / 20)
+        {
+            ArcD arc = new ArcD(new PointD(0, 0), mR, mSa, mEa);
+            return arc.toPointList(divAng);
         }
 
         /// <summary>
@@ -168,6 +185,18 @@ namespace CoreLib
         {
             List<Point3D> plist = toPoint3D(divAng);
             return plist.ConvertAll(p => p.toPoint(face));
+        }
+
+        /// <summary>
+        /// 円周上の端点リスト(端点+4分割点)
+        /// </summary>
+        /// <param name="face">座標点リスト</param>
+        /// <returns></returns>
+        public List<Point3D> toPeackList(FACE3D face)
+        {
+            ArcD arc = new ArcD(new PointD(0, 0), mR, mSa, mEa);
+            List<PointD> plist = arc.toPeakList();
+            return plist.ConvertAll(p => cnvPosition(p));
         }
 
         /// <summary>
@@ -247,10 +276,7 @@ namespace CoreLib
         {
             List<Arc3D> arcs = new List<Arc3D>();
             //  2D平面上で円弧に対する交点角度を求める
-            ArcD arcD = new ArcD(new PointD(0, 0), mR, mSa, mEa);
-            PointD p = cnvPosition(new Point3D(pos, face));
-            PointD ip = arcD.intersection(p);
-            double ang = arcD.getAngle(ip);
+            double ang = intersectionAngle(pos, face);
             //  分割した円弧を作成
             Arc3D arc = toCopy();
             arc.mEa = ang;
@@ -259,6 +285,46 @@ namespace CoreLib
             arc.mSa = ang;
             arcs.Add(arc);
            return arcs;
+        }
+
+        /// <summary>
+        /// トリム
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        /// <param name="face">2D平面</param>
+        public void trim(PointD sp, PointD ep, FACE3D face)
+        {
+            mSa = intersectionAngle(sp, face);
+            mEa = intersectionAngle(ep, face);
+        }
+
+        /// <summary>
+        /// 交点を求める
+        /// </summary>
+        /// <param name="pos">2D座標</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>3D座標</returns>
+        public Point3D intersection(PointD pos, FACE3D face)
+        {
+            ArcD arcD = new ArcD(new PointD(0, 0), mR, mSa, mEa);
+            PointD p = cnvPosition(new Point3D(pos, face));
+            PointD ip = arcD.intersection(p);
+            return cnvPosition(ip);
+        }
+
+        /// <summary>
+        /// 交点の円上の角度を求める
+        /// </summary>
+        /// <param name="pos">2D座標</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>角度</returns>
+        public double intersectionAngle(PointD pos, FACE3D face)
+        {
+            ArcD arcD = new ArcD(new PointD(0, 0), mR, mSa, mEa);
+            PointD p = cnvPosition(new Point3D(pos, face));
+            PointD ip = arcD.intersection(p);
+            return arcD.getAngle(ip);
         }
 
         /// <summary>

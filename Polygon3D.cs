@@ -1,6 +1,6 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
-using System.Windows.Shapes;
 
 namespace CoreLib
 {
@@ -392,17 +392,19 @@ namespace CoreLib
         /// <summary>
         /// 多角形を三角形の集合に変換(座標リスト = 3座標 x 三角形の数)
         /// </summary>
-        /// <returns>3角形の座標リスト</returns>
+        /// <returns>(3角形の座標リスト,リスト反転)</returns>
         public (List<Point3D> triangles, bool reverse) cnvTriangles()
         {
             bool reverse = false;
             PolygonD polygon = new PolygonD(mPolygon);
             int polygonCount = polygon.mPolygon.Count;
-            List<PointD> triangles = cnvTriangles(polygon);
-            if (triangles.Count / 3 < polygonCount - 2) {
+            int removeCount = 0;
+            List<PointD> triangles;
+            (triangles, removeCount) = cnvTriangles(polygon);
+            if (triangles.Count / 3 < polygonCount - removeCount - 2) {
                 polygon = new PolygonD(mPolygon);
                 polygon.mPolygon.Reverse();
-                triangles = cnvTriangles(polygon);
+                (triangles, removeCount) = cnvTriangles(polygon);
                 reverse = true;
             }
             List<Point3D> triangle3d = triangles.ConvertAll(p => Point3D.cnvPlaneLocation(p, mCp, mU, mV));
@@ -414,13 +416,14 @@ namespace CoreLib
         /// 反時計回りに三角形を作っていき、2点目の角度が正で他の輪郭線と重ならないものを使う
         /// </summary>
         /// <param name="plist">多角形の座標リスト</param>
-        /// <returns>3角形の座標リスト</returns>
-        public List<PointD> cnvTriangles(PolygonD polygon)
+        /// <returns>(3角形の座標リスト,削除座標数)</returns>
+        public (List<PointD>, int) cnvTriangles(PolygonD polygon)
         {
             List<PointD> triangles = new List<PointD>();
             List<PointD> plist = polygon.mPolygon;
+            int removeCount = 0;
             if (plist.Count < 3)
-                return triangles;
+                return (triangles, removeCount);
             int n = 0;
             while (n < plist.Count - 2) {
                 //  反時計回りの３点の角度
@@ -439,13 +442,14 @@ namespace CoreLib
                     n = 0;
                 } else if (Math.Abs(ang) < mEps || Math.Abs(ang - Math.PI) < mEps) {
                     plist.RemoveAt(n + 1);
+                    removeCount++;
                     n = 0;
                 } else {
                     //  次の候補
                     n++;
                 }
             }
-            return triangles;
+            return (triangles, removeCount);
         }
 
         /// <summary>
