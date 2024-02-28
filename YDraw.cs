@@ -326,8 +326,6 @@ namespace CoreLib
         /// 形状 type : 0=dot 1:cross 2:plus 3:box 4:Circle 5:triangle
         /// </summary>
         /// <param name="p">点座標</param>
-        /// <param name="size">点の大きさ</param>
-        /// <param name="type">点の形状</param>
         public void drawPoint(PointD p)
         {
             double tmpThickness = mThickness;
