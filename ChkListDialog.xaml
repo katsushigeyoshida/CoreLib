@@ -27,6 +27,7 @@
             </ListBox.ContextMenu>
         </ListBox>
         <StatusBar Height="30" VerticalAlignment="Bottom">
+            <CheckBox x:Name="chLayerAll" Content="全レイヤ" Checked="chLayerAll_Checked" Unchecked="chLayerAll_Unchecked" />
             <Button x:Name="btOK" Content="OK" Width="50" IsDefault="True" Click="btOK_Click" />
             <Button x:Name="btCancel" Content="Cancel" Width="50" IsCancel="True" Click="btCancel_Click" />
         </StatusBar>

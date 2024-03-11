@@ -685,7 +685,8 @@ namespace CoreLib
         /// </summary>
         /// <param name="owner">オーナー</param>
         /// <param name="message">メッセージ</param>
-        /// <param name="title">タイトル</param>
+        /// <param name="title">メッセージのタイトル</param>
+        /// <param name="dlgTitle">ダイヤログのタイトル</param>
         /// <param name="buttonType">ボタンの種類</param>
         /// <returns></returns>
         public MessageBoxResult messageBox(Window owner, string message, string title = "",
@@ -1421,14 +1422,20 @@ namespace CoreLib
             string buf = "";
             int sp = 0, np = 0;
             int n = str.IndexOf(word, sp);
+            int nn = str.IndexOf("\n", sp);
             while (sp < str.Length && 0 <= n) {
                 n += word.Length;
-                if (lineSize < n - np) {
+                if (0 <= nn && nn < n) {
+                    buf += str.Substring(np, nn - np);
+                    n = nn;
+                    np = n;
+                } else if (lineSize < n - np) {
                     buf += str.Substring(np, n - np) + '\n';
                     np = n;
                 }
                 sp = n + 1;
                 n = str.IndexOf(word, sp);
+                nn = str.IndexOf("\n", sp);
             }
             buf += str.Substring(np);
             return buf;

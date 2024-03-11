@@ -218,10 +218,16 @@ namespace CoreLib
         {
             double angle1 = p1.angle(toCopy());
             double angle2 = p2.angle(toCopy());
-            double ang = angle2 - angle1;
-            if (abs) ang = Math.Abs(ang);
-            if (Math.PI < ang) ang -= Math.PI * 2;
-            if (-Math.PI > ang) ang += Math.PI * 2;
+            double ang = 0;
+            if (!abs) {
+                angle2 += angle1 > angle2 ? Math.PI * 2 : 0;
+                ang = angle2 - angle1;
+                ang -= Math.PI < ang ? Math.PI * 2 : 0;
+            } else {
+                ang = Math.Abs(angle2 - angle1);
+                ang -= Math.PI < ang ? Math.PI * 2 : 0;
+                ang += -Math.PI > ang ? Math.PI * 2 : 0;
+            }
             return ang;
         }
 
@@ -476,6 +482,17 @@ namespace CoreLib
         public void mirror(PointD sp, PointD ep)
         {
             LineD l = new LineD(sp, ep);
+            PointD p = new PointD(x, y);
+            PointD cp = l.intersection(p);
+            mirror(cp);
+        }
+
+        /// <summary>
+        /// 指定線分に対してミラーする
+        /// </summary>
+        /// <param name="l">線分</param>
+        public void mirror(LineD l)
+        {
             PointD p = new PointD(x, y);
             PointD cp = l.intersection(p);
             mirror(cp);

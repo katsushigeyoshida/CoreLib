@@ -367,7 +367,7 @@ namespace CoreLib
             List<LineD> llist = toLineList();
             foreach (LineD line in llist) {
                 PointD ip = line.intersection(l);
-                if (ip != null && line.onPoint(ip) && l.onPoint(ip))
+                if (ip != null && line.onPoint2(ip) && l.onPoint2(ip))
                     plist.Add(ip);
             }
             return plist;

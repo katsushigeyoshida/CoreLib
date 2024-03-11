@@ -766,6 +766,21 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定点を中心に拡大縮小する
+        /// </summary>
+        /// <param name="cp">指定点</param>
+        /// <param name="scale">倍率</param>
+        public void scale(Point3D cp, double scale)
+        {
+            Point3D v = new Point3D(x, y, z) - cp;
+            v.length(v.length() * scale);
+            Point3D p = cp + v;
+            x = p.x;
+            y = p.y;
+            z = p.z;
+        }
+
+        /// <summary>
         /// 座標データを原点を中心に拡大・縮小する
         /// </summary>
         /// <param name="vec"></param>

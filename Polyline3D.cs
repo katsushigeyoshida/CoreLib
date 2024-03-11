@@ -104,11 +104,37 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ
         /// </summary>
+        /// <param name="polygon">ポリゴン</param>
+        public Polyline3D(Polygon3D polygon)
+        {
+            mPolyline = polygon.toPointD();
+            mPolyline.Add(mPolyline[0].toCopy());
+            mCp = polygon.mCp.toCopy();
+            mU = polygon.mU.toCopy();
+            mV = polygon.mV.toCopy();
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
         /// <param name="line">線分</param>
         /// <param name="face">2D平面</param>
         public Polyline3D(Line3D line, FACE3D face)
         {
             mPolyline = new List<PointD>() { line.mSp.toPoint(face), line.endPoint().toPoint(face) };
+            mU = Point3D.getUVector(face);
+            mV = Point3D.getVVector(face);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <param name="divAng">分割角度</param>
+        /// <param name="face">2D平面</param>
+        public Polyline3D(Arc3D arc, double divAng, FACE3D face)
+        {
+            mPolyline = arc.toPointD(divAng, face);
             mU = Point3D.getUVector(face);
             mV = Point3D.getVVector(face);
         }
@@ -407,6 +433,99 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// トリム
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void trim(Point3D sp, Point3D ep)
+        {
+            PolylineD polyline = new PolylineD(mPolyline);
+            PointD sp2 = Point3D.cnvPlaneLocation(sp, mCp, mU, mV);
+            PointD ep2 = Point3D.cnvPlaneLocation(ep, mCp, mU, mV);
+            polyline.trim(sp2, ep2);
+            mPolyline = polyline.mPolyline;
+        }
+
+        /// <summary>
+        /// ミラー
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void mirror(Point3D sp, Point3D ep)
+        {
+            Line3D l = new Line3D(sp, ep);
+            mCp = l.mirror(mCp);
+            l.mSp = new Point3D();
+            mU = l.mirror(mU);
+            mV = l.mirror(mV);
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        public void scale(Point3D cp, double scale)
+        {
+            PolylineD polyline = new PolylineD(mPolyline);
+            PointD cp2 = Point3D.cnvPlaneLocation(cp, mCp, mU, mV);
+            polyline.scale(cp2, scale);
+            mPolyline = polyline.mPolyline;
+        }
+
+        /// <summary>
+        /// 2D分割(2D分割位置による分割)
+        /// </summary>
+        /// <param name="pos">2D座標</param>
+        /// <param name="face">表示面</param>
+        /// <returns>ポリラインリスト</returns>
+        public List<Polyline3D> divide(PointD pos, FACE3D face)
+        {
+            List<Polyline3D> polylines = new List<Polyline3D>();
+            PolylineD pline = toPolylineD(face);
+            PointD mp = pline.nearCrossPoint(pos);
+            if (mp == null)
+                return polylines;
+            int n = pline.nearCrossLinePos(mp, true);
+            Point3D ipp = getLine3D(n).intersection(mp, face);
+            PointD ip = Point3D.cnvPlaneLocation(ipp, mCp, mU, mV);
+            Polyline3D polyline = toCopy();
+            polyline.mPolyline = mPolyline.GetRange(0, n + 1);
+            polyline.mPolyline.Add(ip);
+            polylines.Add(polyline);
+            polyline = toCopy();
+            polyline.mPolyline = mPolyline.GetRange(n + 1, mPolyline.Count - n - 1);
+            polyline.mPolyline.Insert(0, ip);
+            polylines.Add(polyline);
+            return polylines;
+        }
+
+        /// <summary>
+        /// 分割
+        /// </summary>
+        /// <param name="pos">分割座標</param>
+        /// <returns>ポリラインリスト</returns>
+        public List<Polyline3D> divide(Point3D pos)
+        {
+            List<Polyline3D> polylines = new List<Polyline3D>();
+            int n = nearLine(pos);
+            if (0 > n)
+                return polylines;
+            Line3D l = getLine3D(n);
+            Point3D ipp = l.intersection(pos);
+            PointD ip = Point3D.cnvPlaneLocation(ipp, mCp, mU, mV);
+            Polyline3D polyline = new Polyline3D();
+            polyline.mPolyline = mPolyline.GetRange(0, n);
+            polyline.mPolyline.Add(ip);
+            polylines.Add(polyline);
+            polyline = new Polyline3D();
+            polyline.mPolyline = mPolyline.GetRange(n, mPolyline.Count - n);
+            polyline.mPolyline.Insert(0, ip);
+            polylines.Add(polyline);
+            return polylines;
+        }
+
+        /// <summary>
         /// 隣り合う座標が同じもの、角度が180°になるものを削除する
         /// </summary>
         public void squeeze()
@@ -534,72 +653,6 @@ namespace CoreLib
                 return line.intersection(pos, face);
             } else
                 return null;
-        }
-
-        /// <summary>
-        /// 2D分割(2D分割位置による分割)
-        /// </summary>
-        /// <param name="pos">2D座標</param>
-        /// <param name="face">表示面</param>
-        /// <returns>ポリラインリスト</returns>
-        public List<Polyline3D> divide(PointD pos, FACE3D face)
-        {
-            List<Polyline3D> polylines = new List<Polyline3D>();
-            PolylineD pline = toPolylineD(face);
-            PointD mp = pline.nearCrossPoint(pos);
-            if (mp == null)
-                return polylines;
-            int n = pline.nearCrossLinePos(mp, true);
-            Point3D ipp = getLine3D(n).intersection(mp, face);
-            PointD ip = Point3D.cnvPlaneLocation(ipp, mCp, mU, mV);
-            Polyline3D polyline = toCopy();
-            polyline.mPolyline  = mPolyline.GetRange(0, n + 1);
-            polyline.mPolyline.Add(ip);
-            polylines.Add(polyline);
-            polyline = toCopy();
-            polyline.mPolyline = mPolyline.GetRange(n + 1, mPolyline.Count - n - 1);
-            polyline.mPolyline.Insert(0, ip);
-            polylines.Add(polyline);
-            return polylines;
-        }
-
-        /// <summary>
-        /// 分割
-        /// </summary>
-        /// <param name="pos">分割座標</param>
-        /// <returns>ポリラインリスト</returns>
-        public List<Polyline3D> divide(Point3D pos)
-        {
-            List<Polyline3D> polylines = new List<Polyline3D>();
-            int n = nearLine(pos);
-            if (0 > n)
-                return polylines;
-            Line3D l = getLine3D(n);
-            Point3D ipp = l.intersection(pos);
-            PointD ip = Point3D.cnvPlaneLocation(ipp, mCp, mU, mV);
-            Polyline3D polyline = new Polyline3D();
-            polyline.mPolyline = mPolyline.GetRange(0, n);
-            polyline.mPolyline.Add(ip);
-            polylines.Add(polyline);
-            polyline = new Polyline3D();
-            polyline.mPolyline = mPolyline.GetRange(n, mPolyline.Count - n);
-            polyline.mPolyline.Insert(0, ip);
-            polylines.Add(polyline);
-            return polylines;
-        }
-
-        /// <summary>
-        /// トリム
-        /// </summary>
-        /// <param name="sp">始点</param>
-        /// <param name="ep">終点</param>
-        public void trim(Point3D sp, Point3D ep)
-        {
-            PolylineD polyline = new PolylineD(mPolyline);
-            PointD sp2 = Point3D.cnvPlaneLocation(sp, mCp, mU, mV);
-            PointD ep2 = Point3D.cnvPlaneLocation(ep, mCp, mU, mV);
-            polyline.trim(sp2, ep2);
-            mPolyline = polyline.mPolyline;
         }
     }
 }

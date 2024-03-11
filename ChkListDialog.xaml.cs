@@ -37,35 +37,47 @@ namespace CoreLib
         public bool mEditMenuEnable = false;
         public bool mDeleteMenuEnable = false;
         public bool mMoveMenuEnable = false;
+        public bool mLayerAllEnable = false;
+        public bool mLayerAll = true;
+
+        public string mSrcName;                                 //  変更前の名称
+        public string mDestName;                                //  変更後の名称
 
         public bool mCallBackOn = false;                        //  コールバック有り
         public Action callback;                                 //  コールバック関数
+        public Action callbackRename;                           //  コールバック関数
 
         public Window mMainWindow;
 
         private YLib ylib = new YLib();
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
         public ChkListDialog()
         {
             InitializeComponent();
 
             mWindowWidth = Width;
             mWindowHeight = Height;
-            WindowFormLoad();       //  Windowの位置とサイズを復元
+            WindowFormLoad();               //  Windowの位置とサイズを復元
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             listDataSet();
-            lbChkListMenuAdd.Visibility = mAddMenuEnable ? Visibility.Visible : Visibility.Collapsed;
-            lbChkListMenuEdit.Visibility = mEditMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+            lbChkListMenuAdd.Visibility    = mAddMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+            lbChkListMenuEdit.Visibility   = mEditMenuEnable ? Visibility.Visible : Visibility.Collapsed;
             lbChkListMenuDelete.Visibility = mDeleteMenuEnable ? Visibility.Visible : Visibility.Collapsed;
-            lbChkListMenuMove.Visibility = mMoveMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+            lbChkListMenuMove.Visibility   = mMoveMenuEnable ? Visibility.Visible : Visibility.Collapsed;
+
+            chLayerAll.Visibility = mLayerAllEnable ? Visibility.Visible : Visibility.Collapsed;
+            chLayerAll.IsChecked  = mLayerAll;
+
             if (0 < mTitle.Length)
                 Title = mTitle;
-            if (mCallBackOn) {
+            if (mCallBackOn)
                 btCancel.Visibility = Visibility.Hidden;
-            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -112,6 +124,11 @@ namespace CoreLib
 
         }
 
+        /// <summary>
+        /// メニュー選択
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void lbChkListMenu_Click(object sender, RoutedEventArgs e)
         {
             MenuItem menuItem = (MenuItem)e.Source;
@@ -119,24 +136,43 @@ namespace CoreLib
             if (menuItem.Name.CompareTo("lbChkListMenuAdd") == 0) {
                 //  項目の追加
                 InputBox dlg = new InputBox();
+                dlg.Title = "レイヤの追加";
                 dlg.Owner = mMainWindow;
                 dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 dlg.mEditText = "";
                 if (dlg.ShowDialog() == true) {
-                    if (0 < dlg.mEditText.Length) {
-                        if (0 <= mChkList.FindIndex(p => p.Text == dlg.mEditText.ToString())) {
-                            mChkList.Add(new CheckBoxListItem(false, dlg.mEditText.ToString()));
-                        }
-                    }
-                }
-                return;
+                    if (0 < dlg.mEditText.Length &&
+                         (0 > mChkList.FindIndex(p => p.Text == dlg.mEditText.ToString()))) {
+                        mChkList.Add(new CheckBoxListItem(false, dlg.mEditText.ToString()));
+                    } else
+                        return;
+                } else
+                    return;
             } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuEdit") == 0) {
                 //  編集
+                CheckBoxListItem item = (CheckBoxListItem)lbChkList.Items[index];
+                mSrcName = item.Text;
+                InputBox dlg = new InputBox();
+                dlg.Title = "レイヤ名の変更";
+                dlg.Owner = mMainWindow;
+                dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                dlg.mEditText = mSrcName;
+                if (dlg.ShowDialog() == true) {
+                    if (0 < dlg.mEditText.Length) {
+                        mDestName = dlg.mEditText;
+                        if (mCallBackOn)
+                            callbackRename();
+                    }
+                }
                 return;
             } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuDelete") == 0) {
                 //  リストボックスから項目削除
                 CheckBoxListItem item = (CheckBoxListItem)lbChkList.Items[index];
-                return;
+                int n = mChkList.FindIndex(p => p.Text == item.Text);
+                if (0 <= n) {
+                    mChkList.RemoveAt(n);
+                } else
+                    return;
             } else if (0 <= index && menuItem.Name.CompareTo("lbChkListMenuMove") == 0) {
                 //  移動
                 CheckBoxListItem item = (CheckBoxListItem)lbChkList.Items[index];
@@ -266,6 +302,30 @@ namespace CoreLib
             if (!mCallBackOn)
                 DialogResult = false;
             Close();
+        }
+
+        /// <summary>
+        /// [全レイヤ]チェックボックスOn
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chLayerAll_Checked(object sender, RoutedEventArgs e)
+        {
+            mLayerAll = chLayerAll.IsChecked == true;
+            if (mCallBackOn)
+                callback();
+        }
+
+        /// <summary>
+        /// [全レイヤ]チェックボックスOff
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chLayerAll_Unchecked(object sender, RoutedEventArgs e)
+        {
+            mLayerAll = chLayerAll.IsChecked == true;
+            if (mCallBackOn)
+                callback();
         }
     }
 }

@@ -113,6 +113,15 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2Dの座標点リストに変換
+        /// </summary>
+        /// <returns>2D座標リスト</returns>
+        public List<PointD> toPointD()
+        {
+            return mPolygon.ConvertAll(p => p.toCopy());
+        }
+
+        /// <summary>
         /// 2D座標に変換
         /// </summary>
         /// <param name="face">2D平面</param>
@@ -322,6 +331,20 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ミラー
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void mirror(Point3D sp, Point3D ep)
+        {
+            Line3D l = new Line3D(sp, ep);
+            mCp = l.mirror(mCp);
+            l.mSp = new Point3D();
+            mU = l.mirror(mU);
+            mV = l.mirror(mV);
+        }
+
+        /// <summary>
         /// ポリゴンの分割(ポリラインに変換)
         /// </summary>
         /// <param name="pos">2D分割座標</param>
@@ -340,6 +363,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        public void scale(Point3D cp, double scale)
+        {
+            PolygonD polygon = new PolygonD(mPolygon);
+            PointD cp2 = Point3D.cnvPlaneLocation(cp, mCp, mU, mV);
+            polygon.scale(cp2, scale);
+            mPolygon = polygon.mPolygon;
+        }
+
+        /// <summary>
         /// 法線ベクトル
         /// </summary>
         /// <returns></returns>
@@ -351,6 +387,24 @@ namespace CoreLib
             }
             normal.unit();
             return normal;
+        }
+
+        /// <summary>
+        /// 多角形の回転方向
+        /// </summary>
+        /// <param name="plist">2D座標リスト</param>
+        /// <returns></returns>
+        public bool isCounterClockWise(List<PointD> plist)
+        {
+            double ang = 0;
+            for (int i = 0; i < plist.Count; i++) {
+                int cp = (i + 1) % plist.Count;
+                int p1 = (i) % plist.Count;
+                int p2 = (i + 2) % plist.Count;
+                double angle = plist[cp].angle(plist[p2], plist[p1], false);
+                ang += Math.Sign(angle) * (Math.PI - Math.Abs(angle));
+            }
+            return  0 < ang;
         }
 
         /// <summary>
@@ -400,13 +454,14 @@ namespace CoreLib
             int polygonCount = polygon.mPolygon.Count;
             int removeCount = 0;
             List<PointD> triangles;
-            (triangles, removeCount) = cnvTriangles(polygon);
-            if (triangles.Count / 3 < polygonCount - removeCount - 2) {
-                polygon = new PolygonD(mPolygon);
+            //  座標リストの回転方向を反時計回りにする
+            if (!isCounterClockWise(polygon.mPolygon)) {
                 polygon.mPolygon.Reverse();
-                (triangles, removeCount) = cnvTriangles(polygon);
                 reverse = true;
             }
+            //  三角形に分割
+            (triangles, removeCount) = cnvTriangles(polygon);
+            //  3D座標に変換
             List<Point3D> triangle3d = triangles.ConvertAll(p => Point3D.cnvPlaneLocation(p, mCp, mU, mV));
             return (triangle3d, reverse);
         }
@@ -422,10 +477,8 @@ namespace CoreLib
             List<PointD> triangles = new List<PointD>();
             List<PointD> plist = polygon.mPolygon;
             int removeCount = 0;
-            if (plist.Count < 3)
-                return (triangles, removeCount);
             int n = 0;
-            while (n < plist.Count - 2) {
+            while (2 < plist.Count && n < plist.Count - 2) {
                 //  反時計回りの３点の角度
                 double ang = plist[n + 1].angle(plist[n + 2], plist[n], false);
                 //  他の輪郭線と重ならないことをチェック
@@ -433,13 +486,20 @@ namespace CoreLib
                 List<PointD> iplist = polygon.intersection(line);
                 iplist = plistSqueeze(iplist, line.toPointList());
                 if (0 < ang && iplist.Count == 0) {
-                    //  三角形を登録
-                    triangles.Add(plist[n].toCopy());
-                    triangles.Add(plist[n + 1].toCopy());
-                    triangles.Add(plist[n + 2].toCopy());
-                    //  登録した三角形の中央頂点を除外
-                    plist.RemoveAt(n + 1);
-                    n = 0;
+                    //  三角形データ
+                    List<PointD> triangle = new List<PointD>() {
+                        plist[n].toCopy(), plist[n + 1].toCopy(), plist[n + 2].toCopy()
+                    };
+                    if (triangleInsideChk(triangle, plist)) {
+                        // 三角形内に座標点があるものは除外
+                        n++;
+                    } else {
+                        //  三角形を登録
+                        triangles.AddRange(triangle);
+                        //  登録した三角形の中央頂点を除外
+                        plist.RemoveAt((n + 1) % plist.Count);
+                        n = 0;
+                    }
                 } else if (Math.Abs(ang) < mEps || Math.Abs(ang - Math.PI) < mEps) {
                     plist.RemoveAt(n + 1);
                     removeCount++;
@@ -450,6 +510,37 @@ namespace CoreLib
                 }
             }
             return (triangles, removeCount);
+        }
+
+        /// <summary>
+        /// 多角形内に座標点の有無をチェック
+        /// </summary>
+        /// <param name="polygon">多角形</param>
+        /// <param name="plist">座標リスト</param>
+        /// <returns>内外の有無</returns>
+        private bool triangleInsideChk(List<PointD> polygon, List<PointD> plist)
+        {
+            for (int i =  0; i < plist.Count; i++) {
+                if (insideChk(polygon, plist[i]))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 多角形の内外判定
+        /// </summary>
+        /// <param name="plist">多角形の座標リスト</param>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        private bool insideChk(List<PointD> plist, PointD p)
+        {
+            for (int i = 0; i < plist.Count; i++) {
+                double ang = plist[(i + 1) % plist.Count].angle(p, plist[i], false);
+                if (ang <= 0)
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>

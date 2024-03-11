@@ -10,6 +10,8 @@ namespace CoreLib
         public Point3D mMin;
         public Point3D mMax;
 
+        private YLib ylib = new YLib();
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
@@ -52,6 +54,26 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ(カンマセパレートで６個の数値文字列を変換))
+        /// </summary>
+        /// <param name="buf">文字列</param>
+        public Box3D(string buf)
+        {
+            string[] data = buf.Split(new char[] { ',' });
+            if (5 < data.Length) {
+                mMin = new Point3D(
+                    ylib.doubleParse(data[0]),
+                    ylib.doubleParse(data[1]),
+                    ylib.doubleParse(data[2]));
+                mMax = new Point3D(
+                    ylib.doubleParse(data[3]),
+                    ylib.doubleParse(data[4]),
+                    ylib.doubleParse(data[5]));
+            }
+        }
+
+
+        /// <summary>
         /// Min/Maxになるように正規化
         /// </summary>
         public void normalize()
@@ -80,6 +102,15 @@ namespace CoreLib
             Box b = new Box(mMin.toPoint(face), mMax.toPoint(face));
             b.normalize();
             return b;
+        }
+
+        /// <summary>
+        /// 文字列に変換
+        /// </summary>
+        /// <returns>文字列</returns>
+        public override string ToString()
+        {
+            return $"{mMin.ToString()} {mMax.ToString()}";
         }
 
         /// <summary>

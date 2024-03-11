@@ -294,6 +294,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ミラー
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void mirror(Point3D sp, Point3D ep)
+        {
+            Line3D l = new Line3D(sp, ep);
+            mSp = l.mirror(mSp);
+            l.mSp = new Point3D();
+            mV = l.mirror(mV);
+        }
+
+        /// <summary>
         /// トリム
         /// </summary>
         /// <param name="sp"></param>
@@ -312,14 +325,29 @@ namespace CoreLib
         /// <summary>
         /// トリム
         /// </summary>
-        /// <param name="sp"></param>
-        /// <param name="ep"></param>
-        /// <param name="face"></param>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
         public void trim(Point3D sp, Point3D ep)
         {
             Point3D ps = intersection(sp);
             Point3D pe = intersection(ep);
             Line3D l = new Line3D(ps, pe);
+            mSp = l.mSp;
+            mV = l.mV;
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        public void scale(Point3D cp, double scale)
+        {
+            Point3D ep = endPoint();
+            ep.scale(cp, scale);
+            Point3D sp = mSp.toCopy();
+            sp.scale(cp, scale);
+            Line3D l = new Line3D(sp, ep);
             mSp = l.mSp;
             mV = l.mV;
         }
