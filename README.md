@@ -1,9 +1,8 @@
 ﻿### CoreLib  
 ## .NET用のライブラリ  
 
-### 幾何計算用  
+### 2D幾何計算用  
 PointD    : 2D座標、幾何計算用  
-Point3D   : 3D座標  幾何計算用  
 LineD.cs  : 線分の幾何計算用  
 ArcD      : 円弧の幾何計算用  
 EllipseD  : 楕円の幾何計算用  
@@ -13,6 +12,15 @@ TextD.cs  : 文字列の幾何計算用
 PartsD    : シンボルの幾何計算用  
 Box       : Rectの代替え幾何ライブラリ  
 Shigensu  : 4元数  
+
+### 3D幾何計算用  
+Point3D    : 3D座標の幾何計算用  
+Line3D.cs  : 3D線分の幾何計算用  
+Arc3D      : 2D平面円弧の3D幾何計算用  
+Polygon3D  : 2D平面ポリゴンの3D幾何計算用  
+Polyline3D : 2D平面ポリラインの3D幾何計算用  
+Box3D      : 3D領域幾何計算  
+Shigensu   : 4元数  
 
 ### 拡張機能  
 ArrayExtension : 配列の拡張機能  
@@ -35,11 +43,12 @@ ColorDialog   : カラー選択ダイヤログ
 FullView      : イメージ全画面表示ダイヤログ  
 InputBox      : 文字入力ダイヤログ   
 InputBox2     : 文字入力ダイヤログ(2段)  
-InputSelect   : メニュー選択、文字列入力ダイヤログ  
+InputSelect   : メニュー選択、文字列入力ダイヤログ(ComboBox)  
+InputSelect2  : メニュー選択、文字列入力ダイヤログ(ComboBox+TextBox)  
 MenuDialog    : メニュー選択ダイヤログ(ListBox)  
 MessageBoxEx  : MessageBox拡張ダイヤログ  
-SelectMenu    : メニュー選択ダイヤログ(ConboBox)  
-SelectMenu2   : メニュー選択ダイヤログ(ConboBox+ListBox)  
+SelectMenu    : メニュー選択ダイヤログ(ComboBox)  
+SelectMenu2   : メニュー選択ダイヤログ(ComboBox+ListBox)  
 
 ### グラフィック表示機能  
 YDraw      : 2Dグラフィック  
