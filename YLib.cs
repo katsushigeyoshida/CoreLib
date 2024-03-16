@@ -592,11 +592,15 @@ namespace CoreLib
         /// <summary>
         /// 実行プログラム名をフルパスで取得
         /// プログラム名は exe でなく dll になる
+        /// この場合は CoreLib となるので Mainのアプリケーション名は直接コードを呼ぶ
         /// </summary>
         /// <returns></returns>
-        public string getAppName()
+        public string getAppName(bool fullpath = true)
         {
-            return System.Reflection.Assembly.GetExecutingAssembly().Location;
+            if (fullpath)
+                return System.Reflection.Assembly.GetExecutingAssembly().Location;
+            else
+                return Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetExecutingAssembly().Location);
         }
 
         /// <summary>

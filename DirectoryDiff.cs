@@ -60,6 +60,8 @@ namespace CoreLib
             char[] trimChar = { '\\' };
             mSrcDir = srcDir.TrimEnd(trimChar);
             mDestDir = destDir.TrimEnd(trimChar);
+            if (!Directory.Exists(destDir))
+                Directory.CreateDirectory(destDir);
             mSrcFiles = getDirectories(mSrcDir);
             mDestFiles = getDirectories(mDestDir);
             mHashChk = hashChk;
