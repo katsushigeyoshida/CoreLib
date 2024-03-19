@@ -311,9 +311,9 @@ namespace CoreLib
         {
             if (mPolyline == null)
                 mPolyline = new List<PointD>();
-                List<Point3D> flist = toPoint3D();
-                flist.AddRange(plist);
-                flist = squeeze(flist);
+            List<Point3D> flist = toPoint3D();
+            flist.AddRange(plist);
+            flist = squeeze(flist);
             mCp = flist[0].toCopy();
             (mU, mV) = getFace(flist);
             mPolyline = new List<PointD>();

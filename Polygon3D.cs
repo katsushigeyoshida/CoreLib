@@ -376,24 +376,42 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 法線ベクトル
+        /// 多角形の法線
         /// </summary>
-        /// <returns></returns>
-        public Point3D getNormal()
+        /// <returns>法線ベクトル</returns>
+        public Point3D getNormalLine()
         {
-            Point3D normal = new Point3D();
-            for (int i = 0; i <  mPolygon.Count - 2; i++) {
-                normal += toPoint3D(i).getNormal(toPoint3D(i + 1), toPoint3D(i + 2));
+            bool ccw = isCounterClockWise();
+            for (int i = 0; i < mPolygon.Count; i++) {
+                for (int j = 2; j < mPolygon.Count + 2; j++) {
+                    int cp = (i + 1) % mPolygon.Count;
+                    int p1 = (i) % mPolygon.Count;
+                    int p2 = (i + j) % mPolygon.Count;
+                    double angle = mPolygon[cp].angle(mPolygon[p2], mPolygon[p1], false);
+                    if (ccw && 0 < Math.Sign(angle) * (Math.PI - Math.Abs(angle))) {
+                        return toPoint3D(p1).getNormal(toPoint3D(cp), toPoint3D(p2));
+                    } else if (!ccw && 0 > Math.Sign(angle) * (Math.PI - Math.Abs(angle))) {
+                        return toPoint3D(p1).getNormal(toPoint3D(cp), toPoint3D(p2));
+                    }
+                }
             }
-            normal.unit();
-            return normal;
+            return new Point3D();
         }
 
         /// <summary>
-        /// 多角形の回転方向
+        /// 多角形の回転方向(角度で判定)
+        /// </summary>
+        /// <returns>反時計回り</returns>
+        public bool isCounterClockWise()
+        {
+            return isCounterClockWise(mPolygon);
+        }
+
+        /// <summary>
+        /// 多角形の回転方向(角度で判定)
         /// </summary>
         /// <param name="plist">2D座標リスト</param>
-        /// <returns></returns>
+        /// <returns>反時計回り</returns>
         public bool isCounterClockWise(List<PointD> plist)
         {
             double ang = 0;
@@ -405,6 +423,20 @@ namespace CoreLib
                 ang += Math.Sign(angle) * (Math.PI - Math.Abs(angle));
             }
             return  0 < ang;
+        }
+
+        /// <summary>
+        /// 法線ベクトル
+        /// </summary>
+        /// <returns></returns>
+        public Point3D getNormal()
+        {
+            Point3D normal = new Point3D();
+            for (int i = 0; i < mPolygon.Count - 2; i++) {
+                normal += toPoint3D(i).getNormal(toPoint3D(i + 1), toPoint3D(i + 2));
+            }
+            normal.unit();
+            return normal;
         }
 
         /// <summary>
