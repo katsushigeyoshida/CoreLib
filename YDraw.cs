@@ -381,13 +381,14 @@ namespace CoreLib
                     drawLine(new LineD(ps, pe));
                     break;
                 default:    //  Dot
-                    ps.offset(-size / 2.0, -size / 2.0);
-                    pe.offset( size / 2.0, -size / 2.0);
-                    for (int y = 0; y < size; y++) {
-                        drawLine(new LineD(ps, pe));
-                        ps.offset(0.0, 1.0);
-                        pe.offset(0.0, 1.0);
-                    }
+                    drawPoint(ps.toPoint());
+                    //ps.offset(-size / 2.0, -size / 2.0);
+                    //pe.offset(size / 2.0, -size / 2.0);
+                    //for (int y = 0; y < size; y++) {
+                    //    drawLine(new LineD(ps, pe));
+                    //    ps.offset(0.0, 1.0);
+                    //    pe.offset(0.0, 1.0);
+                    //}
                     break;
             }
             mThickness = tmpThickness;
@@ -421,6 +422,37 @@ namespace CoreLib
             } else {
                 drawLine(l.toLine());
             }
+        }
+
+        /// <summary>
+        /// 点の表示(四角形塗潰しでPolygonを使う Lineより少し早い,RectAngleだと?)
+        /// </summary>
+        /// <param name="point">座標</param>
+        public void drawPoint(Point point)
+        {
+            Polygon polygon = new Polygon();
+            polygon.Stroke = mBrush;
+            polygon.Fill = mBrush;
+            polygon.StrokeThickness = mThickness;
+            polygon.HorizontalAlignment = HorizontalAlignment.Center;
+            polygon.VerticalAlignment = VerticalAlignment.Center;
+            if (mPointSize <= 1.2) {
+                PointCollection points = new PointCollection() {
+                    new Point(point.X, point.Y),
+                    new Point(point.X, point.Y),
+                };
+                polygon.Points = points;
+            } else {
+                double size = mPointSize / 2.0;
+                PointCollection points = new PointCollection() {
+                new Point(point.X - size, point.Y - size),
+                new Point(point.X - size, point.Y + size),
+                new Point(point.X + size, point.Y + size),
+                new Point(point.X + size, point.Y - size),
+            };
+                polygon.Points = points;
+            }
+            mLastIndex = mCanvas.Children.Add(polygon);
         }
 
         /// <summary>
