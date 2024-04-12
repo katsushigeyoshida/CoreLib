@@ -436,20 +436,20 @@ namespace CoreLib
             polygon.StrokeThickness = mThickness;
             polygon.HorizontalAlignment = HorizontalAlignment.Center;
             polygon.VerticalAlignment = VerticalAlignment.Center;
-            if (mPointSize <= 1.2) {
+            if (mPointSize <= 1.5) {
                 PointCollection points = new PointCollection() {
                     new Point(point.X, point.Y),
                     new Point(point.X, point.Y),
                 };
                 polygon.Points = points;
             } else {
-                double size = mPointSize / 2.0;
+                double size = mPointSize / 3.0;
                 PointCollection points = new PointCollection() {
-                new Point(point.X - size, point.Y - size),
-                new Point(point.X - size, point.Y + size),
-                new Point(point.X + size, point.Y + size),
-                new Point(point.X + size, point.Y - size),
-            };
+                    new Point(point.X - size, point.Y - size),
+                    new Point(point.X - size, point.Y + size),
+                    new Point(point.X + size, point.Y + size),
+                    new Point(point.X + size, point.Y - size),
+                };
                 polygon.Points = points;
             }
             mLastIndex = mCanvas.Children.Add(polygon);
