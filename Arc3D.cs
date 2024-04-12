@@ -14,7 +14,10 @@ namespace CoreLib
         public Point3D mV = new Point3D(0, 1, 0);          //  Y軸の向き(円の面でuに垂直な方向の単位ベクトル)
         public double mR = 1;                              //  半径
         public double mSa = 0;                             //  開始角
-        public double mEa = Math.PI* 2;                    //  修了角
+        public double mEa = Math.PI * 2;                   //  修了角
+
+        private double mEps = 1E-8;
+        private YLib ylib = new YLib();
 
         /// <summary>
         /// コンストラクタ
@@ -81,6 +84,7 @@ namespace CoreLib
             mR = r;
             mSa = sa;
             mEa = ea;
+            normalize();
         }
 
         /// <summary>
@@ -96,6 +100,19 @@ namespace CoreLib
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
+            normalize();
+        }
+
+        /// <summary>
+        /// 開始角と修了角の正規化
+        /// 0 <= 開始角 < 2π, 開始角 <= 修了角 < 4π
+        /// </summary>
+        public void normalize()
+        {
+            mSa = ylib.mod(mSa, Math.PI * 2);
+            mEa = ylib.mod(mEa, Math.PI * 2);
+            if (mEa <= mSa + mEps)
+                mEa += Math.PI * 2;
         }
 
         /// <summary>
@@ -280,9 +297,11 @@ namespace CoreLib
             //  分割した円弧を作成
             Arc3D arc = toCopy();
             arc.mEa = ang;
+            arc.normalize();
             arcs.Add(arc);
             arc = toCopy();
             arc.mSa = ang;
+            arc.normalize();
             arcs.Add(arc);
            return arcs;
         }
@@ -297,6 +316,19 @@ namespace CoreLib
         {
             mSa = intersectionAngle(sp, face);
             mEa = intersectionAngle(ep, face);
+            normalize();
+        }
+
+        /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        public void stretch(Point3D vec, Point3D pickPos)
+        {
+            Point3D mp = intersection(pickPos);
+            Point3D rp = mp + vec;
+            mR = mCp.length(rp);
         }
 
         /// <summary>
@@ -307,8 +339,18 @@ namespace CoreLib
         /// <returns>3D座標</returns>
         public Point3D intersection(PointD pos, FACE3D face)
         {
+            return intersection(new Point3D(pos, face));
+        }
+
+        /// <summary>
+        /// 交点を求める
+        /// </summary>
+        /// <param name="pos">3D座標</param>
+        /// <returns>交点座標</returns>
+        public Point3D intersection(Point3D pos)
+        {
             ArcD arcD = new ArcD(new PointD(0, 0), mR, mSa, mEa);
-            PointD p = cnvPosition(new Point3D(pos, face));
+            PointD p = cnvPosition(pos);
             PointD ip = arcD.intersection(p);
             return cnvPosition(ip);
         }
