@@ -150,6 +150,16 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 座標の挿入
+        /// </summary>
+        /// <param name="index">挿入位置</param>
+        /// <param name="p">座標</param>
+        public void Insert(int index, PointD p)
+        {
+            mPolygon.Insert(index, p);
+        }
+
+        /// <summary>
         /// 重複データ削除
         /// </summary>
         public void squeeze()
@@ -158,6 +168,8 @@ namespace CoreLib
                 if (mPolygon[i].isEqual(mPolygon[i - 1]))
                     mPolygon.RemoveAt(i);
             }
+            if (1 < mPolygon.Count && mPolygon[mPolygon.Count - 1].isEqual(mPolygon[0]))
+                mPolygon.RemoveAt(mPolygon.Count - 1);
         }
 
         /// <summary>
@@ -314,9 +326,17 @@ namespace CoreLib
         /// <param name="nearPos">指定位置</param>
         public void stretch(PointD vec, PointD nearPos)
         {
+            int n = nearCrossLinePos(nearPos);
+            LineD line = new LineD(mPolygon[n], mPolygon[(n + 1) % mPolygon.Count]);
+            PointD cp = line.centerPoint();
             int pos = nearPeackPos(nearPos);
-            if (0 <= pos)
+            PointD np = mPolygon[pos];
+            if (cp.length(nearPos) < np.length(nearPos)) {
+                Insert(n + 1, cp + vec);
+            } else {
                 mPolygon[pos].translate(vec);
+            }
+            squeeze();
         }
 
         /// <summary>
