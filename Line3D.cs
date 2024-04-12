@@ -56,6 +56,31 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="ps">2D始点</param>
+        /// <param name="pe">2D終点</param>
+        /// <param name="face">2D平面</param>
+        public Line3D(PointD ps, PointD pe, FACE3D face)
+        {
+            mSp = new Point3D(ps, face);
+            Point3D ep = new Point3D(pe, face);
+            mV = ep - mSp;
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="line">2D線分</param>
+        /// <param name="face">2D平面</param>
+        public Line3D(LineD line, FACE3D face)
+        {
+            mSp = new Point3D(line.ps, face);
+            Point3D ep = new Point3D(line.pe, face);
+            mV = ep - mSp;
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         /// <returns>Line3D</returns>
@@ -185,6 +210,26 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 線分同士の交点(自線分上の点,nullの時は平行)
+        /// </summary>
+        /// <param name="l">線分</param>
+        /// <returns>交点座標</returns>
+        public Point3D intersection(Line3D l)
+        {
+            Point3D t0 = mV.toCopy();
+            Point3D t1 = l.mV.toCopy();
+            t0.unit();
+            t1.unit();
+            Point3D n = mV.crossProduct(l.mV);
+            if (n.isEmpty())
+                return null;
+            Point3D b = n.crossProduct(l.mV);
+            Point3D w = l.mSp - mSp;
+            double s0 = (w * b) / (t0 * b);
+            return (mSp + t0 * s0);
+        }
+
+        /// <summary>
         /// 表示面で点と交わる位置の線分状の座標を求める
         /// </summary>
         /// <param name="pos">2D座標</param>
@@ -193,6 +238,8 @@ namespace CoreLib
         public Point3D intersection(PointD pos, FACE3D face)
         {
             LineD line = toLineD(face);
+            if (line.length() == 0)
+                return mSp;
             PointD p = line.intersection(pos);
             double l1 = line.ps.length(p);
             double ang = line.ps.angle(line.pe, p, true);
@@ -350,6 +397,21 @@ namespace CoreLib
             Line3D l = new Line3D(sp, ep);
             mSp = l.mSp;
             mV = l.mV;
+        }
+
+        /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        public void stretch(Point3D vec, Point3D pickPos)
+        {
+            if (mSp.length(pickPos) < endPoint().length(pickPos)) {
+                mSp.translate(vec);
+                mV = mV - vec;
+            } else
+                mV.translate(vec);
+
         }
     }
 }
