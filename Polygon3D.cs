@@ -292,6 +292,38 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定点に最も近い座標点の位置
+        /// </summary>
+        /// <param name="pos">指定座標</param>
+        /// <returns>座標位置</returns>
+        public int nearPosition(Point3D pos)
+        {
+            int n = -1;
+            double dis = double.MaxValue;
+            PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
+            for (int i = 0; i < mPolygon.Count; i++) {
+                double l = mPolygon[i].length(p);
+                if (l < dis) {
+                    dis = l;
+                    n = i;
+                }
+            }
+            return n;
+        }
+
+        /// <summary>
+        /// 座標点の挿入
+        /// </summary>
+        /// <param name="n">挿入位置</param>
+        /// <param name="p">3D座標</param>
+        public void insert(int n, Point3D p)
+        {
+            if (mPolygon == null)
+                mPolygon = new List<PointD>();
+            mPolygon.Insert(n, Point3D.cnvPlaneLocation(p, mCp, mU, mV));
+        }
+
+        /// <summary>
         /// 移動
         /// </summary>
         /// <param name="v">移動ベクトル</param>
@@ -326,6 +358,7 @@ namespace CoreLib
             LineD l = line.toLineD(mCp, mU, mV);
             double dis = l.distance(epp) * Math.Sign(l.crossProduct(epp)) - l.distance(spp) * Math.Sign(l.crossProduct(spp));
             PolygonD polygon = new PolygonD(mPolygon);
+            polygon.squeeze();
             polygon.offset(dis);
             mPolygon = polygon.mPolygon;
         }
@@ -373,6 +406,28 @@ namespace CoreLib
             PointD cp2 = Point3D.cnvPlaneLocation(cp, mCp, mU, mV);
             polygon.scale(cp2, scale);
             mPolygon = polygon.mPolygon;
+        }
+
+
+        /// <summary>
+        /// 指定点に最も近い座標点を移動する
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        public void stretch(Point3D vec, Point3D pickPos)
+        {
+            int m = nearLine(pickPos);
+            Line3D line = new Line3D(toPoint3D(m), toPoint3D((m + 1) % mPolygon.Count));
+            Point3D cp = line.centerPoint();
+            int n = nearPosition(pickPos);
+            Point3D np = toPoint3D(n);
+            if (cp.length(pickPos) < np.length(pickPos)) {
+                cp.translate(vec);
+                insert(m + 1, cp);
+            } else {
+                mPolygon[n].translate(Point3D.cnvPlaneLocation(vec, new Point3D(0,0,0), mU, mV));
+            }
+            squeeze();
         }
 
         /// <summary>
@@ -469,6 +524,8 @@ namespace CoreLib
                 if (mPolygon[i].length(mPolygon[i - 1]) < mEps)
                     mPolygon.RemoveAt(i);
             }
+            if (1 < mPolygon.Count && mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
+                mPolygon.RemoveAt(mPolygon.Count - 1);
             for (int i = mPolygon.Count - 2; i > 0; i--) {
                 if ((Math.PI - mPolygon[i].angle(mPolygon[i - 1], mPolygon[i + 1])) < mEps)
                     mPolygon.RemoveAt(i);
