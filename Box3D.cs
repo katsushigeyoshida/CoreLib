@@ -54,6 +54,18 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="b"></param>
+        /// <param name="face"></param>
+        public Box3D(Box b, FACE3D face)
+        {
+            mMin = new Point3D(b.BottomLeft, face);
+            mMax = new Point3D(b.TopRight, face);
+            normalize();
+        }
+
+        /// <summary>
         /// コンストラクタ(カンマセパレートで６個の数値文字列を変換))
         /// </summary>
         /// <param name="buf">文字列</param>
