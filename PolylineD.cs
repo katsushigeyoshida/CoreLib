@@ -259,7 +259,8 @@ namespace CoreLib
                 mPolyline.Add(llist[0].ps);
                 for (int i = 0; i < llist.Count - 1; i++) {
                     PointD ip = llist[i].intersection(llist[i + 1]);
-                    mPolyline.Add(ip);
+                    if (ip != null)
+                        mPolyline.Add(ip);
                 }
                 mPolyline.Add(llist[llist.Count - 1].pe);
             }
@@ -375,9 +376,17 @@ namespace CoreLib
         /// <param name="nearPos">指定位置</param>
         public void stretch(PointD vec, PointD nearPos)
         {
+            int n = nearCrossLinePos(nearPos);
+            LineD line = new LineD(mPolyline[n], mPolyline[n + 1]);
+            PointD cp = line.centerPoint();
             int pos = nearPeackPos(nearPos);
-            if (0 <= pos)
+            PointD np = mPolyline[pos];
+            if (cp.length(nearPos) < np.length(nearPos)) {
+                Insert(n + 1, cp + vec);
+            } else {
                 mPolyline[pos].translate(vec);
+            }
+            squeeze();
         }
 
         /// <summary>
