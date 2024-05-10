@@ -468,6 +468,20 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 3点円弧の描画
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="mp"></param>
+        /// <param name="ep"></param>
+        /// <param name="close"></param>
+        public void drawWArc(PointD sp, PointD mp, PointD ep, bool close = false)
+        {
+            ArcD arc = new ArcD(sp, mp, ep);
+            if (arc.mCp != null && 0 < arc.mR)
+                drawWArc(arc, close);
+        }
+
+        /// <summary>
         /// 円弧の描画
         /// </summary>
         /// <param name="arc">ArcD</param>
@@ -741,6 +755,29 @@ namespace CoreLib
             return plist;
         }
 
+        /// <summary>
+        /// 円弧込みポリラインを線分のみのポリラインに変換
+        /// </summary>
+        /// <param name="polylineArc">円弧込みポリライン</param>
+        /// <returns>線分のみのポリライン</returns>
+        public List<PointD> polylineArc2Polyline(List<PointD> polylineArc)
+        {
+            List<PointD> polyline = new List<PointD>();
+            for (int i = 0; i < polylineArc.Count; i++) {
+                if (i< polylineArc.Count - 1 && polylineArc[i + 1].type == 1) {
+                    ArcD arc = new ArcD(polylineArc[i], polylineArc[i + 1], polylineArc[i + 2]);
+                    double sr = world2screenXlength(arc.mR);
+                    if (arc.mCp != null && 2 < sr) {
+                        int div = sr < 20 ? 8 : (sr < 50 ? 32 : (sr < 150 ? 64 : 128));  //円弧をポリゴンに変換する時の分割数
+                        polyline.AddRange(arc.toPointList(div));
+                        i++;
+                    }
+                    i++;
+                } else
+                    polyline.Add(polylineArc[i]);
+            }
+            return polyline;
+        }
 
         /// <summary>
         /// ポリラインの描画
@@ -759,7 +796,11 @@ namespace CoreLib
         {
             if (mClipping) {
                 for (int i = 0; i < wpList.Count - 1; i++) {
-                    drawWLine(new LineD(wpList[i], wpList[i + 1]));
+                    if (wpList[i + 1].type == 1) {
+                        drawWArc(wpList[i], wpList[i + 1], wpList[i + 2]);
+                        i++;
+                    } else
+                        drawWLine(new LineD(wpList[i], wpList[i + 1]));
                 }
             } else {
                 List<PointD> pointList = wpList.ConvertAll(p => cnvWorld2Screen(p));
@@ -782,16 +823,19 @@ namespace CoreLib
         /// </summary>
         /// <param name="wpList">点座標リスト</param>
         /// <param name="fill">塗り潰しの可否</param>
-        public void drawWPolygon(List<PointD> wpList, bool fill = true)
+        public void drawWPolygon(List<PointD> wPolylineArc, bool fill = true)
         {
+            if (wPolylineArc.Count < 2)
+                return;
             List<PointD> pointList = new List<PointD>();
             if (!fill) {
                 //  塗り潰しをしない場合ポリラインで表示
-                pointList.AddRange(wpList);
-                pointList.Add(wpList[0]);
+                pointList.AddRange(wPolylineArc);
+                pointList.Add(wPolylineArc[0]);
                 drawWPolyline(pointList);
                 return;
             }
+            List<PointD> wpList = polylineArc2Polyline(wPolylineArc);
             if (mClipping) {
                 if (!mClipBox.insideChk(wpList)) {
                     pointList = mClipBox.intersection(wpList);
