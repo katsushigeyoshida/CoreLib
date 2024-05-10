@@ -2030,6 +2030,35 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ファイルを読み込んでリストデータにする
+        /// </summary>
+        /// <param name="filePath">ファイルパス</param>
+        /// <returns>リストデータ</returns>
+        public List<string> loadListData(string filePath)
+        {
+            List<string> listData = new List<string>();
+            if (!File.Exists(filePath))
+                return listData;
+            try {
+                using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                    using (StreamReader dataFile = new StreamReader(filePath, mEncoding[mEncordingType])) {
+                        string line;
+                        while ((line = dataFile.ReadLine()) != null) {
+                            if (0 < line.Length)
+                                listData.Add(line);
+                        }
+                    }
+                    return listData;
+                }
+            } catch (Exception e) {
+                mError = true;
+                mErrorMessage = e.Message;
+                return null;
+            }
+        }
+
+
+        /// <summary>
         /// テキストファイルの読込
         /// </summary>
         /// <param name="path">ファイルパス</param>
