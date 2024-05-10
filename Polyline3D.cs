@@ -545,10 +545,12 @@ namespace CoreLib
         {
             List<Polyline3D> polylines = new List<Polyline3D>();
             PolylineD pline = toPolylineD(face);
-            PointD mp = pline.nearCrossPoint(pos);
-            if (mp == null)
+            //PointD mp = pline.nearCrossPoint(pos);
+            //if (mp == null)
+            //    return polylines;
+            (int n, PointD mp) = pline.nearCrossPos(pos, true);
+            if (n < 0 || mp == null)
                 return polylines;
-            int n = pline.nearCrossLinePos(mp, true);
             Point3D ipp = getLine3D(n).intersection(mp, face);
             PointD ip = Point3D.cnvPlaneLocation(ipp, mCp, mU, mV);
             Polyline3D polyline = toCopy();
