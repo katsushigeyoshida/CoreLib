@@ -64,6 +64,7 @@ namespace CoreLib
         public double mR = 0;
         public double mSa = 0;
         public double mEa = Math.PI * 2;
+        public bool mCcw = true;            //  3点円弧の座標順
         public double mOpenAngle { get { return mEa - mSa; } }
         private double mEps = 1E-8;
 
@@ -83,12 +84,14 @@ namespace CoreLib
         /// <param name="r">半径</param>
         /// <param name="sa">開始角(rad)</param>
         /// <param name="ea">修了角(rad)</param>
-        public ArcD(PointD cp, double r, double sa = 0, double ea = Math.PI * 2)
+        /// <param name="ccw">3点円弧の座標順</param>
+        public ArcD(PointD cp, double r, double sa = 0, double ea = Math.PI * 2, bool ccw = true)
         {
             mCp = cp;
             mR = r;
             mSa = sa;
             mEa = ea;
+            mCcw = ccw;
         }
 
         /// <summary>
@@ -99,12 +102,14 @@ namespace CoreLib
         /// <param name="r">半径</param>
         /// <param name="sa">開始角(rad)</param>
         /// <param name="ea">修了角(rad)</param>
-        public ArcD(double cx, double cy, double r, double sa = 0, double ea = Math.PI * 2)
+        /// <param name="ccw">3点円弧の座標順</param>
+        public ArcD(double cx, double cy, double r, double sa = 0, double ea = Math.PI * 2, bool ccw = true)
         {
             mCp = new PointD(cx, cy);
             mR = r;
             mSa = sa;
             mEa = ea;
+            mCcw = ccw;
         }
 
         /// <summary>
@@ -134,6 +139,7 @@ namespace CoreLib
                     YLib.Swap(ref mSa, ref mEa);
                 }
                 mEa += mEa < mSa ? Math.PI * 2 : 0;
+                mCcw = centerIsLeft(sp, mp);
             }
         }
 
@@ -204,6 +210,10 @@ namespace CoreLib
                 mEa += Math.PI * 2;
         }
 
+        /// <summary>
+        /// 文字列に変換
+        /// </summary>
+        /// <returns>文字列</returns>
         public override string ToString()
         {
             return $"({mCp.x},{mCp.y}),{mR},{mSa},{mEa}";
@@ -222,10 +232,22 @@ namespace CoreLib
         /// <summary>
         /// コピーを作成
         /// </summary>
-        /// <returns></returns>
+        /// <returns>ArcD</returns>
         public ArcD toCopy()
         {
-            return new ArcD(mCp.toCopy(), mR, mSa, mEa);
+            return new ArcD(mCp.toCopy(), mR, mSa, mEa, mCcw);
+        }
+
+        /// <summary>
+        /// 2点の位置から中心が左にあるかを確認
+        /// </summary>
+        /// <param name="ps">始点</param>
+        /// <param name="pe">終点</param>
+        /// <returns>左側</returns>
+        public bool centerIsLeft(PointD ps, PointD pe)
+        {
+            LineD line = new LineD(ps, pe);
+            return 0 < line.crossProduct(mCp);
         }
 
         /// <summary>
@@ -284,6 +306,7 @@ namespace CoreLib
             pe.mirror(sp, ep);
             mSa = getAngle(pe);
             mEa = getAngle(ps);
+            mCcw = !mCcw;
             normalize();
         }
 
@@ -449,6 +472,27 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定座標で始角を設定
+        /// </summary>
+        /// <param name="sp">始点座標</param>
+        /// <param name="ep">終点座標</param>
+        public void setStartPoint(PointD sp)
+        {
+            mSa = sp.angle(mCp);
+            normalize();
+        }
+
+        /// <summary>
+        /// 指定座標で終角を設定
+        /// </summary>
+        /// <param name="ep">終点座標</param>
+        public void setEndPoint(PointD ep)
+        {
+            mEa = ep.angle(mCp);
+            normalize();
+        }
+
+        /// <summary>
         /// 指定座標で始角と終角を設定
         /// </summary>
         /// <param name="sp">始点座標</param>
@@ -469,8 +513,8 @@ namespace CoreLib
         {
             double ang = p.angle(mCp);
             ang = ylib.mod(ang, Math.PI * 2);
-            if (ang < mSa)
-                ang += Math.PI * 2;
+            if (ang > mSa)　ang -= Math.PI * 2;
+            if (ang < mSa)　ang += Math.PI * 2;
             return ang;
         }
 
