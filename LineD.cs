@@ -494,10 +494,11 @@ namespace CoreLib
         /// 円との交点を求める
         /// </summary>
         /// <param name="arc">円弧</param>
+        /// <param name="on">要素上の交点</param>
         /// <returns>交点リスト</returns>
-        public List<PointD> intersection(ArcD arc)
+        public List<PointD> intersection(ArcD arc, bool on = true)
         {
-            return intersection(arc.mCp, arc.mR, arc.mSa, arc.mEa);
+            return intersection(arc.mCp, arc.mR, arc.mSa, arc.mEa, on);
         }
 
         /// <summary>
@@ -505,8 +506,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="c">円の中心座標</param>
         /// <param name="r">円の半径</param>
+        /// <param name="on">要素上の交点</param>
         /// <returns>交点リスト</returns>
-        public List<PointD> intersection(PointD c, double r, double sa = 0.0, double ea = Math.PI * 2.0)
+        public List<PointD> intersection(PointD c, double r, double sa = 0.0, double ea = Math.PI * 2.0, bool on = true)
         {
             List<PointD> pointList = new List<PointD>();
             PointD mp = intersection(c);                    //  線分と中心点との垂点
@@ -524,19 +526,19 @@ namespace CoreLib
                 if (sa <= ang && ang <= ea) {
                     PointD p = new PointD(r * Math.Cos(ang), r * Math.Sin(ang));
                     p.offset(c);
-                    if (onPoint(p))
+                    if (!on || onPoint(p))
                         pointList.Add(p);
                 }
                 ang += Math.PI;
                 if (sa <= ang && ang <= ea) {
                     PointD p = new PointD(r * Math.Cos(ang), r * Math.Sin(ang));
                     p.offset(c);
-                    if (onPoint(p))
+                    if (!on || onPoint(p))
                         pointList.Add(p);
                 }
             } else if (Math.Abs(r - l) < mEps) {
                 //  接点
-                if (innerAngle(sa, ea, mp.angle(c)))
+                if (!on || innerAngle(sa, ea, mp.angle(c)))
                     pointList.Add(mp);
             } else {
                 //  交点
@@ -545,16 +547,16 @@ namespace CoreLib
                 double a = ml.angle();
                 double ang = ylib.mod(a + th, Math.PI * 2.0);
                 ang += ang < sa ? Math.PI * 2 : 0;
-                if (sa <= ang && ang <= ea) {
+                if (!on || (sa <= ang && ang <= ea)) {
                     PointD p1 = new PointD(c.x + r * Math.Cos(ang), c.y + r * Math.Sin(ang));
-                    if (onPoint(p1))
+                    if (!on || onPoint(p1))
                         pointList.Add(p1);
                 }
                 ang = ylib.mod(a - th, Math.PI * 2.0);
                 ang += ang < sa ? Math.PI * 2 : 0;
-                if (sa <= ang && ang <= ea) {
+                if (!on || (sa <= ang && ang <= ea)) {
                     PointD p2 = new PointD(c.x + r * Math.Cos(ang), c.y + r * Math.Sin(ang));
-                    if (onPoint(p2))
+                    if (!on || onPoint(p2))
                         pointList.Add(p2);
                 }
             }
