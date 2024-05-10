@@ -62,6 +62,7 @@ namespace CoreLib
     {
         public double x = double.NaN;
         public double y = double.NaN;
+        public int type = 0;                    //  座標の種別 0: 点座標 1:円弧の中点座標
 
         /// <summary>
         /// コンストラクタ
@@ -76,10 +77,11 @@ namespace CoreLib
         /// </summary>
         /// <param name="x">X座標</param>
         /// <param name="y">Y座標</param>
-        public PointD(double x, double y)
+        public PointD(double x, double y, int type = 0)
         {
             this.x = x;
             this.y = y;
+            this.type = type;
         }
 
         /// <summary>
@@ -90,6 +92,7 @@ namespace CoreLib
         {
             this.x = p.x;
             this.y = p.y;
+            this.type = p.type;
         }
 
         /// <summary>
@@ -128,6 +131,7 @@ namespace CoreLib
         {
             x = 0.0;
             y = 0.0;
+            type = 0;
         }
 
         /// <summary>
@@ -183,7 +187,7 @@ namespace CoreLib
         /// <returns></returns>
         public PointD toCopy()
         {
-            return new PointD(x, y);
+            return new PointD(x, y, type);
         }
 
         /// <summary>
