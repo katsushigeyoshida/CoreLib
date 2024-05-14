@@ -4,9 +4,9 @@ using System.Windows;
 namespace CoreLib
 {
     /// <summary>
-    /// 点座標クラス
+    /// 点座標クラス(属性付き)
     /// PointD()
-    /// PointD(double x, double y)
+    /// PointD(double x, double y, int type = 0)
     /// PointD(PointD p)
     /// PointD(Point p)
     /// 
@@ -21,7 +21,8 @@ namespace CoreLib
     /// PointD toCopy()                             PointDへコピー
     /// double angle()                              原点に対する角度(rad)
     /// double angle(PointD p)                      指定点を原点とした角度(rad)
-    /// double angle(PointD p1, PointD p2)          自点を中心とした2点の角度
+    /// double angle(PointD p1, PointD p2, bool abs = true) 自点を中心とした2点の角度(0～π,-π～π)
+    /// double angle2(PointD p1, PointD p2)         自点を中心とした2点の角度(0～2π)
     /// double length()                             原点からの距離
     /// double length(PointD p)                     指定点との距離
     /// void setLength(double l)                    原点からのベクトルの長さを設定する
@@ -44,6 +45,7 @@ namespace CoreLib
     /// void rotate(PointD cp, PointD up)           指定点を中心に回転(回転角はcpとupでの角度)
     /// void mirror(PointD p)                       指定点でミラーする
     /// void mirror(PointD sp, PointD ep)           指定線分に対してミラーする
+    /// void mirror(LineD l)                        指定線分に対してミラー
     /// void scale(double scale)                    原点を中心に拡大縮小
     /// void scale(PointD cp, double scale)         原点を指定して拡大縮小
     /// bool isInside(Rect r)                       四角形の内側かどうかを判定
@@ -54,8 +56,13 @@ namespace CoreLib
     /// double operator *(PointD v1, PointD v2)
     /// PointD operator /(PointD v1, double m)
     /// PointD operator /(PointD v1, PointD v2)
-    /// 
+    /// ---  (static)  ---
     /// double distance(PointD p1, PointD p2)       2点間の距離
+    /// 
+    /// ---  マトリックス計算  ----
+    /// PointD toMatrix(double[,] mp)               アフィン変換のマトリックス計算
+    /// void matrix(double[,] mp)                   アフィン変換のマトリックス計算
+    /// 
     /// 
     /// </summary>
     public class PointD

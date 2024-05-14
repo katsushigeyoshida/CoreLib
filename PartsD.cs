@@ -11,6 +11,7 @@ namespace CoreLib
     /// 
     /// PartsD()                                                    コンストラクタ
     /// PartsD(string name, List<LineD> lines, List<ArcD> arcs, List<TextD> texts)
+    /// PartsD(string name,List<PointD> points, List<LineD> lines, List<ArcD> arcs, List<TextD> texts)
     /// 
     /// PartsD toCopy()                                             コピーの作成
     /// Box getBox()                                                領域Boxを求める
@@ -36,8 +37,7 @@ namespace CoreLib
     /// List<PointD> intersection(PolylineD polyline)               ポリラインとの交点を求める
     /// List<PointD> intersection(PolygonD polygon)                 ポリゴンとの交点を求める
     /// List<PointD> getPointList()                                 点座標リストの取得
-    /// PointD nearPoint(PointD p)                                  座標リストから指定点にもっと近い点座標を取得
-    /// 
+    /// PointD nearPoint(PointD p)                                  座標リストから指定点にもっと近い点座標を取得0
     /// 
     /// int getDimType(PointD ps, PointD pe, PointD pos)            寸法線のタイプ
     /// List<LineD> arrow(PointD ps, PointD pe)                     矢印の先端形状の作成
@@ -45,6 +45,8 @@ namespace CoreLib
     /// List<PointD> addTextPos(List<PointD> plist, int n, PointD pos, PointD tp)   ピック位置が文字位置の場合文字位置を追加
     /// bool textPickChk(PointD pos)                                指定点が文字位置に含まれているかの判定
     /// 
+    /// (int no, string text) getPickText(PointD pos)               ピック位置の文字列を取得
+    /// (int no, string text) getNearText(PointD pos)               指定位置に最も近い文字列を取得
     /// 
     /// </summary>
     public class PartsD
@@ -967,6 +969,7 @@ namespace CoreLib
             }
             return plist;
         }
+
         /// <summary>
         /// 寸法線のタイプ
         /// 1:水平寸法  -1:垂直寸法 0:平行寸法

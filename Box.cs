@@ -70,6 +70,7 @@ namespace CoreLib
     ///     bool insideChk(PointD c, double r)  円データの内外判定
     ///     bool insideChk(ArcD arc)            円弧データの内外判定
     ///     bool insideChk(PointD c, double r, double sa, double ea)    円弧データの内外判定
+    ///     bool insideChk(EllipseD ellipse)    楕円の内外判定
     ///     bool insideChk(List<PointD> plist)  座標リストの座標がすべて内側か
     ///     bool circleInsideChk(PointD c, double r)    円の内側に入っているか
     ///     bool polygonInsideChk(List<PointD> polygon) ポリゴン内にBoxの頂点が入っているの判定
@@ -90,7 +91,7 @@ namespace CoreLib
     ///     Box andBox(Box b)                   Box同士のANDをとったBoxを求める
     ///     void extension(PointD p)            領域を拡張
     ///     void extension(LineD l)             領域を拡張
-    ///     void extension(List<PointD> plist)  領域を拡張する
+    ///     void extension(List<PointD> plist)  領域を拡張
     ///     void extension(Box b)               領域を拡張
     /// 
     /// </summary>

@@ -18,6 +18,7 @@ namespace CoreLib
     ///  string ToString()
     ///  string ToString(string format)                     書式付き文字列変換
     ///  ArcD toCopy()                                      コピーを作成
+    ///  bool centerIsLeft(PointD ps, PointD pe)            2点の位置から中心が左にあるかを確認
     ///  void translate(PointD vec)                         ベクトル分移動させる
     ///  void rotate(double angle)                          円弧の回転
     ///  void rotate(PointD cp, double ang)                 指定点を中心に回転
@@ -32,14 +33,14 @@ namespace CoreLib
     ///  PointD startPoint()                                始点座標
     ///  PointD endPoint()                                  終点座標
     ///  PointD middlePoint()                               中間点座標
-    ///  List<PointD> dividePoints(int divNo)               円弧を分割した座標点リスト
     ///  PointD getPoint(double ang, bool clockwise = false)    角度から円周上の座標を求める
+    ///  void setStartPoint(PointD sp)                      指定座標で始角を設定
+    ///  void setEndPoint(PointD ep)                        指定座標で終角を設定
     ///  void setPoint(PointD sp, PointD ep)                指定座標で始角と終角を設定
     ///  double getAngle(PointD p)                          指定座標と中心との角度を求める
     ///  List<PointD> toPeakList()                          円周上の端点リスト(端点+4分割点)
     ///  List<PointD> toPointList(int divideNo, bool clockwise = false)     円弧の分割点リストを作成
     ///  List<PointD> toPointList(double da, bool clockwise = false)    円弧の分割点リストを作成
-    ///  List<PointD> toAnglePointList(double da, bool clockwise = false)   円弧の角度分割点リストを作成
     ///  PointD nearPoints(PointD p, int divideNo = 4)      円弧の分割点で最も近い点を求める
     ///  bool onPoint(PointD p)                             点が円弧上にあるかの判定
     ///  bool innerAngle(double ang)                        指定の角度が円弧内かの判定
@@ -55,6 +56,7 @@ namespace CoreLib
     ///  List<ArcD> tangentCircle(LineD lf, LineD ls, double r) 2線分に接する円のリスト
     ///  List<ArcD> tangentCircle(LineD lf, ArcD af, double r)  線分と円に接する円
     ///  List<ArcD> tangentCircle(ArcD a1, ArcD a2, double r)   2円に接する円
+    ///  
     ///  
     /// </summary>
 

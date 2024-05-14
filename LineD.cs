@@ -29,6 +29,8 @@ namespace CoreLib
     ///  PointD vector()                        ベクトル(増分データ)に変換
     ///  PointD getVectorAngle(double ang, double l)    線分に対して角度と長さを指定したベクトルを求める
     ///  PointD getEndPointLine(PointD pickPos, PointD cp)  線分の端点を求める(寸法線用)
+    ///  bool sameDirect(LineD lp)              同じ方向の線分か
+    ///  bool directHorizontal()                水平と垂直に2分した時の水平化の判定
     ///  void inverse()                         始終点を入れ換える
     ///  double length()                        線分の長さ
     ///  void setLength(double l)               線分の長さを再設定する
@@ -40,15 +42,15 @@ namespace CoreLib
     ///  bool isParalell(LineD l)               平行線の判定
     ///  bool innerAngle(double sa, double ea, double ang)  2角の間にあるかを判定(境界を含む)
     ///  double crossProduct(PointD p)          外積(線分に対しての左右の位置関係)
-    ///  double pointDistance(PointD p)         点との垂線の距離
     ///  PointD intersection(PointD p)          点からの垂線の交点座標(垂点)
     ///  PointD intersection(LineD l)           2線分の交点(延長線上の交点も含む)
-    ///  List<PointD> intersection(ArcD arc)    円との交点を求める
-    ///  List<PointD> intersection(PointD c, double r, double sa = 0.0, double ea = Math.PI * 2.0)  円との交点を求める
+    ///  List<PointD> intersection(ArcD arc, bool on = true)    円との交点を求める
+    ///  List<PointD> intersection(PointD c, double r, double sa = 0.0, double ea = Math.PI * 2.0, bool on = true)  円との交点を求める
     ///  bool intersectionHorizon(PointD p)     指定点の水平線と交点を持つかをチェック
     ///  PointD intersectHorizonPoint(PointD p) 指定点の水平線との交点(延長線上も含む)
     ///  PointD centerPoint()                   線分の中点を求める
     ///  bool onPoint(PointD pnt)               点が線分上にあるかを判定
+    ///  bool onPoint2(PointD p, double eps = -1)   点が線分上にあるかを判定
     ///  PointD nearPoints(PointD p, int divideNo = 4) 線分の分割点で最も近い点を求める
     ///  byte inOutAreaCode(PointD p, Rect rect)クリッピング領域に対する点の9分割位置の範囲
     ///  byte inOutAreaCode(Point p, Rect rect) クリッピング領域に対する点の9分割位置の範囲
@@ -64,6 +66,7 @@ namespace CoreLib
     ///  void move(double dx, double dy)        増分を指定して平行移動
     ///  void moveLength(double r,double th)    距離と角度を指定して平行移動
     ///  void moveLength(double l)              延長線上に距離を指定して移動
+    ///  void rotate(double rotate)             原点を中心に回転
     ///  void rotate(PointD ctr, double rotate) 中心を指定して線分を回転
     ///  void rotate(PointD cp, PointD mp)      指定点を中心に回転
     ///  void mirror(PointD sp, PointD ep)      指定線分でミラー
@@ -75,6 +78,8 @@ namespace CoreLib
     ///  List<LineD> divide(PointD p)           指定点で分割する
     ///  List<PointD> dividePoints(int divNo)   線分を分割する座標リスト
     ///  List<PointD> dividePattern(List<double> pattern)   指定したパターンに線分を分割し分割した座標リストを求めめる
+    ///  List<LineD> divideLine(LineD line, int divNo = 2)   線分間を分割する線分を求める
+    /// 
     /// </summary>
     public class LineD
     {
