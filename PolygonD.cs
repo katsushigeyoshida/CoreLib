@@ -13,15 +13,18 @@ namespace CoreLib
     /// PolygonD(PolygonD polygon)
     /// 
     /// void Add(PointD p)                              座標点の追加
-    /// void insert(int index, PointD p)                座標点の挿入
+    /// void Insert(int index, PointD p)                座標点の挿入
     /// override string ToString()
     /// string ToString(string form)                    座標を書式付きで文字列に変換
     /// PolygonD toCopy()                               コピーを作成
     /// List<PointD> toPointList()                      座標点リストに変換
-    /// List<LineD> toLineList()                        線分リストに変換
+    /// List<LineD> toLineList(bool withoutArc = false) 線分リストに変換
+    /// List<ArcD> toArcList()                          円弧データの取得
+    /// void squeeze()                                  重複データ削除
     /// double length()                                 全体の長さ
     /// Box getBox()                                    ポリゴンの領域を求める
     /// LineD getLine(int n)                            指定位置のポリラインの線分を取り出す
+    /// LineD getLine(PointD p)                         指定位置に最も近い線分を取り出す
     /// void translate(PointD vec)                      全体を移動する
     /// void rotate(double ang)                         原点を中心に全体を回転する
     /// void rotate(PointD cp, double ang)              指定点を中心に全体を回転
@@ -29,9 +32,10 @@ namespace CoreLib
     /// void mirror(PointD sp, PointD ep)               指定の線分に対してミラーする
     /// void mirror(LineD line)                         指定の線分に対してミラーする
     /// void offset(double d)                           オフセットする
+    /// List<PointD> offsetLineArc(double dis)          円弧を含むポリラインのオフセット(進行方向に左が+値、右が-値)
     /// void offset(PointD sp, PointD ep)               垂直方向に平行移動させる
     /// void scale(PointD cp, double scale)             原点を指定して拡大縮小
-    /// void stretch(PointD vec, PointD nearPos)        要素の指定位置に近い座標を移動させる
+    ///void stretch(PointD vec, PointD nearPos, bool arc = false)   要素の指定位置に近い座標を移動させる
     /// PolylineD divide(PointD dp)                     要素を分割するしたポリラインを作成
     /// List<PointD> intersection(PointD p)             点との交点(垂点)リストを求める
     /// List<PointD> intersection(LineD l)              線分との交点リストを求める
@@ -39,8 +43,9 @@ namespace CoreLib
     /// List<PointD> intersection(PolylineD polyline)   ポリラインとの交点の座標リストを求める
     /// List<PointD> intersection(PolygonD polygon)     ポリゴンとの交点の座標リストを求める
     /// LineD nearLine(PointD p)                        最も近い線分を求める
-    /// PointD nearPoint(PointD p)                      交点の中で最も近い点を求める
-    /// int nearPos(PointD p)                           交点の中で最も近い点の線分位置を求める
+    /// PointD nearCrossPoint(PointD p)                 交点の中で最も近い点を求める
+    /// (int n, PointD pos) nearCrossPos(PointD p)      交点とその線分または円弧の位置
+    /// int nearCrossLinePos(PointD p)                  交点の中で最も近い点の線分位置
     /// ointD nearPeackPoint(PointD p)                  頂点の中で最も近い点の座標
     /// int nearPeackPos(PointD p)                      頂点の中で最も近い点の位置
     /// 
@@ -88,11 +93,11 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 座標点の挿入
+        /// 座標の挿入
         /// </summary>
         /// <param name="index">挿入位置</param>
         /// <param name="p">座標</param>
-        public void insert(int index, PointD p)
+        public void Insert(int index, PointD p)
         {
             mPolygon.Insert(index, p);
         }
@@ -147,7 +152,7 @@ namespace CoreLib
         {
             List<LineD> llist = new List<LineD>();
             for (int i = 0; i < mPolygon.Count; i++) {
-                if (withoutArc && mPolygon[i + 1].type == 1) {
+                if (withoutArc && mPolygon[(i + 1) % mPolygon.Count].type == 1) {
                     i++;
                 } else {
                     LineD line = new LineD(mPolygon[i], mPolygon[(i + 1) % mPolygon.Count]);
@@ -166,23 +171,13 @@ namespace CoreLib
         {
             List<ArcD> arclist = new List<ArcD>();
             for (int i = 0; i < mPolygon.Count; i++) {
-                if (mPolygon[i + 1].type == 1) {
+                if (mPolygon[(i + 1) % mPolygon.Count].type == 1) {
                     ArcD arc = new ArcD(mPolygon[i], mPolygon[(i + 1) % mPolygon.Count], mPolygon[(i + 2) % mPolygon.Count]);
                     arclist.Add(arc);
                     i++;
                 }
             }
             return arclist;
-        }
-
-        /// <summary>
-        /// 座標の挿入
-        /// </summary>
-        /// <param name="index">挿入位置</param>
-        /// <param name="p">座標</param>
-        public void Insert(int index, PointD p)
-        {
-            mPolygon.Insert(index, p);
         }
 
         /// <summary>
@@ -212,9 +207,11 @@ namespace CoreLib
         /// <returns>長さ</returns>
         public double length()
         {
-            double length = mPolygon[0].length(mPolygon[mPolygon.Count - 1]);
-            for (int i = 0; i < mPolygon.Count - 1; i++)
-                length += mPolygon[i].length(mPolygon[i + 1]);
+            double length = 0;
+            List<LineD> llist = toLineList(true);
+            length = llist.Sum(l => l.length());
+            List<ArcD> alist = toArcList();
+            length += alist.Sum(a => a.mOpenAngle * a.mR);
             return length;
         }
 
@@ -313,6 +310,22 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 垂直方向に平行移動させる
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void offset(PointD sp, PointD ep)
+        {
+            LineD line = getLine(sp);
+            double dis = line.distance(ep) * Math.Sign(line.crossProduct(ep)) - line.distance(sp) * Math.Sign(line.crossProduct(sp));
+            //offset(dis);
+            List<PointD> pline = offsetLineArc(dis);
+            if (pline != null)
+                mPolygon = pline;
+
+        }
+
+        /// <summary>
         /// オフセット(進行方向に左が+値、右が-値)
         /// </summary>
         /// <param name="d">オフセット距離</param>
@@ -341,23 +354,22 @@ namespace CoreLib
             if (dis == 0 || mPolygon.Count < 3) return null;
             List<PointD> pline = new List<PointD>();
             PointD ip, mp;
-            LineD line0 = null, line1 = null;
-            ArcD arc0 = null, arc1 = null;
-            int mi, ii, pi, pi2;
+            LineD line0 = null, line1;
+            ArcD arc0 = null, arc1;
+            int ii, ii1, ii2;
             for (int i = 0; i <= mPolygon.Count; i++) {
                 line1 = null;
                 arc1 = null;
                 ip = null;
-                mi = ylib.mod(i - 1, mPolygon.Count);
                 ii = ylib.mod(i, mPolygon.Count);
-                pi = ylib.mod(i + 1, mPolygon.Count);
-                pi2 = ylib.mod(i + 2, mPolygon.Count);
+                ii1 = ylib.mod(i + 1, mPolygon.Count);
+                ii2 = ylib.mod(i + 2, mPolygon.Count);
                 //  線分か円弧化の区別
-                if (mPolygon[ii].type == 0 && mPolygon[pi].type == 0) {
-                    line1 = new LineD(mPolygon[ii], mPolygon[pi]);
+                if (mPolygon[ii].type == 0 && mPolygon[ii1].type == 0) {
+                    line1 = new LineD(mPolygon[ii], mPolygon[ii1]);
                     line1.offset(dis);
-                } else if (mPolygon[ii].type == 0 && mPolygon[pi].type == 1) {
-                    arc1 = new ArcD(mPolygon[ii], mPolygon[pi], mPolygon[pi2]);
+                } else if (mPolygon[ii].type == 0 && mPolygon[ii1].type == 1) {
+                    arc1 = new ArcD(mPolygon[ii], mPolygon[ii1], mPolygon[ii2]);
                     if (arc1.mCcw) {
                         arc1.mR -= dis;
                     } else {
@@ -372,20 +384,18 @@ namespace CoreLib
                 if (line0 != null && line1 != null) {
                     //  線分と線分
                     ip = line0.intersection(line1);
-                    if (ip != null)
-                        pline.Add(ip);
-                    else
+                    if (ip == null)
                         return null;
                 } else if (line0 != null && arc1 != null) {
                     //  線分と円弧
                     List<PointD> iplist = line0.intersection(arc1, false);
                     if (iplist.Count == 1) {
-                        pline.Add(iplist[0]);
+                        ip = iplist[0];
                     } else if (iplist.Count == 2) {
                         if (line0.pe.length(iplist[0]) < line0.pe.length(iplist[1]))
-                            pline.Add(iplist[0]);
+                            ip = iplist[0];
                         else
-                            pline.Add(iplist[1]);
+                            ip = iplist[1];
                     } else
                         return null;
                 } else if (arc0 != null && line1 != null) {
@@ -408,10 +418,6 @@ namespace CoreLib
                         mp = arc0.middlePoint();
                         mp.type = 1;
                         pline.Add(mp);
-                        if (i < mPolygon.Count)
-                            pline.Add(ip);
-                        else
-                            pline[0] = ip;
                     } else
                         return null;
                 } else if (arc0 != null && arc1 != null) {
@@ -420,7 +426,7 @@ namespace CoreLib
                     if (iplist.Count == 1) {
                         ip = iplist[0];
                     } else if (iplist.Count == 2) {
-                        if (mPolygon[i - 1].length(iplist[0]) < mPolygon[mi].length(iplist[1]))
+                        if (mPolygon[ii].length(iplist[0]) < mPolygon[ii].length(iplist[1]))
                             ip = iplist[0];
                         else
                             ip = iplist[1];
@@ -434,39 +440,32 @@ namespace CoreLib
                         mp = arc0.middlePoint();
                         mp.type = 1;
                         pline.Add(mp);
-                        pline.Add(ip);
                     } else
                         return null;
                 } else if (line0 == null && arc0 == null && line1 != null) {
                     //  始点が線分の時
-                    pline.Add(line1.ps);
+                    ip = line1.ps;
                 } else if (line0 == null && arc0 == null && arc1 != null) {
                     //  始点が円弧の時
-                    pline.Add(arc1.intersection(mPolygon[i]));
-                    pline.Add(arc1.intersection(mPolygon[pi]));
-                    pline[^1].type = 1;
+                    if (arc1.mCcw) {
+                        pline.Add(arc1.startPoint());
+                    } else {
+                        pline.Add(arc1.endPoint());
+                    }
                 } else
                     return null;
+
+                if (ip != null) {
+                    if (i < mPolygon.Count)
+                        pline.Add(ip);
+                    else
+                        pline[ii] = ip;
+                }
+
                 line0 = line1;
                 arc0 = arc1;
             }
             return pline;
-        }
-
-        /// <summary>
-        /// 垂直方向に平行移動させる
-        /// </summary>
-        /// <param name="sp">始点</param>
-        /// <param name="ep">終点</param>
-        public void offset(PointD sp, PointD ep)
-        {
-            LineD line = getLine(sp);
-            double dis = line.distance(ep) * Math.Sign(line.crossProduct(ep)) - line.distance(sp) * Math.Sign(line.crossProduct(sp));
-            //offset(dis);
-            List<PointD> pline = offsetLineArc(dis);
-            if (pline != null)
-                mPolygon = pline;
-
         }
 
         /// <summary>
