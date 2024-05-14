@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CoreLib
 {
@@ -17,22 +18,29 @@ namespace CoreLib
     /// string ToString(string form)                    座標を書式付きで文字列に変換
     /// PolylineD toCopy()                              コピーを作成
     /// List<PointD> toPointList()                      座標点リストに変換
-    /// List<LineD> toLineList()                        線分リストに変換
+    /// List<LineD> toLineList(bool withoutArc = false) 線分リストに変換
+    /// List<ArcD> toArcList()                          円弧データの取得
+    /// List<PointD> toHVLine()                         水平垂直線分の座標点リストに変換
+    /// void squeeze()                                  重複データ削除
     /// double length()                                 全体の長さを求める
+    /// double length(PointD pos, int n, int st = 0)    指定座標位置から線上の距離
     /// Box getBox()                                    Box領域を求める
     /// LineD getLine(int n)                            指定位置のポリラインの線分を取り出す
     /// LineD getLine(PointD p)                         指定座標に近い線分を取り出す
-    /// void offset(double d)                           オフセットする
     /// void offset(PointD sp, PointD ep)               垂直方向に平行移動させる
+    /// void offset(double d)                           オフセットする
+    /// List<PointD> offsetLineArc(double dis)          円弧を含むポリラインのオフセット(進行方向に左が+値、右が-値)
     /// void translate(PointD vec)                      全体を移動する
-    /// void rotate(double iang)                         原点を中心に全体を回転する
-    /// void rotate(PointD cp, double iang)              指定点を中心に回転する
-    /// void rotate(PointD cp, PointD ip)               指定点を中心に回転する
+    /// void rotate(double iang)                        原点を中心に全体を回転する
+    /// void rotate(PointD cp, double iang)             指定点を中心に回転する
+    /// void rotate(PointD cp, PointD mp)               指定点を中心に回転する
     /// void mirror(PointD sp, PointD ep)               指定線分でミラーする
     /// void mirror(LineD l)                            指定線分でミラーする
     /// void scale(PointD cp, double scale)             原点を指定して拡大縮小
+    /// void stretch(PointD vec, PointD nearPos, bool arc = false)  要素の指定位置に近い座標を移動させる
     /// void trim(PointD sp, PointD ep)                 指定点でトリミングする
-    /// void stretch(PointD vec, PointD nearPos)        要素の指定位置に近い座標を移動させる
+    /// void endCut(int n, PointD pos)                  折線の後をトリム
+    /// void startCut(int n, PointD pos)                折線の前をトリム
     /// List<PolylineD> divide(PointD dp)               指定位置で分割する
     /// List<PointD> intersection(PointD p)             交点(垂点)の座標リストを求める
     /// List<PointD> intersection(LineD l)              交点の座標リストを求める
@@ -40,8 +48,10 @@ namespace CoreLib
     /// List<PointD> intersection(PolylineD polyline)   交点の座標リストを求める
     /// List<PointD> intersection(PolygonD polygon)     交点の座標リストを求める
     /// LineD nearLine(PointD p, bool on = false)       最も近い線分を求める
+    /// PointD nearCrossPoint(PointD p)                 交点の中で最も近い点
+    /// (int, PointD) nearCrossPos(PointD p, bool on = false)  交点の中で最も近い点の線分(円弧)位置 
     /// PointD nearPoint(PointD p)                      交点の中で最も近い点を求める
-    /// int nearPos(PointD p)                           交点の中で最も近い点の線分位置を求める
+    /// PointD interSection(int i, PointD p, bool on = true)    区間指定の交点
     /// PointD nearPeackPoint(PointD p)                 頂点の中で最も近い点の座標
     /// int nearPeackPos(PointD p)                      頂点の中で最も近い点の位置
     /// 
@@ -231,8 +241,10 @@ namespace CoreLib
         public double length()
         {
             double length = 0;
-            for (int i = 0; i < mPolyline.Count - 1; i++)
-                length += mPolyline[i].length(mPolyline[i + 1]);
+            List<LineD> llist = toLineList(true);
+            length = llist.Sum(l => l.length());
+            List<ArcD> alist = toArcList();
+            length += alist.Sum(a => a.mOpenAngle * a.mR);
             return length;
         }
 
