@@ -99,6 +99,15 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 線分以外の要素を含む
+        /// </summary>
+        /// <returns>MultiType</returns>
+        public bool IsMultiType()
+        {
+            return 0 <= mPolygon.FindIndex(p => p.type != 0);
+        }
+
+        /// <summary>
         /// コピーの作成
         /// </summary>
         /// <returns>Polygon3D</returns>
@@ -135,12 +144,15 @@ namespace CoreLib
         /// <summary>
         /// 3D座標リストの抽出
         /// </summary>
+        /// <param name="divAng">円弧の分割角度</param>
+        /// <param name="close">閉領域</param>
         /// <returns>3D座標リスト</returns>
-        public List<Point3D> toPoint3D(bool close = false)
+        public List<Point3D> toPoint3D(double divAng = 0, bool close = false)
         {
             List<Point3D> plist = new List<Point3D>();
-            for (int i = 0; i < mPolygon.Count; i++) {
-                plist.Add(Point3D.cnvPlaneLocation(mPolygon[i], mCp, mU, mV));
+            List<PointD> polygon = new PolygonD(mPolygon).toPointList(divAng);
+            for (int i = 0; i < polygon.Count; i++) {
+                plist.Add(Point3D.cnvPlaneLocation(polygon[i], mCp, mU, mV));
             }
             if (close)
                 plist.Add(Point3D.cnvPlaneLocation(mPolygon[0], mCp, mU, mV));
@@ -352,14 +364,11 @@ namespace CoreLib
         /// <param name="ep">終点</param>
         public void offset(Point3D sp, Point3D ep)
         {
-            Line3D line = getLine3D(nearLine(sp));
             PointD spp = Point3D.cnvPlaneLocation(sp, mCp, mU, mV);
             PointD epp = Point3D.cnvPlaneLocation(ep, mCp, mU, mV);
-            LineD l = line.toLineD(mCp, mU, mV);
-            double dis = l.distance(epp) * Math.Sign(l.crossProduct(epp)) - l.distance(spp) * Math.Sign(l.crossProduct(spp));
             PolygonD polygon = new PolygonD(mPolygon);
+            polygon.offset(spp, epp);
             polygon.squeeze();
-            polygon.offset(dis);
             mPolygon = polygon.mPolygon;
         }
 
@@ -396,6 +405,20 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ポリゴンの分割(ポリラインに変換)
+        /// </summary>
+        /// <param name="pos">3D分割座標</param>
+        /// <returns>ポリライン</returns>
+        public Polyline3D divide(Point3D pos)
+        {
+            PointD p = pos.toPointD(mCp, mU, mV);
+            PolygonD polygon = new PolygonD(mPolygon);
+            PolylineD polyline = polygon.divide(p);
+            return new Polyline3D(polyline, mCp, mU, mV);
+        }
+
+
+        /// <summary>
         /// 拡大縮小
         /// </summary>
         /// <param name="cp">拡大中心</param>
@@ -414,19 +437,13 @@ namespace CoreLib
         /// </summary>
         /// <param name="vec">移動ベクトル</param>
         /// <param name="pickPos">ピック位置</param>
-        public void stretch(Point3D vec, Point3D pickPos)
+        public void stretch(Point3D vec, Point3D pickPos, bool arc = false)
         {
-            int m = nearLine(pickPos);
-            Line3D line = new Line3D(toPoint3D(m), toPoint3D((m + 1) % mPolygon.Count));
-            Point3D cp = line.centerPoint();
-            int n = nearPosition(pickPos);
-            Point3D np = toPoint3D(n);
-            if (cp.length(pickPos) < np.length(pickPos)) {
-                cp.translate(vec);
-                insert(m + 1, cp);
-            } else {
-                mPolygon[n].translate(Point3D.cnvPlaneLocation(vec, new Point3D(0,0,0), mU, mV));
-            }
+            PointD vvec = vec.toPointD(new Point3D(0, 0, 0), mU, mV);
+            PointD ppos = pickPos.toPointD(mCp, mU, mV);
+            PolygonD polygon = new PolygonD(mPolygon);
+            polygon.stretch(vvec, ppos, arc);
+            mPolygon = polygon.mPolygon;
             squeeze();
         }
 
@@ -520,14 +537,17 @@ namespace CoreLib
         /// </summary>
         public void squeeze()
         {
+            //  隣と同じ座標削除
             for (int i = mPolygon.Count - 1; i > 0; i--) {
                 if (mPolygon[i].length(mPolygon[i - 1]) < mEps)
                     mPolygon.RemoveAt(i);
             }
             if (1 < mPolygon.Count && mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
                 mPolygon.RemoveAt(mPolygon.Count - 1);
+            //  角度が180°になるものを削除
             for (int i = mPolygon.Count - 2; i > 0; i--) {
-                if ((Math.PI - mPolygon[i].angle(mPolygon[i - 1], mPolygon[i + 1])) < mEps)
+                if ((mPolygon[i - 1].type == 0 && mPolygon[i].type == 0 && mPolygon[i + 1].type == 0)
+                    && (Math.PI - mPolygon[i].angle(mPolygon[i - 1], mPolygon[i + 1])) < mEps)
                     mPolygon.RemoveAt(i);
             }
         }
@@ -535,17 +555,18 @@ namespace CoreLib
         /// <summary>
         /// 多角形を三角形の集合に変換(座標リスト = 3座標 x 三角形の数)
         /// </summary>
+        /// <param name="divAng">円弧の分割角度</param>
         /// <returns>(3角形の座標リスト,リスト反転)</returns>
-        public (List<Point3D> triangles, bool reverse) cnvTriangles()
+        public (List<Point3D> triangles, bool reverse) cnvTriangles(double divAng = 0)
         {
             bool reverse = false;
-            PolygonD polygon = new PolygonD(mPolygon);
-            int polygonCount = polygon.mPolygon.Count;
+            List<PointD> polygon = new PolygonD(mPolygon).toPointList(divAng);
+            int polygonCount = polygon.Count;
             int removeCount = 0;
             List<PointD> triangles;
             //  座標リストの回転方向を反時計回りにする
-            if (!isCounterClockWise(polygon.mPolygon)) {
-                polygon.mPolygon.Reverse();
+            if (!isCounterClockWise(polygon)) {
+                polygon.Reverse();
                 reverse = true;
             }
             //  三角形に分割
@@ -559,25 +580,34 @@ namespace CoreLib
         /// 多角形を三角形の集合に変換(座標リスト=3座標x三角形の数)
         /// 反時計回りに三角形を作っていき、2点目の角度が正で他の輪郭線と重ならないものを使う
         /// </summary>
-        /// <param name="plist">多角形の座標リスト</param>
+        /// <param name="pplist">多角形の座標リスト</param>
         /// <returns>(3角形の座標リスト,削除座標数)</returns>
-        public (List<PointD>, int) cnvTriangles(PolygonD polygon)
+        public (List<PointD>, int) cnvTriangles(List<PointD> pplist)
         {
             List<PointD> triangles = new List<PointD>();
-            List<PointD> plist = polygon.mPolygon;
             int removeCount = 0;
+            List<PointD> plist = pplist.ConvertAll(p => p.toCopy());
             int n = 0;
-            while (2 < plist.Count && n < plist.Count - 2) {
+            while (2 < plist.Count && n < plist.Count) {
+                PolygonD polygon = new PolygonD(plist);
+                int n0 = (n) % plist.Count;
+                int n1 = (n + 1) % plist.Count;
+                int n2 = (n + 2) % plist.Count;
                 //  反時計回りの３点の角度
-                double ang = plist[n + 1].angle(plist[n + 2], plist[n], false);
+                double ang = plist[n1].angle(plist[n2], plist[n0], false);
                 //  他の輪郭線と重ならないことをチェック
-                LineD line = new LineD(plist[n], plist[n + 2]);
+                LineD line = new LineD(plist[n0], plist[n2]);
                 List<PointD> iplist = polygon.intersection(line);
                 iplist = plistSqueeze(iplist, line.toPointList());
-                if (0 < ang && iplist.Count == 0) {
+                if (Math.Abs(ang) < mEps || Math.Abs(ang - Math.PI) < mEps) {
+                    //  不要データ
+                    plist.RemoveAt(n1);
+                    removeCount++;
+                    n = 0;
+                } else if (0 < ang && iplist.Count == 0) {
                     //  三角形データ
                     List<PointD> triangle = new List<PointD>() {
-                        plist[n].toCopy(), plist[n + 1].toCopy(), plist[n + 2].toCopy()
+                        plist[n0].toCopy(), plist[n1].toCopy(), plist[n2].toCopy()
                     };
                     if (triangleInsideChk(triangle, plist)) {
                         // 三角形内に座標点があるものは除外
@@ -586,13 +616,10 @@ namespace CoreLib
                         //  三角形を登録
                         triangles.AddRange(triangle);
                         //  登録した三角形の中央頂点を除外
-                        plist.RemoveAt((n + 1) % plist.Count);
+                        plist.RemoveAt(n1);
                         n = 0;
+                        continue;
                     }
-                } else if (Math.Abs(ang) < mEps || Math.Abs(ang - Math.PI) < mEps) {
-                    plist.RemoveAt(n + 1);
-                    removeCount++;
-                    n = 0;
                 } else {
                     //  次の候補
                     n++;
