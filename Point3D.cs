@@ -24,6 +24,7 @@ namespace CoreLib
         public double x = 0.0;
         public double y = 0.0;
         public double z = 0.0;
+        public int type = 0;         //  座標の種別 0: 点座標 1:円弧の中点座標
 
         /// <summary>
         /// コンストラクタ
@@ -109,6 +110,35 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2D平面の座標を3D座標に変換
+        ///  P(u,v) = c + u * x + v * y
+        /// </summary>
+        /// <param name="p">2D座標</param>
+        /// <param name="cp">2D平面の中心座標</param>
+        /// <param name="u">2D平面のX軸向き</param>
+        /// <param name="v">2D座標のY軸の向き</param>
+        public Point3D(PointD p, Point3D cp, Point3D u, Point3D v)
+        {
+            Point3D p3d = cnvPlaneLocation(p, cp, u, v);
+            x = p3d.x;
+            y = p3d.y;
+            z = p3d.z;
+        }
+
+        /// <summary>
+        /// 3D座標から平面座標に変換
+        /// </summary>
+        /// <param name="cp">2D平面の中心座標</param>
+        /// <param name="u">2D平面のX軸向き</param>
+        /// <param name="v">2D座標のY軸の向き</param>
+        /// <returns>2D座標</returns>
+        public PointD toPointD(Point3D cp, Point3D u, Point3D v)
+        {
+            Point3D p = new Point3D(x, y, z);
+            return cnvPlaneLocation(p, cp, u, v);
+        }
+
+        /// <summary>
         /// Uベクター X軸の向き(平面での方向単位ベクト
         /// </summary>
         /// <param name="face">2D平面</param>
@@ -160,7 +190,9 @@ namespace CoreLib
         public static Point3D cnvPlaneLocation(PointD p, Point3D cp, Point3D u, Point3D v)
         {
             Point3D uv = u * p.x + v * p.y;
-            return cp + uv;
+            uv = cp + uv;
+            uv.type = p.type;
+            return uv;
         }
 
         /// <summary>
@@ -188,6 +220,7 @@ namespace CoreLib
                 t.x = (p.x * v.z - p.z * v.x) / c;
                 t.y = (p.z * u.x - p.x * u.z) / c;
             }
+            t.type = pos.type;
             return t;
         }
 
@@ -244,6 +277,7 @@ namespace CoreLib
             p.x = this.x;
             p.y = this.y;
             p.z = this.z;
+            p.type = this.type;
             return p;
         }
 
@@ -253,7 +287,7 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD toPointXY()
         {
-            return new PointD(x, y);
+            return new PointD(x, y, type);
         }
 
         /// <summary>
@@ -262,7 +296,7 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD toPointYX()
         {
-            return new PointD(y, x);
+            return new PointD(y, x, type);
         }
 
         /// <summary>
@@ -271,7 +305,7 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD toPointYZ()
         {
-            return new PointD(y, z);
+            return new PointD(y, z, type);
         }
 
         /// <summary>
@@ -280,7 +314,7 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD toPointZY()
         {
-            return new PointD(z, y);
+            return new PointD(z, y, type);
         }
 
         /// <summary>
@@ -289,7 +323,7 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD toPointZX()
         {
-            return new PointD(z, x);
+            return new PointD(z, x, type);
         }
 
         /// <summary>
@@ -298,7 +332,7 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD toPointXZ()
         {
-            return new PointD(x, z);
+            return new PointD(x, z, type);
         }
 
         /// <summary>
@@ -309,23 +343,23 @@ namespace CoreLib
         public PointD toPoint(FACE3D face)
         {
             if (face == FACE3D.XY)
-                return new PointD(x, y);
+                return new PointD(x, y, type);
             else if (face == FACE3D.YZ)
-                return new PointD(y, z);
+                return new PointD(y, z, type);
             else if (face == FACE3D.ZX)
-                return new PointD(z, x);
+                return new PointD(z, x, type);
             else if (face == FACE3D.YX)
-                return new PointD(y, x);
+                return new PointD(y, x, type);
             else if (face == FACE3D.ZY)
-                return new PointD(z, y);
+                return new PointD(z, y, type);
             else if (face == FACE3D.XZ)
-                return new PointD(x, z);
+                return new PointD(x, z, type);
             else if (face == FACE3D.FRONT)
-                return new PointD(x, y);
+                return new PointD(x, y, type);
             else if (face == FACE3D.TOP)
-                return new PointD(x, -z);
+                return new PointD(x, -z, type);
             else if (face == FACE3D.RIGHT)
-                return new PointD(-z, y);
+                return new PointD(-z, y, type);
 
             return null;
         }
@@ -335,9 +369,10 @@ namespace CoreLib
         /// </summary>
         public void clear()
         {
-            this.x = 0.0;
-            this.y = 0.0;
-            this.z = 0.0;
+            x = 0.0;
+            y = 0.0;
+            z = 0.0;
+            type = 0;
         }
 
         /// <summary>
@@ -380,9 +415,9 @@ namespace CoreLib
         /// </summary>
         public void inverse()
         {
-            this.x *= -1.0;
-            this.y *= -1.0;
-            this.z *= -1.0;
+            x *= -1.0;
+            y *= -1.0;
+            z *= -1.0;
         }
 
         /// <summary>
@@ -391,9 +426,9 @@ namespace CoreLib
         /// <param name="offset"></param>
         public void offset(Point3D offset)
         {
-            this.x += offset.x;
-            this.y += offset.y;
-            this.z += offset.z;
+            x += offset.x;
+            y += offset.y;
+            z += offset.z;
         }
 
         /// <summary>
