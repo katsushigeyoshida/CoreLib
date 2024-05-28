@@ -797,7 +797,7 @@ namespace CoreLib
             if (mClipping) {
                 for (int i = 0; i < wpList.Count - 1; i++) {
                     if (wpList[i + 1].type == 1) {
-                        drawWArc(wpList[i], wpList[i + 1], wpList[i + 2]);
+                        drawWArc(wpList[i], wpList[(i + 1) % wpList.Count], wpList[(i + 2) % wpList.Count]);
                         i++;
                     } else
                         drawWLine(new LineD(wpList[i], wpList[i + 1]));
