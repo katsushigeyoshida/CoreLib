@@ -30,6 +30,7 @@ namespace CoreLib
     ///  void trimNear(PointD tp, PointD pos)               ピックした位置に近い方を消すようにトリミング
     ///  void trimFar(PointD tp, PointD pos)                ピックした位置に遠いを消すようにトリミング
     ///  void stretch(PointD vec, PointD pos)               円弧を端点または半径をストレッチ
+    ///  List<PointD> to3PointList()                        三点円弧の座標点リスト(開始座標、中点、終了座標)
     ///  PointD startPoint()                                始点座標
     ///  PointD endPoint()                                  終点座標
     ///  PointD middlePoint()                               中間点座標
@@ -411,6 +412,18 @@ namespace CoreLib
             }
         }
 
+        /// <summary>
+        /// 三点円弧の座標点リスト(開始座標、中点、終了座標)
+        /// </summary>
+        /// <returns>座標点リスト</returns>
+        public List<PointD> to3PointList()
+        {
+            List<PointD> plist = new List<PointD>() {
+                startPoint(), middlePoint(), endPoint(),
+            };
+            plist[1].type = 1;
+            return plist;
+        }
 
         /// <summary>
         /// 始点座標
@@ -438,26 +451,7 @@ namespace CoreLib
         {
             return getPoint((mSa + mEa) / 2);
         }
-
-        /// <summary>
-        /// 円弧を分割した座標点リスト
-        /// </summary>
-        /// <param name="divNo">分割数</param>
-        /// <returns>座標点リスト</returns>
-        //public List<PointD> dividePoints(int divNo)
-        //{
-        //    List<PointD> points = new List<PointD>();
-        //    if (0 < divNo) {
-        //        double da = mOpenAngle / divNo;
-        //        double ang = mSa;
-        //        while (ang <= mEa + mEps) {
-        //            points.Add(getPoint(ang));
-        //            ang += da;
-        //        }
-        //    }
-        //    return points;
-        //}
-
+ 
         /// <summary>
         /// 角度から円周上の座標を求める
         /// </summary>
@@ -567,32 +561,22 @@ namespace CoreLib
         public List<PointD> toPointList(double da, bool clockwise = false)
         {
             List<PointD> pointList = new List<PointD>();
-            double ang = mSa;
-            while (ang < mEa - mEps) {
-                pointList.Add(getPoint(ang, clockwise));
-                ang += da;
+            if (da <= 0) {
+                    pointList.Add(startPoint());
+                    pointList.Add(middlePoint());
+                    pointList.Add(endPoint());
+            } else {
+                double ang = mSa;
+                while (ang < mEa - mEps) {
+                    pointList.Add(getPoint(ang));
+                    ang += da;
+                }
+                pointList.Add(endPoint());
             }
-            pointList.Add(endPoint());
+            if (clockwise)
+                pointList.Reverse();
             return pointList;
         }
-
-        /// <summary>
-        /// 円弧の分割点リストを作成
-        /// </summary>
-        /// <param name="da">分割角度</param>
-        /// <param name="clockwise">回転方向</param>
-        /// <returns>座標リスト</returns>
-        //public List<PointD> toAnglePointList(double da, bool clockwise = false)
-        //{
-        //    List<PointD> pointList = new List<PointD>();
-        //    double ang = mSa;
-        //    while (ang < mEa - mEps) {
-        //        pointList.Add(getPoint(ang, clockwise));
-        //        ang += da;
-        //    }
-        //    pointList.Add(getPoint(mEa, clockwise));
-        //    return pointList;
-        //}
 
         /// <summary>
         /// 円弧の分割点で最も近い点を求める
