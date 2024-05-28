@@ -1064,8 +1064,9 @@ namespace CoreLib
                     break;
                 if (i < polyline.Count - 2 && polyline[i + 1].type == 1) {
                     ArcD arc = new ArcD(polyline[i], polyline[i + 1], polyline[(i + 2) % polyline.Count]);
-                    for (int j = 0; j < ll.Count; j++) {
-                        plist.AddRange(ll[j].intersection(arc));
+                    if (mEps < arc.mR) {
+                        for (int j = 0; j < ll.Count; j++)
+                            plist.AddRange(ll[j].intersection(arc));
                     }
                     i++;
                 } else {
