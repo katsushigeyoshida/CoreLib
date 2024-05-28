@@ -92,10 +92,19 @@ namespace CoreLib
         /// <summary>
         /// 座標の追加
         /// </summary>
-        /// <param name="p"></param>
+        /// <param name="p">座標点</param>
         public void Add(PointD p)
         {
             mPolyline.Add(p);
+        }
+
+        /// <summary>
+        /// 座標の追加
+        /// </summary>
+        /// <param name="plist">座標点リスト</param>
+        public void Add(List<PointD> plist)
+        {
+            mPolyline.AddRange(plist);
         }
 
         /// <summary>
@@ -106,6 +115,64 @@ namespace CoreLib
         public void Insert(int index, PointD p)
         {
             mPolyline.Insert(index, p);
+        }
+
+        /// <summary>
+        /// 端点が近い方で接続する
+        /// </summary>
+        /// <param name="plist">座標点リスト</param>
+        public void connect(List<PointD> plist)
+        {
+            List<double> dis = new List<double>() {
+                mPolyline[0].length(plist[0]),
+                mPolyline[0].length(plist[^1]),
+                mPolyline[^1].length(plist[0]),
+                mPolyline[^1].length(plist[^1]),
+            };
+            switch (dis.IndexOf(dis.Min())) {
+                case 0:
+                    mPolyline.Reverse();
+                    mPolyline.AddRange(plist);
+                    break;
+                case 1:
+                    mPolyline.Reverse();
+                    plist.Reverse();
+                    mPolyline.AddRange(plist);
+                    break;
+                case 2:
+                    mPolyline.AddRange(plist);
+                    break;
+                case 3:
+                    plist.Reverse();
+                    mPolyline.AddRange(plist);
+                    break;
+            }
+            squeeze();
+        }
+
+        /// <summary>
+        /// 指定した座標点に近い方同氏を接続
+        /// </summary>
+        /// <param name="pos">ボラインの指定位置</param>
+        /// <param name="plist">接続座標リスト</param>
+        /// <param name="pos2"></param>
+        public void connect(PointD pos, List<PointD> plist, PointD pos2)
+        {
+            if (mPolyline[0].length(pos) < mPolyline[^1].length(pos))
+                mPolyline.Reverse();
+            if (plist[0].length(pos2) > plist[^1].length(pos2))
+                plist.Reverse();
+            mPolyline.AddRange(plist);
+            squeeze();
+        }
+
+        /// <summary>
+        /// 線分以外の要素を含む
+        /// </summary>
+        /// <returns>MultiType</returns>
+        public bool IsMultiType()
+        {
+            return 0 <= mPolyline.FindIndex(p => p.type != 0);
         }
 
         /// <summary>
@@ -144,9 +211,25 @@ namespace CoreLib
         /// 座標点リストに変換
         /// </summary>
         /// <returns></returns>
-        public List<PointD> toPointList()
+        public List<PointD> toPointList(double divAng = 0)
         {
-            return mPolyline.ConvertAll(p => new PointD(p));
+            List<PointD> plist = new List<PointD>();
+            for (int i = 0; i < mPolyline.Count; i++) {
+                int i1 = (i + 1) % mPolyline.Count;
+                int i2 = (i + 2) % mPolyline.Count;
+                if (0 < divAng && mPolyline[i1].type == 1) {
+                    ArcD arc = new ArcD(mPolyline[i], mPolyline[i1], mPolyline[i2]);
+                    List<PointD> pplist = arc.toPointList(divAng);
+                    if (!arc.mCcw)
+                        pplist.Reverse();
+                    pplist.RemoveAt(pplist.Count - 1);
+                    plist.AddRange(pplist);
+                    i++;
+                } else {
+                    plist.Add(mPolyline[i].toCopy());
+                }
+            }
+            return plist;
         }
 
         /// <summary>
@@ -229,7 +312,8 @@ namespace CoreLib
                     mPolyline.RemoveAt(i);
             }
             for (int i = mPolyline.Count - 2; i > 0; i--) {
-                if ((Math.PI - mPolyline[i].angle(mPolyline[i - 1], mPolyline[i + 1])) < mEps)
+                if ((mPolyline[i - 1].type == 0 && mPolyline[i].type == 0 && mPolyline[i + 1].type == 0)
+                    && (Math.PI - mPolyline[i].angle(mPolyline[i - 1], mPolyline[i + 1])) < mEps)
                     mPolyline.RemoveAt(i);
             }
         }
