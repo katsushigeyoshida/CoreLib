@@ -138,9 +138,30 @@ namespace CoreLib
         /// 座標点リストに変換
         /// </summary>
         /// <returns>座標点リスト</returns>
-        public List<PointD> toPointList()
+        public List<PointD> toPointList(double divAng = 0)
         {
-            return mPolygon.ConvertAll(p => new PointD(p));
+            List<PointD> plist = new List<PointD>();
+            for (int i = 0; i < mPolygon.Count; i++) {
+                if (0 < divAng && mPolygon[(i + 1) % mPolygon.Count].type == 1) {
+                    //  円弧を座標点リストに変換
+                    ArcD arc = new ArcD(mPolygon[i], mPolygon[(i + 1) % mPolygon.Count], mPolygon[(i + 2) % mPolygon.Count]);
+                    if (arc.mCp != null) {
+                        List<PointD> pplist = arc.toPointList(divAng);
+                        if (!arc.mCcw)
+                            pplist.Reverse();
+                        pplist.RemoveAt(pplist.Count - 1);
+                        plist.AddRange(pplist);
+                    } else {
+                        plist.Add(mPolygon[i].toCopy());
+                        plist.Add(mPolygon[(i + 1) % mPolygon.Count].toCopy());
+                    }
+                    i++;
+                } else {
+                    plist.Add(mPolygon[i].toCopy());
+                }
+            }
+            return plist;
+            //return mPolygon.ConvertAll(p => new PointD(p));
         }
 
         /// <summary>
@@ -486,7 +507,7 @@ namespace CoreLib
         /// <param name="nearPos">指定位置</param>
         public void stretch(PointD vec, PointD nearPos, bool arc = false)
         {
-            int n = nearCrossLinePos(nearPos);
+            (int n, PointD ip) = nearCrossPos(nearPos);
             LineD line = new LineD(mPolygon[n], mPolygon[(n + 1) % mPolygon.Count]);
             PointD cp = line.centerPoint();
             int pos = nearPeackPos(nearPos);
@@ -510,8 +531,10 @@ namespace CoreLib
             (int pos, PointD ip) = nearCrossPos(dp);
             if (ip == null)
                 return polyline;
-            if (mPolygon[pos + 1].type == 1) {
-                ArcD arc = new ArcD(mPolygon[pos], mPolygon[pos + 1], mPolygon[pos + 2]);
+            int pos1 = (pos + 1) % mPolygon.Count;
+            int pos2 = (pos + 2) % mPolygon.Count;
+            if (mPolygon[pos1].type == 1) {
+                ArcD arc = new ArcD(mPolygon[pos], mPolygon[pos1], mPolygon[pos2]);
                 ArcD arcStart = arc.toCopy();
                 ArcD arcEnd = arc.toCopy();
                 if (arc.mCcw) {
@@ -520,8 +543,8 @@ namespace CoreLib
                     PointD mp = arcStart.middlePoint();
                     mp.type = 1;
                     polyline.Add(mp);
-                    polyline.mPolyline.AddRange(mPolygon.Skip(pos + 2));
-                    polyline.mPolyline.AddRange(mPolygon.Take(pos + 1));
+                    polyline.mPolyline.AddRange(mPolygon.Skip(pos2));
+                    polyline.mPolyline.AddRange(mPolygon.Take(pos1));
                     arcEnd.setEndPoint(ip);
                     mp = arcEnd.middlePoint();
                     mp.type = 1;
@@ -533,8 +556,8 @@ namespace CoreLib
                     PointD mp = arcStart.middlePoint();
                     mp.type = 1;
                     polyline.Add(mp);
-                    polyline.mPolyline.AddRange(mPolygon.Skip(pos + 2));
-                    polyline.mPolyline.AddRange(mPolygon.Take(pos + 1));
+                    polyline.mPolyline.AddRange(mPolygon.Skip(pos2));
+                    polyline.mPolyline.AddRange(mPolygon.Take(pos1));
                     arcEnd.setStartPoint(ip);
                     mp = arcEnd.middlePoint();
                     mp.type = 1;
@@ -543,9 +566,9 @@ namespace CoreLib
                 }
             } else {
                 polyline.Add(ip);
-                if (pos + 1 < mPolygon.Count)
-                    polyline.mPolyline.AddRange(mPolygon.Skip(pos + 1));
-                polyline.mPolyline.AddRange(mPolygon.Take(pos + 1));
+                if (pos1 < mPolygon.Count)
+                    polyline.mPolyline.AddRange(mPolygon.Skip(pos1));
+                polyline.mPolyline.AddRange(mPolygon.Take(pos1));
                 polyline.Add(ip);
             }
             return polyline;
@@ -598,7 +621,7 @@ namespace CoreLib
                 } else {                        //  線分
                     LineD line = new LineD(mPolygon[ii], mPolygon[i1]);
                     PointD ip = line.intersection(l);
-                    if (ip != null && line.onPoint(ip))
+                    if (ip != null && line.onPoint2(ip) && l.onPoint2(ip))
                         plist.Add(ip);
                 }
             }
