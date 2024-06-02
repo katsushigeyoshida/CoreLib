@@ -473,7 +473,7 @@ namespace CoreLib
         public PointD intersection(PointD p)
         {
             LineD lp = new LineD(ps, p);                            //  始点と点をつなぐ線分
-            double ll = lp.length() * Math.Cos(angle2(lp));          //  始点と垂点との距離
+            double ll = lp.length() * Math.Cos(angle2(lp));         //  始点と垂点との距離
             double a = angle();                                     //  線分の角度
             return new PointD(ll * Math.Cos(a) + ps.x, ll * Math.Sin(a) + ps.y);
         }
@@ -646,6 +646,18 @@ namespace CoreLib
                 return true;
             return false;
         }
+
+        /// <summary>
+        /// 延長線を含めた線分上の位置を判定
+        /// </summary>
+        /// <param name="p">対称座標</param>
+        /// <returns>判定</returns>
+        public bool onPointEx(PointD p)
+        {
+            PointD ip = intersection(p);
+            return p.length(ip) < mEps;
+        }
+
 
         /// <summary>
         /// 線分の分割点で最も近い点を求める
@@ -945,10 +957,25 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定位置でトリムする(ピック位置側を残す)
+        /// </summary>
+        /// <param name="tp">トリム位置</param>
+        /// <param name="pos">ピック位置</param>
+        public void trimOn(PointD tp, PointD pos)
+        {
+            PointD ip = intersection(tp);
+            LineD l = new LineD(ps, ip);
+            if (l.onPoint(intersection(pos)))
+                pe = ip;
+            else
+                ps = ip;
+        }
+
+        /// <summary>
         /// ピックした位置に近い方を消すようにトリミングする
         /// </summary>
-        /// <param name="tp"></param>
-        /// <param name="pos"></param>
+        /// <param name="tp">トリム位置</param>
+        /// <param name="pos">ピック位置</param>
         public void trimNear(PointD tp, PointD pos)
         {
             if (ps.length(pos) < pe.length(pos)) {
