@@ -333,6 +333,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 始点からの線上の距離
+        /// </summary>
+        /// <param name="pos">指定座標</param>
+        /// <returns>距離</returns>
+        public double length(PointD pos)
+        {
+            (int n, PointD sp) = nearCrossPos(pos);
+            return length(sp, n);
+        }
+
+        /// <summary>
         /// 指定座標位置から線上の距離
         /// </summary>
         /// <param name="pos">線上の座標</param>
@@ -414,6 +425,23 @@ namespace CoreLib
                 return;
             //offset(dis);
 
+            List<PointD> pline = offsetLineArc(dis);
+            if (pline != null)
+                mPolyline = pline;
+        }
+
+        /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="dis">オフセット量</param>
+        /// <param name="sp">オフセット方向</param>
+        public void offset(double dis, PointD sp)
+        {
+            //  オフセットの方向(進行方向に左が+値、右が-値)と距離
+            LineD line = getLine(sp);
+            dis *= Math.Sign(line.crossProduct(sp));
+            if (dis == 0)
+                return;
             List<PointD> pline = offsetLineArc(dis);
             if (pline != null)
                 mPolyline = pline;
@@ -689,6 +717,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定位置でトリムする(ピック位置側を残す)
+        /// </summary>
+        /// <param name="tp">トリム位置</param>
+        /// <param name="pos">ピック位置</param>
+        public void trimOn(PointD tp, PointD pos)
+        {
+            if (length(tp) < length(pos))
+                trim(tp, mPolyline[^1]);
+            else
+                trim(mPolyline[0], tp);
+        }
+
+        /// <summary>
         /// 折線の後をトリムする
         /// </summary>
         /// <param name="n">トリム座標位置</param>
@@ -792,6 +833,49 @@ namespace CoreLib
             }
             polylineList.Add(polyline1);
             return polylineList;
+        }
+
+        /// <summary>
+        /// 指定位置をフィレットに変換
+        /// </summary>
+        /// <param name="r">フィレット半径</param>
+        /// <param name="pos">座標位置</param>
+        public void fillet(double r, PointD pos)
+        {
+            LineD line0 = null, line1;
+            ArcD arc, arc0 = null, arc1;
+            int n = nearPeackPos(pos);
+            if (mPolyline[n].type == 1) {
+                if (pos.length(mPolyline[n - 1]) < pos.length(mPolyline[n + 1]))
+                    n -= 1;
+                else
+                    n += 1;
+            }
+            if (r <= 0 || n <= 0 || mPolyline.Count - 1 <= n) return;
+            if (mPolyline[n - 1].type != 1 && mPolyline[n + 1].type != 1) {
+                line0 = new LineD(mPolyline[n - 1], mPolyline[n]);
+                line1 = new LineD(mPolyline[n], mPolyline[n + 1]);
+                arc = new ArcD(r, line0, mPolyline[n - 1], line1, mPolyline[n + 1]);
+            } else if (mPolyline[n - 1].type != 1 && mPolyline[n + 1].type == 1) {
+                line0 = new LineD(mPolyline[n - 1], mPolyline[n]);
+                arc1 = new ArcD(mPolyline[n], mPolyline[n + 1], mPolyline[n + 2]);
+                arc = new ArcD(r, line0, mPolyline[n - 1], arc1, mPolyline[n + 1]);
+            } else if (mPolyline[n - 1].type == 1 && mPolyline[n + 1].type != 1) {
+                arc0 = new ArcD(mPolyline[n - 2], mPolyline[n - 1], mPolyline[n]);
+                line1 = new LineD(mPolyline[n], mPolyline[n + 1]);
+                arc = new ArcD(r, line1, mPolyline[n + 1], arc0, mPolyline[n - 1]);
+            } else if (mPolyline[n - 1].type == 1 && mPolyline[n + 1].type == 1) {
+                arc0 = new ArcD(mPolyline[n - 2], mPolyline[n - 1], mPolyline[n]);
+                arc1 = new ArcD(mPolyline[n], mPolyline[n + 1], mPolyline[n + 2]);
+                arc = new ArcD(r, arc0, mPolyline[n - 1], arc1, mPolyline[n + 1]);
+            } else
+                return;
+            List<PointD> plist = arc.to3PointList();
+            if ((mPolyline[n - 1].type != 1 && line0.onPoint(plist[2])) ||
+                (mPolyline[n - 1].type == 1 && arc0.onPoint(plist[2])))
+                plist.Reverse();
+            mPolyline.RemoveAt(n);
+            mPolyline.InsertRange(n, plist);
         }
 
         /// <summary>
@@ -1057,6 +1141,27 @@ namespace CoreLib
                 }
             }
             return nearNo;
+        }
+
+        /// <summary>
+        /// 座標がポリライン上にあるかの判定
+        /// </summary>
+        /// <param name="p">座標</param>
+        /// <returns></returns>
+        public bool onPoint(PointD p)
+        {
+            for (int i = 0; i < mPolyline.Count - 1; i++) {
+                if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
+                    ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
+                    if (arc.onPoint(p))
+                        return true;
+                } else {    //  線分
+                    LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
+                    if (line.onPoint2(p))
+                        return true;
+                }
+            }
+            return false;
         }
     }
 }
