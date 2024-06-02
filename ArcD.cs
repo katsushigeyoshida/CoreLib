@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CoreLib
 {
@@ -175,6 +176,201 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ(２線に接する円弧(フィレット))
+        /// </summary>
+        /// <param name="r">円弧の半径</param>
+        /// <param name="line0">線分0</param>
+        /// <param name="pos0">ピック位置0</param>
+        /// <param name="line1">線分1</param>
+        /// <param name="pos1">ピック位置1</param>
+        public ArcD(double r, LineD line0, PointD pos0, LineD line1, PointD pos1)
+        {
+            LineD l0 = line0.toCopy();
+            l0.offset(r, pos1);
+            LineD l1 = line1.toCopy();
+            l1.offset(r, pos0);
+            mCp = l0.intersection(l1);
+            mR = r;
+            if (mCp != null && !mCp.isNaN()) {
+                mSa = getAngle(line0.intersection(mCp));
+                mEa = getAngle(line1.intersection(mCp));
+                normalize();
+                if (Math.PI < (mEa - mSa)) {
+                    YLib.Swap(ref mSa, ref mEa);
+                    normalize();
+                }
+            }
+        }
+
+        /// <summary>
+        /// コンストラクタ(線分と円に接する円弧(フィレット))
+        /// </summary>
+        /// <param name="r">半径</param>
+        /// <param name="line">線分</param>
+        /// <param name="posLine">線分ピック位置</param>
+        /// <param name="arc">円弧</param>
+        /// <param name="posArc">円弧ピック位置</param>
+        public ArcD(double r, LineD line, PointD posLine, ArcD arc, PointD posArc)
+        {
+            LineD l = line.toCopy();
+            l.offset(r, posArc);
+            ArcD a = arc.toCopy();
+            a.offset(r, posLine);
+            List<PointD> plist = a.intersection(l, false);
+            if (plist.Count == 1)
+                mCp = plist[0];
+            else if (plist.Count == 2) {
+                if ((plist[0].length(posLine) + plist[0].length(posArc)) < (plist[1].length(posLine) + plist[1].length(posArc)))
+                    mCp = plist[0];
+                else
+                    mCp = plist[1];
+            } else
+                return;
+            mR = r;
+            mSa = getAngle(line.intersection(mCp));
+            mEa = getAngle(arc.intersection(mCp));
+            normalize();
+            if (Math.PI < (mEa - mSa)) {
+                YLib.Swap(ref mSa, ref mEa);
+                normalize();
+            }
+        }
+
+        /// <summary>
+        /// コンストラクタ(円と円に接する円弧(フィレット))
+        /// </summary>
+        /// <param name="r">半径</param>
+        /// <param name="arc0">円弧</param>
+        /// <param name="posArc0">ピック位置</param>
+        /// <param name="arc1">円弧</param>
+        /// <param name="posArc1">ピック位置</param>
+        public ArcD(double r, ArcD arc0, PointD posArc0, ArcD arc1, PointD posArc1)
+        {
+            ArcD a0 = arc0.toCopy();
+            ArcD a1 = arc1.toCopy();
+            a0.offset(r, posArc1);
+            a1.offset(r, posArc0);
+            List<PointD> plist = a0.intersection(a1, false);
+            if (plist.Count == 1) {
+                mCp = plist[0];
+            } else if (plist.Count == 2) {
+                if ((plist[0].length(posArc0) + plist[0].length(posArc1)) < (plist[1].length(posArc0) + plist[1].length(posArc1)))
+                    mCp = plist[0];
+                else
+                    mCp = plist[1];
+            }
+            mR = r;
+            PointD v0 = mCp.vector(arc0.mCp);
+            if (mR > v0.length() || arc0.mR > v0.length()) {
+                if (mR < arc0.mR) v0.invert();
+            }
+            mSa = v0.angle();
+            PointD v1 = mCp.vector(arc1.mCp);
+            if (mR > v1.length() || arc1.mR > v1.length()) {
+                if (mR < arc1.mR) v1.invert();
+            }
+            mEa = v1.angle();
+            normalize();
+            if (Math.PI < (mEa - mSa)) {
+                YLib.Swap(ref mSa, ref mEa);
+                normalize();
+            }
+        }
+
+        /// <summary>
+        /// コンストラクタ(線分とポリラインに接する円弧(フィレット))
+        /// </summary>
+        /// <param name="r">半径</param>
+        /// <param name="line">線分</param>
+        /// <param name="posLine">ピック位置</param>
+        /// <param name="polyline">ポリライン</param>
+        /// <param name="posPolyline">ピック位置</param>
+        public ArcD(double r, LineD line, PointD posLine, PolylineD polyline, PointD posPolyline)
+        {
+            List<PointD> iplist = polyline.intersection(line);
+            if (iplist.Count == 0)
+                return;
+            PointD ip = iplist.MinBy(p => p.length(posLine) + p.length(posPolyline));
+            (int n, PointD pos) = polyline.nearCrossPos(ip);
+            if (polyline.mPolyline[n + 1].type == 1) {
+                ArcD parc = new ArcD(polyline.mPolyline[n], polyline.mPolyline[n + 1], polyline.mPolyline[n + 2]);
+                ArcD a = new ArcD(r, line, posLine, parc, posPolyline);
+                setArc(a);
+            } else {
+                LineD l = new LineD(polyline.mPolyline[n], polyline.mPolyline[n + 1]);
+                ArcD a = new ArcD(r, l, posPolyline, line, posLine);
+                setArc(a);
+            }
+        }
+
+        /// <summary>
+        /// コンストラクタ(円とボラインに接する円弧(フィレット))
+        /// </summary>
+        /// <param name="r">半径</param>
+        /// <param name="arc">円</param>
+        /// <param name="posArc">ピック位置</param>
+        /// <param name="polyline">ポリライン</param>
+        /// <param name="posPolyline">ピック位置</param>
+        public ArcD(double r, ArcD arc, PointD posArc, PolylineD polyline, PointD posPolyline)
+        {
+            List<PointD> iplist = polyline.intersection(arc);
+            if (iplist.Count == 0)
+                return;
+            PointD ip = iplist.MinBy(p => p.length(posArc) + p.length(posPolyline));
+            (int n, PointD pos) = polyline.nearCrossPos(ip);
+            if (polyline.mPolyline[n + 1].type == 1) {
+                ArcD parc = new ArcD(polyline.mPolyline[n], polyline.mPolyline[n + 1], polyline.mPolyline[n + 2]);
+                ArcD a = new ArcD(r, arc, posArc, parc, posPolyline);
+                setArc(a);
+            } else {
+                LineD l = new LineD(polyline.mPolyline[n], polyline.mPolyline[n + 1]);
+                ArcD a = new ArcD(r, l, posPolyline, arc, posArc);
+                setArc(a);
+            }
+        }
+
+        /// <summary>
+        /// コンストラクタ(ポリラインとボラインに接する円弧(フィレット))
+        /// </summary>
+        /// <param name="r">半径</param>
+        /// <param name="polyline0">ポリライン</param>
+        /// <param name="posPolyline0">ピック位置</param>
+        /// <param name="polyline1">ポリライン</param>
+        /// <param name="posPolyline1">ピック位置</param>
+        public ArcD(double r, PolylineD polyline0, PointD posPolyline0, PolylineD polyline1, PointD posPolyline1)
+        {
+            List<PointD> iplist = polyline0.intersection(polyline1);
+            if (iplist.Count == 0)
+                return;
+            PointD ip = iplist.MinBy(p => p.length(posPolyline0) + p.length(posPolyline1));
+            (int n0, PointD pos0) = polyline0.nearCrossPos(ip);
+            (int n1, PointD pos1) = polyline1.nearCrossPos(ip);
+            if (polyline0.mPolyline[n0 + 1].type == 1 && polyline1.mPolyline[n1 + 1].type == 1) {
+                ArcD parc0 = new ArcD(polyline0.mPolyline[n0], polyline0.mPolyline[n0 + 1], polyline0.mPolyline[n0 + 2]);
+                ArcD parc1 = new ArcD(polyline1.mPolyline[n1], polyline1.mPolyline[n1 + 1], polyline1.mPolyline[n1 + 2]);
+                ArcD a = new ArcD(r, parc0, posPolyline0, parc1, posPolyline1);
+                setArc(a);
+            } else if (polyline0.mPolyline[n0 + 1].type == 0 && polyline1.mPolyline[n1 + 1].type == 1) {
+                LineD pline0 = new LineD(polyline0.mPolyline[n0], polyline0.mPolyline[n0 + 1]);
+                ArcD parc1 = new ArcD(polyline1.mPolyline[n1], polyline1.mPolyline[n1 + 1], polyline1.mPolyline[n1 + 2]);
+                ArcD a = new ArcD(r, pline0, posPolyline0, parc1, posPolyline1);
+                setArc(a);
+            } else if (polyline0.mPolyline[n0 + 1].type == 1 && polyline1.mPolyline[n1 + 1].type == 0) {
+                ArcD parc0 = new ArcD(polyline0.mPolyline[n0], polyline0.mPolyline[n0 + 1], polyline0.mPolyline[n0 + 2]);
+                LineD pline1 = new LineD(polyline1.mPolyline[n1], polyline1.mPolyline[n1 + 1]);
+                ArcD a = new ArcD(r, pline1, posPolyline1, parc0, posPolyline0);
+                setArc(a);
+            } else if (polyline0.mPolyline[n0 + 1].type == 0 && polyline1.mPolyline[n1 + 1].type == 0) {
+                LineD pline0 = new LineD(polyline0.mPolyline[n0], polyline0.mPolyline[n0 + 1]);
+                LineD pline1 = new LineD(polyline1.mPolyline[n1], polyline1.mPolyline[n1 + 1]);
+                ArcD a = new ArcD(r, pline0, posPolyline0, pline1, posPolyline1);
+                setArc(a);
+            } else {
+                return;
+            }
+        }
+
+        /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="arc"></param>
@@ -184,6 +380,19 @@ namespace CoreLib
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
+        }
+
+        /// <summary>
+        /// ArcDの取り込み
+        /// </summary>
+        /// <param name="arc"></param>
+        public void setArc(ArcD arc)
+        {
+            mCp = arc.mCp.toCopy();
+            mR = arc.mR;
+            mSa = arc.mSa;
+            mEa = arc.mEa;
+            normalize();
         }
 
         /// <summary>
@@ -325,6 +534,20 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定点の方向にオフセットする
+        /// </summary>
+        /// <param name="dis">オフセット量</param>
+        /// <param name="pos"><オフセット方向/param>
+        public void offset(double dis, PointD pos)
+        {
+            double l = mCp.length(pos);
+            if (mR < l)
+                mR += dis;
+            else
+                mR -= dis;
+        }
+
+        /// <summary>
         /// 円弧の半径をオフセットする
         /// </summary>
         /// <param name="sp">始点</param>
@@ -344,6 +567,22 @@ namespace CoreLib
         {
             mSa = getAngle(sp);
             mEa = getAngle(ep);
+            normalize();
+        }
+
+        /// <summary>
+        /// 指定位置でトリムする(ピック位置側を残す)
+        /// </summary>
+        /// <param name="tp">トリム位置</param>
+        /// <param name="pos">ピック位置</param>
+        public void trimOn(PointD tp, PointD pos)
+        {
+            double ang  = ylib.mod(getAngle(tp), Math.PI * 2);
+            double pang = ylib.mod(getAngle(pos), Math.PI * 2);
+            if (pang < ang)
+                mEa = ang;
+            else
+                mSa = ang;
             normalize();
         }
 
@@ -703,35 +942,35 @@ namespace CoreLib
         /// <summary>
         /// 円と円との交点を求める
         /// </summary>
-        /// <param name="Arc">円弧</param>
+        /// <param name="arc">円弧</param>
         /// <param name="on">円弧上の有無</param>
         /// <returns></returns>
-        public List<PointD> intersection(ArcD Arc, bool on = true)
+        public List<PointD> intersection(ArcD arc, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
             PointD ip;
-            double dis = mCp.length(Arc.mCp);
-            PointD vec = mCp.vector(Arc.mCp);
-            if (mR + Arc.mR < dis || Math.Abs(mR - Arc.mR) > dis) {
-                //  交点なし
-            } else if (mR + Arc.mR == dis || Math.Abs(mR - Arc.mR) == dis) {
+            double dis = mCp.length(arc.mCp);
+            PointD vec = mCp.vector(arc.mCp);
+            if (Math.Abs(mR + arc.mR - dis) < mEps || Math.Abs(Math.Abs(mR - arc.mR) - dis) < mEps) {
                 //  接点
                 vec.setLength(mR);
                 ip = mCp + vec;
-                if (!on || (onPoint(ip) && Arc.onPoint(ip)))
+                if (!on || (onPoint(ip) && arc.onPoint(ip)))
                     plist.Add(ip);
+            } else if (mR + arc.mR < dis || Math.Abs(mR - arc.mR) > dis) {
+                //  交点なし
             } else {
                 //  交点 余弦定理(cos(th) = (a^2+b^2-c^2) / 2ab)交点の角度を求める
                 //                  a = distance(cp1,cp2) b = r1 c = r2
-                double ang = Math.Acos((dis * dis + mR * mR - Arc.mR * Arc.mR) / (2 * dis * mR));
+                double ang = Math.Acos((dis * dis + mR * mR - arc.mR * arc.mR) / (2 * dis * mR));
                 vec.rotate(ang);
                 vec.setLength(mR);
                 ip = mCp + vec;
-                if (!on || (onPoint(ip) && Arc.onPoint(ip)))
+                if (!on || (onPoint(ip) && arc.onPoint(ip)))
                     plist.Add(ip);
                 vec.rotate(-ang * 2);
                 ip = mCp + vec;
-                if (!on || (onPoint(ip) && Arc.onPoint(ip)))
+                if (!on || (onPoint(ip) && arc.onPoint(ip)))
                     plist.Add(ip);
             }
             return plist;
