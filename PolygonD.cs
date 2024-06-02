@@ -574,6 +574,57 @@ namespace CoreLib
             return polyline;
         }
 
+
+        /// <summary>
+        /// 指定位置をフィレットに変換
+        /// </summary>
+        /// <param name="r">フィレット半径</param>
+        /// <param name="pos">座標位置</param>
+        public void fillet(double r, PointD pos)
+        {
+            int n = nearPeackPos(pos);
+            int pn = ylib.mod((n - 1), this.mPolygon.Count);
+            int nn = ylib.mod((n + 1), this.mPolygon.Count);
+            LineD line0 = null, line1;
+            ArcD arc, arc0 = null, arc1;
+            if (mPolygon[n].type == 1) {
+                if (pos.length(mPolygon[pn]) < pos.length(mPolygon[nn]))
+                    n -= 1;
+                else
+                    n += 1;
+                n = ylib.mod(n, this.mPolygon.Count);
+                pn = ylib.mod((n - 1), this.mPolygon.Count);
+                nn = ylib.mod((n + 1), this.mPolygon.Count);
+            }
+            int ppn = ylib.mod((n - 2), this.mPolygon.Count);
+            int nnn = ylib.mod((n + 2), this.mPolygon.Count);
+            if (r <= 0) return;
+            if (mPolygon[pn].type != 1 && mPolygon[nn].type != 1) {
+                line0 = new LineD(mPolygon[pn], mPolygon[n]);
+                line1 = new LineD(mPolygon[n], mPolygon[nn]);
+                arc = new ArcD(r, line0, mPolygon[pn], line1, mPolygon[nn]);
+            } else if (mPolygon[pn].type != 1 && mPolygon[nn].type == 1) {
+                line0 = new LineD(mPolygon[pn], mPolygon[n]);
+                arc1 = new ArcD(mPolygon[n], mPolygon[nn], mPolygon[nnn]);
+                arc = new ArcD(r, line0, mPolygon[pn], arc1, mPolygon[nn]);
+            } else if (mPolygon[pn].type == 1 && mPolygon[nn].type != 1) {
+                arc0 = new ArcD(mPolygon[ppn], mPolygon[pn], mPolygon[n]);
+                line1 = new LineD(mPolygon[n], mPolygon[nn]);
+                arc = new ArcD(r, line1, mPolygon[nn], arc0, mPolygon[pn]);
+            } else if (mPolygon[pn].type == 1 && mPolygon[nn].type == 1) {
+                arc0 = new ArcD(mPolygon[ppn], mPolygon[pn], mPolygon[n]);
+                arc1 = new ArcD(mPolygon[n], mPolygon[nn], mPolygon[nnn]);
+                arc = new ArcD(r, arc0, mPolygon[pn], arc1, mPolygon[nn]);
+            } else
+                return;
+            List<PointD> plist = arc.to3PointList();
+            if ((mPolygon[pn].type != 1 && line0.onPoint(plist[2])) ||
+                (mPolygon[pn].type == 1 && arc0.onPoint(plist[2])))
+                plist.Reverse();
+            mPolygon.RemoveAt(n);
+            mPolygon.InsertRange(n, plist);
+        }
+
         /// <summary>
         /// 点との交点(垂点)リストを求める
         /// </summary>
