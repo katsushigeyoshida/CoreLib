@@ -371,7 +371,7 @@ namespace CoreLib
         public void add(List<Point3D> plist, PointD loc, FACE3D face, bool near)
         {
             Polyline3D polyline = new Polyline3D(plist);
-            if (polyline.nearStart(loc, face) ^ near)
+            if (polyline.length(new Point3D(loc, face)) > polyline.length() / 2)
                 plist.Reverse();
             add(plist);
         }
@@ -708,6 +708,28 @@ namespace CoreLib
                     polyline.RemoveAt(i);
             }
             return polyline;
+        }
+
+        /// <summary>
+        /// ポリラインの長さ
+        /// </summary>
+        /// <returns>長さ</returns>
+        public double length()
+        {
+            PolylineD polyline = new PolylineD(mPolyline);
+            return polyline.length();
+        }
+
+        /// <summary>
+        /// 始点からの周長
+        /// </summary>
+        /// <param name="pos">指定点</param>
+        /// <returns>長さ</returns>
+        public double length(Point3D pos)
+        {
+            PointD p = pos.toPointD(mCp, mU, mV);
+            PolylineD polyline = new PolylineD(mPolyline);
+            return polyline.length(p);
         }
 
         /// <summary>
