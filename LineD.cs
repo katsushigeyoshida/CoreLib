@@ -29,6 +29,7 @@ namespace CoreLib
     ///  PointD vector()                        ベクトル(増分データ)に変換
     ///  PointD getVectorAngle(double ang, double l)    線分に対して角度と長さを指定したベクトルを求める
     ///  PointD getEndPointLine(PointD pickPos, PointD cp)  線分の端点を求める(寸法線用)
+    ///  bool sameDirect(PointD p)              点が同じ方向
     ///  bool sameDirect(LineD lp)              同じ方向の線分か
     ///  bool directHorizontal()                水平と垂直に2分した時の水平化の判定
     ///  void inverse()                         始終点を入れ換える
@@ -51,7 +52,8 @@ namespace CoreLib
     ///  PointD centerPoint()                   線分の中点を求める
     ///  bool onPoint(PointD pnt)               点が線分上にあるかを判定
     ///  bool onPoint2(PointD p, double eps = -1)   点が線分上にあるかを判定
-    ///  PointD nearPoints(PointD p, int divideNo = 4) 線分の分割点で最も近い点を求める
+    ///  bool onPointEx(PointD p)               延長線を含めた線分上の位置を判定
+    ///  PointD nearPoint(PointD p, int divideNo = 4)   線分の分割点で最も近い点を求める
     ///  byte inOutAreaCode(PointD p, Rect rect)クリッピング領域に対する点の9分割位置の範囲
     ///  byte inOutAreaCode(Point p, Rect rect) クリッピング領域に対する点の9分割位置の範囲
     ///  LineD clippingLine(Rect rect)          矩形領域でクリッピングする
@@ -72,6 +74,7 @@ namespace CoreLib
     ///  void mirror(PointD sp, PointD ep)      指定線分でミラー
     ///  void scale(PointD cp, double scale)    原点を指定して拡大縮小
     ///  void trim(PointD sp, PointD ep)        指定点の垂点で線分の長さを変える
+    ///  void trimOn(PointD tp, PointD pos)     指定位置でトリムする(ピック位置側を残す)
     ///  void trimNear(PointD tp, PointD pos)   ピックした位置に近い方を消すようにトリミングする
     ///  void trimFar(PointD tp, PointD pos)    ピックした位置に遠い方を消すようにトリミングする
     ///  void stretch(PointD vec, PointD pickPos)   指定地に近い端点を移動させる
@@ -316,6 +319,16 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 点が同じ方向
+        /// </summary>
+        /// <param name="p">点座標</param>
+        /// <returns>同方向</returns>
+        public bool sameDirect(PointD p)
+        {
+            return angle(p) < Math.PI / 2;
+        }
+
+        /// <summary>
         /// 同じ方向の線分か
         /// </summary>
         /// <param name="lp"></param>
@@ -396,6 +409,16 @@ namespace CoreLib
         {
             PointD v = vector();
             return Math.Atan2(v.y, v.x);
+        }
+
+        /// <summary>
+        /// 始点を中心とした線分との角度(0 ～ π) 
+        /// </summary>
+        /// <param name="p">座標</param>
+        /// <returns>角度</returns>
+        public double angle(PointD p)
+        {
+            return ps.angle(pe, p);
         }
 
         /// <summary>
