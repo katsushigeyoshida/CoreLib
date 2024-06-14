@@ -208,16 +208,16 @@ namespace CoreLib
         public void squeeze()
         {
             //  隣同士が同一座標の削除
-            for (int i = mPolygon.Count - 1; 0 < i; i--) {
-                if (mPolygon[i] == null || mPolygon[i].isEqual(mPolygon[i - 1]))
-                    mPolygon.RemoveAt(i);
+            for (int i = mPolygon.Count - 1; 0 <= i; i--) {
+                if (mPolygon[i] == null || mPolygon[i].length(mPolygon[i == 0 ? ^1 : i - 1]) < mEps)
+                    if (mPolygon[i + 1].type ==1)
+                        mPolygon.RemoveAt(i == 0 ? mPolygon.Count - 1 : i - 1);
+                    else
+                        mPolygon.RemoveAt(i);
             }
-            //  始終点が同じ座標の時終点座標を削除
-            if (1 < mPolygon.Count && mPolygon[mPolygon.Count - 1].isEqual(mPolygon[0]))
-                mPolygon.RemoveAt(mPolygon.Count - 1);
             //  角度が180°になる座標を削除
-            for (int i = mPolygon.Count - 2; i > 0; i--) {
-                if ((Math.PI - mPolygon[i].angle(mPolygon[i - 1], mPolygon[i + 1])) < mEps)
+            for (int i = mPolygon.Count - 2; 0 <= i; i--) {
+                if ((Math.PI - mPolygon[i].angle(mPolygon[i == 0 ? ^1 : i - 1], mPolygon[i + 1])) < mEps)
                     mPolygon.RemoveAt(i);
             }
         }
@@ -228,12 +228,78 @@ namespace CoreLib
         /// <returns>長さ</returns>
         public double length()
         {
-            double length = 0;
-            List<LineD> llist = toLineList(true);
-            length = llist.Sum(l => l.length());
-            List<ArcD> alist = toArcList();
-            length += alist.Sum(a => a.mOpenAngle * a.mR);
-            return length;
+            return length(mPolygon.Count);
+            //double length = 0;
+            //List<LineD> llist = toLineList(true);
+            //length = llist.Sum(l => l.length());
+            //List<ArcD> alist = toArcList();
+            //length += alist.Sum(a => a.mOpenAngle * a.mR);
+            //return length;
+        }
+
+        /// <summary>
+        /// 始点からの線上の距離
+        /// </summary>
+        /// <param name="pos">指定座標</param>
+        /// <returns>距離</returns>
+        public double length(PointD pos)
+        {
+            (int n, PointD sp) = nearCrossPos(pos);
+            return length(sp, n);
+        }
+
+        /// <summary>
+        /// 座標位置までの戦場の長さ
+        /// </summary>
+        /// <param name="n">座標位置</param>
+        /// <param name="st">開始座標位置</param>
+        /// <returns>距離</returns>
+        public double length(int n, int st = 0)
+        {
+            double len = 0;
+            for (int i = st; i < n; i++) {
+                int i1 = (i + 1) % mPolygon.Count;
+                int i2 = (i + 2) % mPolygon.Count;
+                if (i < mPolygon.Count - 1 && mPolygon[i1].type == 1) {
+                    ArcD arc = new ArcD(mPolygon[i], mPolygon[i1], mPolygon[i2]);
+                    len += arc.length();
+                } else {
+                    len += mPolygon[i].length(mPolygon[i1]);
+                }
+            }
+            return len;
+        }
+
+
+        /// <summary>
+        /// 指定座標位置から線上の距離
+        /// </summary>
+        /// <param name="pos">線上の座標</param>
+        /// <param name="n">線上の位置</param>
+        /// <param name="st">開始位置</param>
+        /// <returns>距離</returns>
+        public double length(PointD pos, int n, int st = 0)
+        {
+            double len = 0;
+            for (int i = st; i < n; i++) {
+                if (i < mPolygon.Count - 1 && mPolygon[i + 1].type == 1) {
+                    ArcD arc = new ArcD(mPolygon[i], mPolygon[i + 1], mPolygon[i + 2]);
+                    len += arc.length();
+                } else {
+                    len += mPolygon[i].length(mPolygon[i + 1]);
+                }
+            }
+            if (n < mPolygon.Count - 1 && mPolygon[n + 1].type == 1) {
+                ArcD arc = new ArcD(mPolygon[n], mPolygon[n + 1], mPolygon[n + 2]);
+                if (arc.mCcw)
+                    arc.setEndPoint(pos);
+                else
+                    arc.setStartPoint(pos);
+                len += arc.length();
+            } else {
+                len += mPolygon[n].length(pos);
+            }
+            return len;
         }
 
         /// <summary>
@@ -505,6 +571,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="vec">移動量</param>
         /// <param name="nearPos">指定位置</param>
+        /// <param name="arc">円弧ストレッチ</param>
         public void stretch(PointD vec, PointD nearPos, bool arc = false)
         {
             (int n, PointD ip) = nearCrossPos(nearPos);
@@ -749,6 +816,26 @@ namespace CoreLib
                 }
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 分割点で最も近い点を求める
+        /// </summary>
+        /// <param name="p">近傍座標</param>
+        /// <param name="divideNo">分割数</param>
+        /// <returns>座標</returns>
+        public PointD nearPoint(PointD p, int divideNo = 4)
+        {
+            (int np, PointD pos) = nearCrossPos(p);
+            if (mPolygon[np + 1].type == 1) {
+                ArcD arc = new ArcD(mPolygon[np], mPolygon[np + 1], mPolygon[np + 2]);
+                return arc.nearPoints(p, divideNo);
+            } else if (np < 0) {
+                return null;
+            } else {
+                LineD line = new LineD(mPolygon[np], mPolygon[np + 1]);
+                return line.nearPoint(p, divideNo);
+            }
         }
 
         /// <summary>

@@ -290,7 +290,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定点に最も近い線分の分割座標から最も近い2D座標を求める
+        /// 指定点に最も近い線分または円弧の分割座標から最も近い2D座標を求める
         /// </summary>
         /// <param name="pos">指定点</param>
         /// <param name="divideNo">分割数</param>
@@ -298,9 +298,37 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD nearPoint(PointD pos, int divideNo, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            LineD l = getLine3D(n).toLineD(face);
-            return l.nearPoint(pos, divideNo);
+            Point3D p3d = nearPoint(new Point3D(pos, face), divideNo);
+            return p3d.toPoint(face);
+            //int n = nearLine(pos, face);
+            //LineD l = getLine3D(n).toLineD(face);
+            //return l.nearPoint(pos, divideNo);
+        }
+
+        /// <summary>
+        /// 指定点に最も近い線分または円弧の分割座標から最も近い3D座標を求める
+        /// </summary>
+        /// <param name="pos">指定座標</param>
+        /// <param name="divideNo">分割数</param>
+        /// <returns>3D座標</returns>
+        public Point3D nearPoint(Point3D pos, int divideNo)
+        {
+            PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
+            int n = nearPosition(pos);
+            PointD np;
+            int n1 = (n + 1) % mPolygon.Count;
+            int n2 = (n + 2) % mPolygon.Count;
+            if (mPolygon[n].type == 1) {
+                ArcD arc = new ArcD(mPolygon[n - 1], mPolygon[n], mPolygon[n1]);
+                np = arc.nearPoints(p, divideNo);
+            } else if (mPolygon[n1].type == 1) {
+                ArcD arc = new ArcD(mPolygon[n], mPolygon[n1], mPolygon[n2]);
+                np = arc.nearPoints(p, divideNo);
+            } else {
+                LineD l = new LineD(mPolygon[n], mPolygon[n1]);
+                np = l.nearPoint(p, divideNo);
+            }
+            return Point3D.cnvPlaneLocation(np, mCp, mU, mV);
         }
 
         /// <summary>
@@ -310,17 +338,14 @@ namespace CoreLib
         /// <returns>座標位置</returns>
         public int nearPosition(Point3D pos)
         {
-            int n = -1;
-            double dis = double.MaxValue;
             PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
-            for (int i = 0; i < mPolygon.Count; i++) {
-                double l = mPolygon[i].length(p);
-                if (l < dis) {
-                    dis = l;
-                    n = i;
-                }
+            PolygonD polygon = new PolygonD(mPolygon);
+            double len = polygon.length(p);
+            for (int i = 1; i <= mPolygon.Count; i++) {
+                if (len < polygon.length(i))
+                    return i - 1;
             }
-            return n;
+            return 0;
         }
 
         /// <summary>
@@ -525,6 +550,28 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ポリゴンの長さ(周長)
+        /// </summary>
+        /// <returns>長さ</returns>
+        public double length()
+        {
+            PolygonD polygon = new PolygonD(mPolygon);
+            return polygon.length();
+        }
+
+        /// <summary>
+        /// 始点からの周長
+        /// </summary>
+        /// <param name="pos">指定点</param>
+        /// <returns>長さ</returns>
+        public double length(Point3D pos)
+        {
+            PointD p = pos.toPointD(mCp, mU, mV);
+            PolygonD polygon = new PolygonD(mPolygon);
+            return polygon.length(p);
+        }
+
+        /// <summary>
         /// 座標点を逆順にする
         /// </summary>
         public void reverse()
@@ -538,16 +585,18 @@ namespace CoreLib
         public void squeeze()
         {
             //  隣と同じ座標削除
-            for (int i = mPolygon.Count - 1; i > 0; i--) {
-                if (mPolygon[i].length(mPolygon[i - 1]) < mEps)
-                    mPolygon.RemoveAt(i);
+            for (int i = mPolygon.Count - 1; i >= 0; i--) {
+                if (mPolygon[i].length(mPolygon[i == 0 ? ^1 : i - 1]) < mEps) {
+                    if (mPolygon[i].type == 1)
+                        mPolygon.RemoveAt(i == 0 ? mPolygon.Count - 1 : i - 1);
+                    else
+                        mPolygon.RemoveAt(i);
+                }
             }
-            if (1 < mPolygon.Count && mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
-                mPolygon.RemoveAt(mPolygon.Count - 1);
             //  角度が180°になるものを削除
             for (int i = mPolygon.Count - 2; i > 0; i--) {
                 if ((mPolygon[i - 1].type == 0 && mPolygon[i].type == 0 && mPolygon[i + 1].type == 0)
-                    && (Math.PI - mPolygon[i].angle(mPolygon[i - 1], mPolygon[i + 1])) < mEps)
+                    && (Math.PI - mPolygon[i].angle(mPolygon[i == 0 ? ^1 : i - 1], mPolygon[i + 1])) < mEps)
                     mPolygon.RemoveAt(i);
             }
         }
