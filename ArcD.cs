@@ -12,13 +12,21 @@ namespace CoreLib
     ///  ArcD(PointD sp, PointD mp, PointD ep)              三点円弧
     ///  ArcD(PointD cp, PointD sp, double ang)             中心座標と開始座標、開口角
     ///  ArcD(PointD cp, double r)                          円
+    ///  ArcD(double r, LineD line0, PointD pos0, LineD line1, PointD pos1)     ２線に接する円弧(フィレット)
+    ///  ArcD(double r, LineD line, PointD posLine, ArcD arc, PointD posArc)    線分と円に接する円弧(フィレット)
+    ///  ArcD(double r, ArcD arc0, PointD posArc0, ArcD arc1, PointD posArc1)   円と円に接する円弧(フィレット)
+    ///  ArcD(double r, LineD line, PointD posLine, PolylineD polyline, PointD posPolyline) 線分とポリラインに接する円弧(フィレット)
+    ///  ArcD(double r, ArcD arc, PointD posArc, PolylineD polyline, PointD posPolyline)    円とボラインに接する円弧(フィレット)
+    ///  ArcD(double r, PolylineD polyline0, PointD posPolyline0, PolylineD polyline1, PointD posPolyline1) ポリラインとボラインに接する円弧(フィレット)
     ///  ArcD(ArcD arc)
     ///  
+    /// void setArc(ArcD arc)                               ArcDの取り込み
     ///  void setArc(PointD cp, PointD sp, PointD ep)       中心点と始点、終点から円弧を作成
     ///  void normalize()                                   開始角と修了角の正規化
     ///  string ToString()
     ///  string ToString(string format)                     書式付き文字列変換
     ///  ArcD toCopy()                                      コピーを作成
+    ///  double length()                                    周長
     ///  bool centerIsLeft(PointD ps, PointD pe)            2点の位置から中心が左にあるかを確認
     ///  void translate(PointD vec)                         ベクトル分移動させる
     ///  void rotate(double angle)                          円弧の回転
@@ -28,6 +36,7 @@ namespace CoreLib
     ///  void scale(PointD cp, double scale)                原点を指定して拡大縮小
     ///  void offset(PointD sp, PointD ep)                  円弧の半径をオフセットする
     ///  void trim(PointD sp, PointD ep)                    指定点でトリムする
+    ///  void trimOn(PointD tp, PointD pos)                 指定位置でトリムする(ピック位置側を残す)
     ///  void trimNear(PointD tp, PointD pos)               ピックした位置に近い方を消すようにトリミング
     ///  void trimFar(PointD tp, PointD pos)                ピックした位置に遠いを消すようにトリミング
     ///  void stretch(PointD vec, PointD pos)               円弧を端点または半径をストレッチ
@@ -143,7 +152,7 @@ namespace CoreLib
                     YLib.Swap(ref mSa, ref mEa);
                 }
                 mEa += mEa < mSa ? Math.PI * 2 : 0;
-                mCcw = centerIsLeft(sp, mp);
+                mCcw = centerIsLeft(sp, middlePoint());
             }
         }
 
@@ -451,6 +460,15 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 周長
+        /// </summary>
+        /// <returns>周長</returns>
+        public double length()
+        {
+            return mOpenAngle * mR;
+        }
+
+        /// <summary>
         /// 2点の位置から中心が左にあるかを確認
         /// </summary>
         /// <param name="ps">始点</param>
@@ -625,12 +643,14 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 円弧を端点または半径をストレッチする
+        /// 円弧を端点または中間点をストレッチする
         /// </summary>
         /// <param name="vec">ストレッチの方向</param>
         /// <param name="pos">ストレッチの基準点</param>
         public void stretch(PointD vec, PointD pos)
         {
+            if (Math.PI * 2 <= (mEa - mSa))
+                return;
             PointD sp = startPoint();
             PointD mp = middlePoint();
             PointD ep = endPoint();
@@ -639,16 +659,14 @@ namespace CoreLib
             double el = pos.length(ep);
             if (Math.PI * 2 <= mOpenAngle || (ml < sl && ml < el)) {
                 mp += vec;
-                mR = mp.length(mCp);
             } else if (sl < el) {
                 sp += vec;
-                mSa = getAngle(sp);
-                normalize();
             } else {
                 ep += vec;
-                mEa = getAngle(ep);
-                normalize();
             }
+            ArcD arc = new ArcD(sp, mp, ep);
+            setArc(arc);
+            normalize();
         }
 
         /// <summary>
@@ -903,17 +921,17 @@ namespace CoreLib
         public List<PointD> intersection(LineD line, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
-            PointD mp = line.intersection(mCp);           //  線分と中心点との垂点
-            double l = mp.length(mCp);                      //  垂点と中心点との距離
+            PointD p = line.intersection(mCp);              //  線分と中心点との垂点
+            double r = p.length(mCp);                       //  垂点と中心点との距離
             normalize();
 
-            if (mR < l - mEps) {
+            if (mR < r - mEps) {
                 //  交点なし
-            } else if (Math.Abs(mR - l) < mEps) {
+            } else if (Math.Abs(mR - r) < mEps) {
                 //  接点
-                if (!on || innerAngle(mp.angle(mCp)))
-                    plist.Add(mp);
-            } else if (l < mEps) {
+                if (!on || innerAngle(p.angle(mCp)))
+                    plist.Add(p);
+            } else if (r < mEps) {
                 double ang = line.angle();
                 PointD cp = getPoint(ang);
                 if (!on || (onPoint(cp) && line.onPoint(cp)))
@@ -924,17 +942,17 @@ namespace CoreLib
                     plist.Add(cp);
             } else {
                 //  交点
-                double th = Math.Acos(l / mR);           //  垂線との角度
-                LineD ml = new LineD(mCp, mp);
-                ml.rotate(mCp, th);
-                ml.setLength(mR);
-                if (!on || (onPoint(ml.pe) && line.onPoint(ml.pe)))
-                    plist.Add(ml.pe);
-                ml = new LineD(mCp, mp);
-                ml.rotate(mCp, -th);
-                ml.setLength(mR);
-                if (!on || (onPoint(ml.pe) && line.onPoint(ml.pe)))
-                    plist.Add(ml.pe);
+                double th = Math.Acos(r / mR);              //  垂線との角度
+                LineD l = new LineD(mCp, p);
+                l.rotate(mCp, th);
+                l.setLength(mR);
+                if (!on || (onPoint(l.pe) && line.onPoint(l.pe)))
+                    plist.Add(l.pe);
+                l = new LineD(mCp, p);
+                l.rotate(mCp, -th);
+                l.setLength(mR);
+                if (!on || (onPoint(l.pe) && line.onPoint(l.pe)))
+                    plist.Add(l.pe);
             }
             return plist;
         }
