@@ -69,14 +69,7 @@ namespace CoreLib
         /// <param name="squeezeFlg">重複チェック</param>
         public Polyline3D(List<Point3D> polyline, bool squeezeFlg = true)
         {
-            if (squeezeFlg)
-                polyline = squeeze(polyline);
-            mCp = polyline[0].toCopy();
-            (mU, mV) = getFace(polyline);
-            mPolyline = new List<PointD>();
-            for (int i = 0; i < polyline.Count; i++) {
-                mPolyline.Add(Point3D.cnvPlaneLocation(polyline[i], mCp, mU, mV));
-            }
+            setData(polyline, squeezeFlg);
         }
 
         /// <summary>
@@ -161,20 +154,45 @@ namespace CoreLib
                 u = plist[1] - plist[0];
                 u.unit();
                 Line3D l = new Line3D(plist[0], plist[1]);
-                Point3D ip = l.intersection(plist[2]);
-                v = plist[2] - ip;
+                //  平面の精度を上げるために線分ともっとも離れた点を使って平面を作成
+                double dis = 0;
+                for (int i = 2; i < plist.Count; i++) {
+                    Point3D ip = l.intersection(plist[i]);
+                    double d = ip.length(plist[i]);
+                    if (dis < d) {
+                        dis = d;
+                        v = plist[i] - ip;
+                    }
+                }
                 v.unit();
             }
             return (u, v);
         }
 
         /// <summary>
-        /// 線分以外の要素を含む
+        /// 線分以外の要素を含むポリラインデータの確認
         /// </summary>
         /// <returns>MultiType</returns>
         public bool IsMultiType()
         {
             return 0 <= mPolyline.FindIndex(p => p.type != 0);
+        }
+
+        /// <summary>
+        /// データを設定する
+        /// </summary>
+        /// <param name="polyline">座標点リスト</param>
+        /// <param name="squeezeFlg">重複チェック</param>
+        public void setData(List<Point3D> polyline, bool squeezeFlg = true)
+        {
+            if (squeezeFlg)
+                polyline = squeeze(polyline);
+            mCp = polyline[0].toCopy();
+            (mU, mV) = getFace(polyline);
+            mPolyline = new List<PointD>();
+            for (int i = 0; i < polyline.Count; i++) {
+                mPolyline.Add(Point3D.cnvPlaneLocation(polyline[i], mCp, mU, mV));
+            }
         }
 
         /// <summary>
@@ -310,6 +328,21 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2Dのポリラインに変換する
+        /// </summary>
+        /// <param name="cp">2D平面の中心座標</param>
+        /// <param name="u">2D平面のX軸向き</param>
+        /// <param name="v">2D座標のY軸の向き</param>
+        /// <returns>2Dポリライン</returns>
+        public PolylineD toPolylineD(Point3D cp, Point3D u, Point3D v)
+        {
+            List<Point3D> plist = toPoint3D();
+            PolylineD polyline = new PolylineD();
+            polyline.mPolyline = plist.ConvertAll(p => p.toPointD(cp, u, v));
+            return polyline;
+        }
+
+        /// <summary>
         /// 座標点の追加(このポリラインの平面上の座標に変換)
         /// </summary>
         /// <param name="p">座標点</param>
@@ -362,7 +395,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定点に遠い方を始点として座標データを追加
+        /// 指定点に近い方を始点として座標データを追加
         /// </summary>
         /// <param name="plist">3D座標リスト</param>
         /// <param name="loc">指定点</param>
@@ -371,7 +404,7 @@ namespace CoreLib
         public void add(List<Point3D> plist, PointD loc, FACE3D face, bool near)
         {
             Polyline3D polyline = new Polyline3D(plist);
-            if (polyline.length(new Point3D(loc, face)) > polyline.length() / 2)
+            if (polyline.length(new Point3D(loc, face)) < polyline.length() / 2)
                 plist.Reverse();
             add(plist);
         }
@@ -404,9 +437,11 @@ namespace CoreLib
         /// <param name="plist"></param>
         public void addFirst(List<Point3D> plist)
         {
-            List<Point3D> p1list = toPoint3D();
-            plist.AddRange(p1list);
-            setPointList(plist);
+            mPolyline.Reverse();
+            add(plist);
+            //List<Point3D> p1list = toPoint3D();
+            //plist.AddRange(p1list);
+            //setPointList(plist);
         }
 
         /// <summary>
@@ -630,10 +665,10 @@ namespace CoreLib
             int n = dis.IndexOf(dis.Min());
             switch (n) {
                 case 0:
-                    polyline.reverse();
                     addFirst(polyline.toPoint3D());
                     break;
                 case 1:
+                    polyline.reverse();
                     addFirst(polyline.toPoint3D());
                     break;
                 case 2:
@@ -645,6 +680,30 @@ namespace CoreLib
                     break;
             }
             squeeze();
+        }
+
+        /// <summary>
+        /// ポリライン同士の接続
+        /// </summary>
+        /// <param name="pos">ピック位置</param>
+        /// <param name="polyline">ポリライン</param>
+        /// <param name="pos2">ピック位置</param>
+        public void connect(Point3D pos, Polyline3D polyline, Point3D pos2)
+        {
+            if (mPolyline.Count < 3) {
+                //  ポリラインが2点以下では平面ができないので接続する要素と合わせて平面を決定
+                List<Point3D> p3list = toPoint3D();
+                p3list.AddRange(polyline.toPoint3D());
+                setData(p3list);
+                mPolyline.RemoveRange(2, mPolyline.Count - 2);
+            }
+
+            PolylineD polyline0 = new PolylineD(mPolyline);
+            PolylineD polyline1 = polyline.toPolylineD(mCp, mU, mV);
+            PointD pos0 = pos.toPointD(mCp, mU, mV);
+            PointD pos1 = pos2.toPointD(mCp, mU, mV);
+            polyline0.connect(pos0, polyline1, pos1);
+            mPolyline = polyline0.toPointList();
         }
 
         /// <summary>
@@ -681,12 +740,34 @@ namespace CoreLib
             if (3 < mPolyline.Count) {
                 List<PointD> plist = new List<PointD>();
                 plist = mPolyline.ConvertAll(p => p.toCopy());
-                LineD l0 = new LineD(mPolyline[0], mPolyline[(1) % mPolyline.Count]);
-                LineD l1 = new LineD(mPolyline[^2], mPolyline[^1]);
-                PointD p = l0.intersection(l1);
-                if (p != null && l0.onPoint(p)) {
-                    plist[0] = p.toCopy();
-                    plist[^1] = p.toCopy();
+                PointD ip = null;
+                List<PointD> iplist = new List<PointD>();
+                if (plist[1].type == 1) {
+                    ArcD arc0 = new ArcD(plist[0], plist[1], plist[2]);
+                    if (plist[^2].type == 1) {
+                        ArcD arc1 = new ArcD(plist[^3], plist[^2], plist[^1]);
+                        iplist = arc0.intersection(arc1);
+                    } else {
+                        LineD line1 = new LineD(mPolyline[^2], mPolyline[^1]);
+                        iplist = arc0.intersection(line1);
+                    }
+                } else {
+                    LineD line0 = new LineD(mPolyline[0], mPolyline[1]);
+                    if (plist[^2].type == 1) {
+                        ArcD arc1 = new ArcD(plist[^3], plist[^2], plist[^1]);
+                        iplist = arc1.intersection(line0);
+                    } else {
+                        LineD line1 = new LineD(mPolyline[^2], mPolyline[^1]);
+                        ip = line0.intersection(line1);
+                    }
+                }
+                if (iplist.Count == 1)
+                    ip = iplist[0];
+                else if (1 < iplist.Count)
+                    ip = iplist.MinBy(p => p.length(plist[0]) + p.length(plist[^1]));
+                if (ip != null) {
+                    plist[0] = ip.toCopy();
+                    plist[^1] = ip.toCopy();
                 }
                 mPolyline = plist;
             }
@@ -733,27 +814,15 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定点が終点よりも始点に近いかどうかの判定
+        /// 指定点が周長で終点よりも始点に近いかどうかの判定
         /// </summary>
         /// <param name="loc">指定点</param>
         /// <returns>判定</returns>
         public bool nearStart(Point3D loc)
         {
             PointD loc2d = Point3D.cnvPlaneLocation(loc, mCp, mU, mV);
-            return mPolyline[0].length(loc2d) < mPolyline[^1].length(loc2d);
-        }
-
-        /// <summary>
-        /// 2D平面上で指定点が終点よりも始点に近いかどうかの判定
-        /// </summary>
-        /// <param name="loc">指定点</param>
-        /// <param name="face">2D平面</param>
-        /// <returns>判定</returns>
-        public bool nearStart(PointD loc, FACE3D face)
-        {
-            PointD sp = toPoint3D(0).toPoint(face);
-            PointD ep = toPoint3D(mPolyline.Count - 1).toPoint(face);
-            return sp.length(loc) < ep.length(loc);
+            PolylineD polyline = new PolylineD(mPolyline);
+            return polyline.length(loc2d) < polyline.length() / 2;
         }
 
         /// <summary>
@@ -800,7 +869,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定点に最も近い線分の分割座標から最も近い2D座標を求める
+        /// 指定点に最も近い線分または円弧の分割座標から最も近い2D座標を求める
         /// </summary>
         /// <param name="pos">指定点</param>
         /// <param name="divideNo">分割数</param>
@@ -808,29 +877,49 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD nearPoint(PointD pos, int divideNo, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            LineD l = getLine3D(n).toLineD(face);
-            return l.nearPoint(pos, divideNo);
+            Point3D p3d = nearPoint(new Point3D(pos, face), divideNo);
+            return p3d.toPoint(face);
         }
 
         /// <summary>
-        /// 指定点に最も近い座標点の位置
+        /// 指定点に最も近い線分または円弧の分割座標から最も近い3D座標を求める
+        /// </summary>
+        /// <param name="pos">指定座標</param>
+        /// <param name="divideNo">分割数</param>
+        /// <returns>3D座標</returns>
+        public Point3D nearPoint(Point3D pos, int divideNo)
+        {
+            PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
+            int n = nearPosition(pos);
+            PointD np;
+            if (mPolyline[n].type == 1) {
+                ArcD arc = new ArcD(mPolyline[n - 1], mPolyline[n], mPolyline[n + 1]);
+                np = arc.nearPoints(p, divideNo);
+            } else if (mPolyline[n + 1].type == 1) {
+                ArcD arc = new ArcD(mPolyline[n], mPolyline[n + 1], mPolyline[n + 2]);
+                np = arc.nearPoints(p, divideNo);
+            } else {
+                LineD l = new LineD(mPolyline[n], mPolyline[n + 1]);
+                np = l.nearPoint(p, divideNo);
+            }
+            return Point3D.cnvPlaneLocation(np, mCp, mU, mV);
+        }
+
+        /// <summary>
+        /// 線上の距離で指定点を超えない最も近い座標点の位置
         /// </summary>
         /// <param name="pos">指定座標</param>
         /// <returns>座標位置</returns>
         public int nearPosition(Point3D pos)
         {
-            int n = -1;
-            double dis = double.MaxValue;
             PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
-            for (int i = 0; i < mPolyline.Count; i++) {
-                double l = mPolyline[i].length(p);
-                if (l < dis) {
-                    dis = l;
-                    n = i;
-                }
+            PolylineD polyline = new PolylineD(mPolyline);
+            double len = polyline.length(p);
+            for (int i = 1; i < mPolyline.Count; i++) {
+                if (len < polyline.length(i))
+                    return i - 1;
             }
-            return n;
+            return 0;
         }
 
         /// <summary>
