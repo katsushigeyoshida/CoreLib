@@ -135,6 +135,7 @@ namespace CoreLib
         public PointD toPointD(Point3D cp, Point3D u, Point3D v)
         {
             Point3D p = new Point3D(x, y, z);
+            p.type = this.type;
             return cnvPlaneLocation(p, cp, u, v);
         }
 
