@@ -326,9 +326,14 @@ namespace CoreLib
         /// <param name="pickPos">ピック位置</param>
         public void stretch(Point3D vec, Point3D pickPos)
         {
-            Point3D mp = intersection(pickPos);
-            Point3D rp = mp + vec;
-            mR = mCp.length(rp);
+            PointD svec = vec.toPointD(new Point3D(0, 0, 0), mU, mV);
+            PointD ppos = pickPos.toPointD(mCp, mU, mV);
+            ArcD arc = new ArcD(new PointD(0, 0), mR, mSa, mEa);
+            arc.stretch(svec, ppos);
+            mCp = Point3D.cnvPlaneLocation(arc.mCp, mCp, mU, mV);
+            mR = arc.mR;
+            mSa = arc.mSa;
+            mEa = arc.mEa;
         }
 
         /// <summary>
