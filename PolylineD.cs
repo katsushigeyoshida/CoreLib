@@ -151,7 +151,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定した座標点に近い方同氏を接続
+        /// 指定した座標点に近い方同士を接続
         /// </summary>
         /// <param name="pos">ボラインの指定位置</param>
         /// <param name="plist">接続座標リスト</param>
@@ -164,6 +164,32 @@ namespace CoreLib
                 plist.Reverse();
             mPolyline.AddRange(plist);
             squeeze();
+        }
+
+        /// <summary>
+        /// 指定ポリライン要素同士の接続
+        /// </summary>
+        /// <param name="pos">ピック位置</param>
+        /// <param name="poly2">ポリライン</param>
+        /// <param name="pos2">ピック位置</param>
+        public void connect(PointD pos, PolylineD poly2, PointD pos2)
+        {
+            //List<PointD> iplist = intersection(poly2, false);   //  交点リスト(延長線の交点も含める)
+            List<PointD> iplist = intersection(pos, poly2, pos2, false);   //  交点リスト(延長線の交点も含める)
+            if (nearStart(pos))                 //  ピック位置に近い端点を終点にする
+                mPolyline.Reverse();
+            if (!poly2.nearStart(pos2))         //  ピック位置に近い方を始点なする
+                poly2.mPolyline.Reverse();
+
+            if (iplist.Count == 0) {            //  交点がない時は線分で補間
+                mPolyline.AddRange(poly2.mPolyline);
+            } else if (0 < iplist.Count) {      //  ピック位置に近い交点を接続座標にする
+                PointD ip = iplist.MinBy(p => p.length(pos) + p.length(pos2));
+                mPolyline.RemoveAt(mPolyline.Count - 1);
+                mPolyline.Add(ip);
+                poly2.mPolyline.RemoveAt(0);
+                mPolyline.AddRange(poly2.mPolyline);
+            }
         }
 
         /// <summary>
@@ -328,7 +354,7 @@ namespace CoreLib
             List<LineD> llist = toLineList(true);
             length = llist.Sum(l => l.length());
             List<ArcD> alist = toArcList();
-            length += alist.Sum(a => a.mOpenAngle * a.mR);
+            length += alist.Sum(a => a.length());
             return length;
         }
 
@@ -344,6 +370,26 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 座標位置までの戦場の長さ
+        /// </summary>
+        /// <param name="n">座標位置</param>
+        /// <param name="st">開始座標位置</param>
+        /// <returns>距離</returns>
+        public double length(int n, int st = 0)
+        {
+            double len = 0;
+            for (int i = st; i < n; i++) {
+                if (i < mPolyline.Count - 1 && mPolyline[i + 1].type == 1) {
+                    ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
+                    len += arc.length();
+                } else {
+                    len += mPolyline[i].length(mPolyline[i + 1]);
+                }
+            }
+            return len;
+        }
+
+        /// <summary>
         /// 指定座標位置から線上の距離
         /// </summary>
         /// <param name="pos">線上の座標</param>
@@ -353,10 +399,10 @@ namespace CoreLib
         public double length(PointD pos, int n, int st = 0)
         {
             double len = 0;
-            for (int i = st; i < n; i++) {
+            for (int i = st; i < n && i < mPolyline.Count; i++) {
                 if (i < mPolyline.Count - 1 && mPolyline[i + 1].type == 1) {
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
-                    len += arc.mOpenAngle + arc.mR * 2;
+                    len += arc.length();
                 } else {
                     len += mPolyline[i].length(mPolyline[i + 1]);
                 }
@@ -367,7 +413,7 @@ namespace CoreLib
                     arc.setEndPoint(pos);
                 else
                     arc.setStartPoint(pos);
-                len += arc.mOpenAngle + arc.mR * 2;
+                len += arc.length();
             } else {
                 len += mPolyline[n].length(pos);
             }
@@ -879,24 +925,24 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 交点(垂点)の座標リストを求める
+        /// 点との交点(垂点)の座標リストを求める
         /// </summary>
         /// <param name="p">点座標</param>
         /// <returns>座標点リスト</returns>
-        public List<PointD> intersection(PointD p)
+        public List<PointD> intersection(PointD p, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolyline.Count - 1; i++) {
                 if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
                     PointD ip = arc.intersection(p);
-                    if (ip != null && arc.onPoint(ip))
+                    if (!((i == 0 || i == mPolyline.Count - 2) ? on : true) || (ip != null && arc.onPoint(ip)))
                         plist.Add(ip);
                     i++;
                 } else {    //  線分
                     LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
                     PointD ip = line.intersection(p);
-                    if (ip != null && line.onPoint(ip))
+                    if (!((i == 0 || i == mPolyline.Count - 2) ? on : true) || (ip != null && line.onPoint(ip)))
                         plist.Add(ip);
                 }
             }
@@ -904,76 +950,146 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 交点の座標リストを求める
+        /// 線分との交点の座標リストを求める
         /// </summary>
         /// <param name="l">線分</param>
-        /// <returns></returns>
-        public List<PointD> intersection(LineD l)
+        /// <param on="l">線分上</param>
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(LineD l, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolyline.Count - 1; i++) {
                 if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
-                    plist.AddRange(arc.intersection(l));
+                    plist.AddRange(arc.intersection(l, (i == 0 || i == mPolyline.Count - 3) ? on : true));
                     i++;
                 } else {    //  線分
                     LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
                     PointD ip = line.intersection(l);
-                    if (ip != null && line.onPoint(ip))
-                        plist.Add(ip);
+                    if (ip != null) {
+                        if (mPolyline.Count == 2 && !on)
+                            plist.Add(ip);
+                        else if (i == 0 && on && line.onPoint(ip))
+                            plist.Add(ip);
+                        else if (i == 0 && !on && !line.sameDirect(ip))
+                            plist.Add(ip);
+                        else if (i == mPolyline.Count - 2 && on && line.onPoint(ip))
+                            plist.Add(ip);
+                        else if (i == mPolyline.Count - 2 && !on && line.sameDirect(ip))
+                            plist.Add(ip);
+                        else if (i != 0 && i != mPolyline.Count - 2 && line.onPoint(ip))
+                            plist.Add(ip);
+                    }
                 }
             }
             return plist;
         }
 
         /// <summary>
-        /// 交点の座標リストを求める
+        /// 円弧との交点の座標リストを求める
         /// </summary>
         /// <param name="arc">円弧</param>
-        /// <returns></returns>
-        public List<PointD> intersection(ArcD arc)
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(ArcD arc, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolyline.Count - 1; i++) {
                 if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
                     ArcD parc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
-                    plist.AddRange(arc.intersection(parc));
+                    plist.AddRange(arc.intersection(parc, (i == 0 || i == mPolyline.Count - 3) ? on : true));
                     i++;
                 } else {    //  線分
                     LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
-                    plist.AddRange(arc.intersection(line));
+                    plist.AddRange(arc.intersection(line, (i == 0 || i == mPolyline.Count - 2) ? on : true));
                 }
             }
             return plist;
         }
 
         /// <summary>
-        /// 交点の座標リストを求める
+        /// ポリラインとの交点の座標リストを求める
         /// </summary>
         /// <param name="polyline">ポリライン</param>
-        /// <returns></returns>
-        public List<PointD> intersection(PolylineD polyline)
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(PolylineD polyline, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolyline.Count - 1; i++) {
                 if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
-                    plist.AddRange(polyline.intersection(arc));
+                    plist.AddRange(polyline.intersection(arc, (i == 0 || i == mPolyline.Count - 3) ? on : true));
                     i++;
                 } else {    //  線分
                     LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
-                    plist.AddRange(polyline.intersection(line));
+                    if (i != 0 && i != mPolyline.Count - 2) {
+                        plist.AddRange(polyline.intersection(line, true));
+                    } else if (mPolyline.Count == 2) {
+                        plist.AddRange(polyline.intersection(line, false));
+                    } else if (on && (i == 0 || i != mPolyline.Count - 2)) {
+                        plist.AddRange(polyline.intersection(line, true));
+                    } else if (i == 0) {
+                        List<PointD> iplist = polyline.intersection(line, false);
+                        for (int j = 0; j < iplist.Count; j++) {
+                            if (!line.sameDirect(iplist[j]))
+                                plist.Add(iplist[j]);
+                        }
+                    } else if (i == mPolyline.Count - 2) {
+                        List<PointD> iplist = polyline.intersection(line, false);
+                        for (int j = 0; j < iplist.Count; j++) {
+                            if (line.sameDirect(iplist[j]))
+                                plist.Add(iplist[j]);
+                        }
+                    }
+                    //plist.AddRange(polyline.intersection(line, (i == 0 || i == mPolyline.Count - 2) ? on : true));
                 }
             }
             return plist;
         }
 
         /// <summary>
-        /// 交点の座標リストを求める
+        /// ポリラインとの交点の座標リストを求める
+        /// </summary>
+        /// <param name="pos">ピック位置</param>
+        /// <param name="polyline">ポリライン</param>
+        /// <param name="pos2">ピック位置</param>
+        /// <param name="on">線上の交点</param>
+        /// <returns>交点リスト</returns>
+        public List<PointD> intersection(PointD pos, PolylineD polyline, PointD pos2, bool on = true)
+        {
+            List<PointD> iplist = new List<PointD>();
+            (int n0, PointD sp0) = nearCrossPos(pos);
+            (int n1, PointD sp1) = polyline.nearCrossPos(pos2);
+            if (mPolyline[n0 + 1].type == 1) {
+                ArcD arc0 = new ArcD(mPolyline[n0], mPolyline[n0 + 1], mPolyline[n0 + 2]);
+                if (polyline.mPolyline[n1 + 1].type == 1) {
+                    ArcD arc1 = new ArcD(polyline.mPolyline[n1], polyline.mPolyline[n1 + 1], polyline.mPolyline[n1 + 2]);
+                    iplist = arc0.intersection(arc1);
+                } else {
+                    LineD line1 = new LineD(polyline.mPolyline[n1], polyline.mPolyline[n1 + 1]);
+                    iplist = arc0.intersection(line1, false);
+                }
+            } else {
+                LineD line0 = new LineD(mPolyline[n0], mPolyline[n0 + 1]);
+                if (polyline.mPolyline[n1 + 1].type == 1) {
+                    ArcD arc1 = new ArcD(polyline.mPolyline[n1], polyline.mPolyline[n1 + 1], polyline.mPolyline[n1 + 2]);
+                    iplist = arc1.intersection(line0, false);
+                } else {
+                    LineD line1 = new LineD(polyline.mPolyline[n1], polyline.mPolyline[n1 + 1]);
+                    PointD ip = line0.intersection(line1);
+                    if (ip != null)
+                        iplist.Add(ip);
+                }
+            }
+            return iplist;
+        }
+
+
+        /// <summary>
+        /// ポリゴンとの交点の座標リストを求める
         /// </summary>
         /// <param name="polygon">ポリライン</param>
         /// <returns></returns>
-        public List<PointD> intersection(PolygonD polygon)
+        public List<PointD> intersection(PolygonD polygon, bool on = true)
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolyline.Count - 1; i++) {
@@ -987,6 +1103,24 @@ namespace CoreLib
                 }
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 分割点で最も近い点を求める
+        /// </summary>
+        /// <param name="p">近傍座標</param>
+        /// <param name="divideNo">分割数</param>
+        /// <returns>座標</returns>
+        public PointD nearPoint(PointD p, int divideNo = 4)
+        {
+            (int np, PointD pos) = nearCrossPos(p, false);
+            if (mPolyline[np + 1].type == 1) {
+                ArcD arc = new ArcD(mPolyline[np], mPolyline[np + 1], mPolyline[np + 2]);
+                return arc.nearPoints(p, divideNo);
+            } else {
+                LineD line = new LineD(mPolyline[np], mPolyline[np + 1]);
+                return line.nearPoint(p, divideNo);
+            }
         }
 
         /// <summary>
@@ -1077,12 +1211,23 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定座標が周長で終点より始点に近い
+        /// </summary>
+        /// <param name="pos">指定座標</param>
+        /// <returns>始点側</returns>
+        public bool nearStart(PointD pos)
+        {
+            return length(pos) < length() / 2;
+        }
+
+
+        /// <summary>
         /// 区間指定の交点
         /// </summary>
         /// <param name="i">座標位置</param>
         /// <param name="p">指定座標</param>
         /// <param name="on">線上の交点</param>
-        /// <returns></returns>
+        /// <returns>交点座標</returns>
         private PointD interSection(int i, PointD p, bool on = true)
         {
             PointD ip;
