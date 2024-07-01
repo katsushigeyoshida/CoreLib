@@ -245,7 +245,10 @@ namespace CoreLib
         public double length(PointD pos)
         {
             (int n, PointD sp) = nearCrossPos(pos);
-            return length(sp, n);
+            if (n < 0)
+                return -1;
+            else
+                return length(sp, n);
         }
 
         /// <summary>
@@ -827,13 +830,15 @@ namespace CoreLib
         public PointD nearPoint(PointD p, int divideNo = 4)
         {
             (int np, PointD pos) = nearCrossPos(p);
-            if (mPolygon[np + 1].type == 1) {
-                ArcD arc = new ArcD(mPolygon[np], mPolygon[np + 1], mPolygon[np + 2]);
+            int np1 = (np + 1) % mPolygon.Count;
+            int np2 = (np + 2) % mPolygon.Count;
+            if (mPolygon[np1].type == 1) {
+                ArcD arc = new ArcD(mPolygon[np], mPolygon[np1], mPolygon[np2]);
                 return arc.nearPoints(p, divideNo);
             } else if (np < 0) {
                 return null;
             } else {
-                LineD line = new LineD(mPolygon[np], mPolygon[np + 1]);
+                LineD line = new LineD(mPolygon[np], mPolygon[np1]);
                 return line.nearPoint(p, divideNo);
             }
         }
