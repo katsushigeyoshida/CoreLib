@@ -177,6 +177,18 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定点と2D上の距離
+        /// </summary>
+        /// <param name="pos">2D座標</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>距離</returns>
+        public double length(PointD pos, FACE3D face)
+        {
+            LineD line = toLineD(face);
+            return line.distance(pos);
+        }
+
+        /// <summary>
         /// 長さを設定
         /// </summary>
         /// <param name="l">長さ</param>
@@ -197,7 +209,7 @@ namespace CoreLib
         /// <summary>
         /// 点との交点(垂点)
         /// https://qiita.com/takenakadx/items/ca137088d3f897bc8b45
-        /// u = mSp→p , t = v * u / |v|^2
+        /// u = mSp → p , t = v * u / |v|^2
         /// </summary>
         /// <param name="p">点座標</param>
         /// <returns>垂点</returns>
@@ -230,7 +242,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 表示面で点と交わる位置の線分状の座標を求める
+        /// 表示面で点と交わる位置の線分上の座標を求める
         /// </summary>
         /// <param name="pos">2D座標</param>
         /// <param name="face">表示面</param>
@@ -329,6 +341,22 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 点を指定面の線分で反転
+        /// </summary>
+        /// <param name="pos">点座標</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>反転座標</returns>
+        public Point3D mirror(Point3D pos,FACE3D face)
+        {
+            PointD p = pos.toPoint(face);
+            LineD l = toLineD(face);
+            p.mirror(l);
+            Point3D pm = new Point3D(p, face);
+            pm.setNormal(pos, face);
+            return pm;
+        }
+
+        /// <summary>
         /// 線分を線分で反転した座標を求める
         /// </summary>
         /// <param name="line">線分</param>
@@ -337,6 +365,19 @@ namespace CoreLib
         {
             Point3D ps = mirror(line.mSp);
             Point3D pe = mirror(line.endPoint());
+            return new Line3D(ps, pe);
+        }
+
+        /// <summary>
+        /// 線分を指定面の線分で反転
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="face"></param>
+        /// <returns></returns>
+        public Line3D mirror(Line3D line, FACE3D face)
+        {
+            Point3D ps = mirror(line.mSp, face);
+            Point3D pe = mirror(line.endPoint(), face);
             return new Line3D(ps, pe);
         }
 
