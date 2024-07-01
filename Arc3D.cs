@@ -88,7 +88,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 
+        /// コンストラクタ
         /// </summary>
         /// <param name="arc">2D円弧データ</param>
         /// <param name="face">作成面</param>
@@ -97,6 +97,31 @@ namespace CoreLib
             mCp = new Point3D(arc.mCp, face);
             mU = Point3D.getUVector(face);
             mV = Point3D.getVVector(face);
+            mR = arc.mR;
+            mSa = arc.mSa;
+            mEa = arc.mEa;
+            normalize();
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="mp">中点</param>
+        /// <param name="ep">終点</param>
+        public Arc3D(Point3D sp, Point3D mp, Point3D ep)
+        {
+            List<Point3D> plist = new List<Point3D>() {
+                sp, mp, ep
+            };
+            Plane3D plane = new Plane3D(plist);
+            mU = plane.mU;
+            mV = plane.mV;
+            PointD sp2 = plane.cnvPlaneLocation(plist[0]);
+            PointD mp2 = plane.cnvPlaneLocation(plist[1]);
+            PointD ep2 = plane.cnvPlaneLocation(plist[2]);
+            ArcD arc = new ArcD(sp2, mp2, ep2);
+            mCp = plane.cnvPlaneLocation(arc.mCp);
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
@@ -128,6 +153,20 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 円弧データをコピーする
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        public void setArc(Arc3D arc)
+        {
+            mCp = arc.mCp.toCopy();
+            mU = arc.mU.toCopy();
+            mV = arc.mV.toCopy();
+            mR = arc.mR;
+            mSa = arc.mSa;
+            mEa = arc.mEa;
+        }
+
+        /// <summary>
         /// 分割座標点リストに変換
         /// </summary>
         /// <param name="divNo">分割数</param>
@@ -147,10 +186,10 @@ namespace CoreLib
             List<Point3D> plist = new List<Point3D>();
             double ang = mSa;
             while (ang < mEa) {
-                plist.Add(getPosion(ang));
+                plist.Add(getPosition(ang));
                 ang += divAng;
             }
-            plist.Add(getPosion(mEa));
+            plist.Add(getPosition(mEa));
             return plist;
         }
 
@@ -226,10 +265,10 @@ namespace CoreLib
             List<Point3D> plist = new List<Point3D>();
             double ang = mEa;
             while (ang > mSa) {
-                plist.Add(getPosion(ang));
+                plist.Add(getPosition(ang));
                 ang -= divAng;
             }
-            plist.Add(getPosion(mSa));
+            plist.Add(getPosition(mSa));
             return plist;
         }
 
@@ -239,7 +278,7 @@ namespace CoreLib
         /// <returns></returns>
         public Point3D startPosition()
         {
-            return getPosion(mSa);
+            return getPosition(mSa);
         }
 
         /// <summary>
@@ -248,7 +287,16 @@ namespace CoreLib
         /// <returns></returns>
         public Point3D endPosition()
         {
-            return getPosion(mEa);
+            return getPosition(mEa);
+        }
+
+        /// <summary>
+        /// 中間点の座標
+        /// </summary>
+        /// <returns></returns>
+        public Point3D midPosition()
+        {
+            return getPosition((mSa + mEa) / 2);
         }
 
         /// <summary>
@@ -271,6 +319,21 @@ namespace CoreLib
             mCp.rotate(cp, ang, face);
             mU.rotate(ang, face);
             mV.rotate(ang, face);
+        }
+
+        /// <summary>
+        /// 反転
+        /// </summary>
+        /// <param name="line">反転基準線</param>
+        /// <param name="face">2D平面</param>
+        public void mirror(Line3D line, FACE3D face)
+        {
+            Point3D cp = line.mirror(mCp, face);
+            Point3D u = line.mirror(mCp + mU, face);
+            Point3D v = line.mirror(mCp + mV, face);
+            mCp = cp.toCopy();
+            mU = u - cp;
+            mV = v - cp;
         }
 
         /// <summary>
@@ -392,7 +455,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="ang">角度(rad)</param>
         /// <returns>座標</returns>
-        public Point3D getPosion(double ang)
+        public Point3D getPosition(double ang)
         {
             Point3D uv = (mU * Math.Cos(ang)) + (mV * Math.Sin(ang));
             return mCp + uv * mR;
@@ -400,7 +463,7 @@ namespace CoreLib
 
         /// <summary>
         /// 平面の座標を3D座標に変換
-        /// P(u,v) = c + u * x + v * y
+        /// P(mU,mV) = c + mU * x + mV * y
         /// </summary>
         /// <param name="p">2D座標</param>
         /// <returns>3D座標</returns>
