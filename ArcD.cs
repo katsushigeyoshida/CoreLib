@@ -20,7 +20,7 @@ namespace CoreLib
     ///  ArcD(double r, PolylineD polyline0, PointD posPolyline0, PolylineD polyline1, PointD posPolyline1) ポリラインとボラインに接する円弧(フィレット)
     ///  ArcD(ArcD arc)
     ///  
-    /// void setArc(ArcD arc)                               ArcDの取り込み
+    ///  void setArc(ArcD arc)                              ArcDの取り込み
     ///  void setArc(PointD cp, PointD sp, PointD ep)       中心点と始点、終点から円弧を作成
     ///  void normalize()                                   開始角と修了角の正規化
     ///  string ToString()
@@ -818,18 +818,19 @@ namespace CoreLib
         public List<PointD> toPointList(double da, bool clockwise = false)
         {
             List<PointD> pointList = new List<PointD>();
+            pointList.Add(startPoint());
             if (da <= 0) {
-                    pointList.Add(startPoint());
-                    pointList.Add(middlePoint());
-                    pointList.Add(endPoint());
+                pointList.Add(middlePoint());
+                pointList[^1].type = 1;
             } else {
-                double ang = mSa;
+                double ang = mSa + da;
                 while (ang < mEa - mEps) {
                     pointList.Add(getPoint(ang));
+                    pointList[^1].type = 2;
                     ang += da;
                 }
-                pointList.Add(endPoint());
             }
+            pointList.Add(endPoint());
             if (clockwise)
                 pointList.Reverse();
             return pointList;
@@ -843,14 +844,18 @@ namespace CoreLib
         /// <returns>座標</returns>
         public PointD nearPoints(PointD p, int divideNo = 4)
         {
-            List<PointD> points = toPointList(divideNo);
-            double l = double.MaxValue;
             PointD np = new PointD();
-            foreach (PointD pt in points) {
-                double lt = pt.length(p);
-                if (lt < l) {
-                    np = pt;
-                    l = lt;
+            if (divideNo <= 0) {
+                np = intersection(p);
+            } else {
+                List<PointD> points = toPointList(divideNo);
+                double l = double.MaxValue;
+                foreach (PointD pt in points) {
+                    double lt = pt.length(p);
+                    if (lt < l) {
+                        np = pt;
+                        l = lt;
+                    }
                 }
             }
             return np;
