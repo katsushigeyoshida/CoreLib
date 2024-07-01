@@ -333,13 +333,56 @@ namespace CoreLib
         /// <param name="cp">2D平面の中心座標</param>
         /// <param name="u">2D平面のX軸向き</param>
         /// <param name="v">2D座標のY軸の向き</param>
+        /// <param name="divAng">円弧の分割角度</param>
         /// <returns>2Dポリライン</returns>
-        public PolylineD toPolylineD(Point3D cp, Point3D u, Point3D v)
+        public PolylineD toPolylineD(Point3D cp, Point3D u, Point3D v, double divAng = 0)
         {
-            List<Point3D> plist = toPoint3D();
+            if (divAng == 0) {
+                Plane3D plane0 = new Plane3D(mCp, mU, mV);
+                Plane3D plane1 = new Plane3D(cp, u, v);
+                if (!plane0.isParallel(plane1))
+                    divAng = Math.PI / 12;
+            }
+            List<Point3D> plist = toPoint3D(divAng);
             PolylineD polyline = new PolylineD();
             polyline.mPolyline = plist.ConvertAll(p => p.toPointD(cp, u, v));
             return polyline;
+        }
+
+        /// <summary>
+        /// 平行確認
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <returns>平行</returns>
+        public bool isParallel(Arc3D arc)
+        {
+            Plane3D plane0 = new Plane3D(mCp, mU, mV);
+            Plane3D plane1 = new Plane3D(arc.mCp, arc.mU, arc.mV);
+            return plane0.isParallel(plane1);
+        }
+
+        /// <summary>
+        /// 平行確認
+        /// </summary>
+        /// <param name="polyline">ポリライン</param>
+        /// <returns>平行</returns>
+        public bool isParallel(Polyline3D polyline)
+        {
+            Plane3D plane0 = new Plane3D(mCp, mU, mV);
+            Plane3D plane1 = new Plane3D(polyline.mCp, polyline.mU, polyline.mV);
+            return plane0.isParallel(plane1);
+        }
+
+        /// <summary>
+        /// 平行確認
+        /// </summary>
+        /// <param name="polygon">ポリゴン</param>
+        /// <returns>平行</returns>
+        public bool isParallel(Polygon3D polygon)
+        {
+            Plane3D plane0 = new Plane3D(mCp, mU, mV);
+            Plane3D plane1 = new Plane3D(polygon.mCp, polygon.mU, polygon.mV);
+            return plane0.isParallel(plane1);
         }
 
         /// <summary>
@@ -562,6 +605,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ミラー
+        /// </summary>
+        /// <param name="l">基準線分</param>
+        /// <param name="face">2D平面</param>
+        public void mirror(Line3D l, FACE3D face)
+        {
+            mCp = l.mirror(mCp, face);
+            l.mSp = new Point3D();
+            mU = l.mirror(mU, face);
+            mV = l.mirror(mV, face);
+        }
+
+        /// <summary>
         /// 拡大縮小
         /// </summary>
         /// <param name="cp">拡大中心</param>
@@ -688,7 +744,7 @@ namespace CoreLib
         /// <param name="pos">ピック位置</param>
         /// <param name="polyline">ポリライン</param>
         /// <param name="pos2">ピック位置</param>
-        public void connect(Point3D pos, Polyline3D polyline, Point3D pos2)
+        public void connect(Point3D pos, Polyline3D polyline, Point3D pos2, double divAng = 0)
         {
             if (mPolyline.Count < 3) {
                 //  ポリラインが2点以下では平面ができないので接続する要素と合わせて平面を決定
@@ -699,7 +755,7 @@ namespace CoreLib
             }
 
             PolylineD polyline0 = new PolylineD(mPolyline);
-            PolylineD polyline1 = polyline.toPolylineD(mCp, mU, mV);
+            PolylineD polyline1 = polyline.toPolylineD(mCp, mU, mV, divAng);
             PointD pos0 = pos.toPointD(mCp, mU, mV);
             PointD pos1 = pos2.toPointD(mCp, mU, mV);
             polyline0.connect(pos0, polyline1, pos1);
@@ -734,6 +790,8 @@ namespace CoreLib
 
         /// <summary>
         /// 始終線分交差をチェックしあれば削除する
+        /// 始終点が近い状態であれば延長交点を追加
+        /// それ以外はそのまま
         /// </summary>
         public void lastCrossCheck()
         {
@@ -766,8 +824,13 @@ namespace CoreLib
                 else if (1 < iplist.Count)
                     ip = iplist.MinBy(p => p.length(plist[0]) + p.length(plist[^1]));
                 if (ip != null) {
-                    plist[0] = ip.toCopy();
-                    plist[^1] = ip.toCopy();
+                    //  延長交点
+                    double l = plist[0].length(plist[^1]) * 2;
+                    if (l > plist[0].length(ip) || l > plist[^1].length(ip)) {
+                        //  延長交点が端点の近傍の時使用する
+                        plist[0] = ip.toCopy();
+                        plist[^1] = ip.toCopy();
+                    }
                 }
                 mPolyline = plist;
             }
@@ -811,6 +874,18 @@ namespace CoreLib
             PointD p = pos.toPointD(mCp, mU, mV);
             PolylineD polyline = new PolylineD(mPolyline);
             return polyline.length(p);
+        }
+
+        /// <summary>
+        /// 指定座標が線上の点かの各線
+        /// </summary>
+        /// <param name="pos">3D座標</param>
+        /// <returns>線上</returns>
+        public bool onPoint(Point3D pos)
+        {
+            PointD loc2d = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
+            PolylineD polyline = new PolylineD(mPolyline);
+            return polyline.onPoint(loc2d);
         }
 
         /// <summary>
