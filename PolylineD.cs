@@ -174,7 +174,6 @@ namespace CoreLib
         /// <param name="pos2">ピック位置</param>
         public void connect(PointD pos, PolylineD poly2, PointD pos2)
         {
-            //List<PointD> iplist = intersection(poly2, false);   //  交点リスト(延長線の交点も含める)
             List<PointD> iplist = intersection(pos, poly2, pos2, false);   //  交点リスト(延長線の交点も含める)
             if (nearStart(pos))                 //  ピック位置に近い端点を終点にする
                 mPolyline.Reverse();
@@ -185,10 +184,17 @@ namespace CoreLib
                 mPolyline.AddRange(poly2.mPolyline);
             } else if (0 < iplist.Count) {      //  ピック位置に近い交点を接続座標にする
                 PointD ip = iplist.MinBy(p => p.length(pos) + p.length(pos2));
-                mPolyline.RemoveAt(mPolyline.Count - 1);
-                mPolyline.Add(ip);
-                poly2.mPolyline.RemoveAt(0);
-                mPolyline.AddRange(poly2.mPolyline);
+                double l = mPolyline[^1].length(poly2.mPolyline[0]) * 2;
+                if (l < mPolyline[^1].length(ip) && l < poly2.mPolyline[0].length(ip)) {
+                    //  延長交点が大きく離れている
+                    mPolyline.AddRange(poly2.mPolyline);
+                } else {
+                    //  延長交点
+                    mPolyline.RemoveAt(mPolyline.Count - 1);
+                    mPolyline.Add(ip);
+                    poly2.mPolyline.RemoveAt(0);
+                    mPolyline.AddRange(poly2.mPolyline);
+                }
             }
         }
 
