@@ -211,13 +211,16 @@ namespace CoreLib
             double a = (u.y * v.x - u.x * v.y);
             double b = (u.z * v.y - u.y * v.z);
             double c = (u.x * v.z - u.z * v.x);
-            if (a != 0) {
+            double A = Math.Abs(a);
+            double B = Math.Abs(b);
+            double C = Math.Abs(c);
+            if (B < A && C < A) {
                 t.x = (p.y * v.x - p.x * v.y) / a;
                 t.y = (p.x * u.y - p.y * u.x) / a;
-            } else if (b != 0) {
+            } else if (C < B && A < B) {
                 t.x = (p.z * v.y - p.y * v.z) / b;
                 t.y = (p.y * u.z - p.z * u.y) / b;
-            } else {
+            } else if (A < C && B < C) {
                 t.x = (p.x * v.z - p.z * v.x) / c;
                 t.y = (p.z * u.x - p.x * u.z) / c;
             }
@@ -366,6 +369,33 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2D平面の法線方向の値を設定
+        /// </summary>
+        /// <param name="p">法線方向の座標値</param>
+        /// <param name="face">2D平面</param>
+        public void setNormal(Point3D p,FACE3D face)
+        {
+            if (face == FACE3D.XY)
+                z = p.z;
+            else if (face == FACE3D.YZ)
+                x = p.x;
+            else if (face == FACE3D.ZX)
+                y = p.y;
+            else if (face == FACE3D.YX)
+                z = p.z;
+            else if (face == FACE3D.ZY)
+                x = p.x;
+            else if (face == FACE3D.XZ)
+                y = p.y;
+            else if (face == FACE3D.FRONT)
+                z = p.z;
+            else if (face == FACE3D.TOP)
+                y = p.y;
+            else if (face == FACE3D.RIGHT)
+                x = p.x;
+        }
+
+        /// <summary>
         /// 座標値を0クリアする
         /// </summary>
         public void clear()
@@ -374,6 +404,19 @@ namespace CoreLib
             y = 0.0;
             z = 0.0;
             type = 0;
+        }
+
+        /// <summary>
+        /// 座標が同じか
+        /// </summary>
+        /// <param name="p">座標値</param>
+        /// <returns>同じ</returns>
+        public bool isEqual(Point3D p)
+        {
+            if (x ==  p.x && y == p.y && z == p.z)
+                return true;
+            else
+                return false;
         }
 
         /// <summary>
