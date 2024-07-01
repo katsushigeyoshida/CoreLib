@@ -299,10 +299,10 @@ namespace CoreLib
         public PointD nearPoint(PointD pos, int divideNo, FACE3D face)
         {
             Point3D p3d = nearPoint(new Point3D(pos, face), divideNo);
-            return p3d.toPoint(face);
-            //int n = nearLine(pos, face);
-            //LineD l = getLine3D(n).toLineD(face);
-            //return l.nearPoint(pos, divideNo);
+            if (p3d == null)
+                return null;
+            else
+                return p3d.toPoint(face);
         }
 
         /// <summary>
@@ -315,6 +315,8 @@ namespace CoreLib
         {
             PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
             int n = nearPosition(pos);
+            if (n < 0)
+                return null;
             PointD np;
             int n1 = (n + 1) % mPolygon.Count;
             int n2 = (n + 2) % mPolygon.Count;
@@ -341,11 +343,25 @@ namespace CoreLib
             PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
             PolygonD polygon = new PolygonD(mPolygon);
             double len = polygon.length(p);
+            if (len < 0)
+                return -1;
             for (int i = 1; i <= mPolygon.Count; i++) {
                 if (len < polygon.length(i))
                     return i - 1;
             }
             return 0;
+        }
+
+        /// <summary>
+        /// 座標リストの開始位置を変更する
+        /// </summary>
+        /// <param name="st">開始位置</param>
+        public void changeStart(int st)
+        {
+            st = st % mPolygon.Count;
+            List<PointD> plist = mPolygon.GetRange(0, st);
+            mPolygon.RemoveRange(0, st);
+            mPolygon.AddRange(plist);
         }
 
         /// <summary>
@@ -412,6 +428,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ミラー
+        /// </summary>
+        /// <param name="line">基準線</param>
+        /// <param name="face">2D平面</param>
+        public void mirror(Line3D line, FACE3D face)
+        {
+            mCp = line.mirror(mCp, face);
+            line.mSp = new Point3D();
+            mU = line.mirror(mU,face);
+            mV = line.mirror(mV, face);
+        }
+
+        /// <summary>
         /// ポリゴンの分割(ポリラインに変換)
         /// </summary>
         /// <param name="pos">2D分割座標</param>
@@ -473,6 +502,20 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 法線ベクトル
+        /// </summary>
+        /// <returns></returns>
+        public Point3D getNormal()
+        {
+            Point3D normal = new Point3D();
+            for (int i = 0; i < mPolygon.Count - 2; i++) {
+                normal += toPoint3D(i).getNormal(toPoint3D(i + 1), toPoint3D(i + 2));
+            }
+            normal.unit();
+            return normal;
+        }
+
+        /// <summary>
         /// 多角形の法線
         /// </summary>
         /// <returns>法線ベクトル</returns>
@@ -496,12 +539,36 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 座標点が平面上で時計回りかの判定(NG)
+        /// </summary>
+        /// <param name="face">2D平面</param>
+        /// <returns></returns>
+        public bool isClockwise(FACE3D face)
+        {
+            List<PointD> plist = toPointD(face);
+            Polygon3D polygon = new Polygon3D(plist, FACE3D.XY);
+            Point3D normal = polygon.getNormal();
+            return 0 < normal.z;
+        }
+
+        /// <summary>
         /// 多角形の回転方向(角度で判定)
         /// </summary>
         /// <returns>反時計回り</returns>
         public bool isCounterClockWise()
         {
             return isCounterClockWise(mPolygon);
+        }
+
+        /// <summary>
+        /// 多角形の回転方向(角度で判定)
+        /// </summary>
+        /// <param name="face">2D平面</param>
+        /// <returns></returns>
+        public bool isCounterClockWise(FACE3D face)
+        {
+            List<PointD> plist = toPointD(face);
+            return isCounterClockWise(plist);
         }
 
         /// <summary>
@@ -520,33 +587,6 @@ namespace CoreLib
                 ang += Math.Sign(angle) * (Math.PI - Math.Abs(angle));
             }
             return  0 < ang;
-        }
-
-        /// <summary>
-        /// 法線ベクトル
-        /// </summary>
-        /// <returns></returns>
-        public Point3D getNormal()
-        {
-            Point3D normal = new Point3D();
-            for (int i = 0; i < mPolygon.Count - 2; i++) {
-                normal += toPoint3D(i).getNormal(toPoint3D(i + 1), toPoint3D(i + 2));
-            }
-            normal.unit();
-            return normal;
-        }
-
-        /// <summary>
-        /// 座標点が平面上で時計回りかの判定(NG)
-        /// </summary>
-        /// <param name="face">2D平面</param>
-        /// <returns></returns>
-        public bool isClockwise(FACE3D face)
-        {
-            List<PointD> plist = toPointD(face);
-            Polygon3D polygon = new Polygon3D(plist, FACE3D.XY);
-            Point3D normal = polygon.getNormal();
-            return 0 < normal.z;
         }
 
         /// <summary>
