@@ -690,6 +690,8 @@ namespace CoreLib
         /// <returns>座標</returns>
         public PointD nearPoint(PointD p, int  divideNo = 4)
         {
+            if (divideNo < 1)
+                return ps;
             List<PointD> points = dividePoints(divideNo);
             double l = double.MaxValue;
             PointD np = new PointD();
