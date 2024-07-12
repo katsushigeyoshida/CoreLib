@@ -469,6 +469,18 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定点までの周長
+        /// </summary>
+        /// <param name="pos">座標</param>
+        /// <returns>周長</returns>
+        public double length(PointD pos)
+        {
+            double ang = getAngle(pos) - mSa;
+            return mR * ang;
+        }
+
+
+        /// <summary>
         /// 2点の位置から中心が左にあるかを確認
         /// </summary>
         /// <param name="ps">始点</param>

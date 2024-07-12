@@ -222,7 +222,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="n">分割位置</param>
         /// <returns>ポリライン</returns>
-        public Polyline3D toPolyline3D(int n = 0)
+        public Polyline3D toPolyline3D(int n = 0, bool loop = true)
         {
             Polyline3D polyline = new Polyline3D();
             polyline.mCp = mCp.toCopy();
@@ -232,7 +232,8 @@ namespace CoreLib
                 polyline.mPolyline.Add(mPolygon[i]);
             for (int i = 0; i < n; i++)
                 polyline.mPolyline.Add(mPolygon[i]);
-            polyline.mPolyline.Add(mPolygon[n]);
+            if (loop)
+                polyline.mPolyline.Add(mPolygon[n]);
             return polyline;
         }
 
@@ -407,6 +408,8 @@ namespace CoreLib
         {
             PointD spp = Point3D.cnvPlaneLocation(sp, mCp, mU, mV);
             PointD epp = Point3D.cnvPlaneLocation(ep, mCp, mU, mV);
+            if (spp.isNaN() || epp.isNaN())
+                return;
             PolygonD polygon = new PolygonD(mPolygon);
             polygon.offset(spp, epp);
             polygon.squeeze();

@@ -100,7 +100,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 座標点リストに変換
+        /// 座標点リストに変換(始終点)
         /// </summary>
         /// <returns>座標点リスト</returns>
         public List<Point3D> toPoint3D()
@@ -108,6 +108,24 @@ namespace CoreLib
             return new List<Point3D>() {
                 mSp, mSp + mV
             };
+        }
+
+        /// <summary>
+        /// 線分の分割リスト
+        /// </summary>
+        /// <param name="divNo">分割数</param>
+        /// <returns>座標点リスト</returns>
+        public List<Point3D> toPoint3D(int divNo)
+        {
+            List<Point3D> plist = new List<Point3D> ();
+            plist.Add(mSp);
+            double l = mV.length();
+            for (int i = 1; i <= divNo; i++) {
+                Point3D v = mV.toCopy();
+                v.length(l / divNo * i);
+                plist.Add(mSp + v);
+            }
+            return plist;
         }
 
         /// <summary>

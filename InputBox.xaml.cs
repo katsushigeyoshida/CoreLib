@@ -233,7 +233,7 @@ namespace CoreLib
             pos = pos >= EditText.Text.Length ? 0 : pos;
             int sp = EditText.Text.LastIndexOf("\n", pos);
             int ep = EditText.Text.IndexOf("\n", pos);
-            if (sp == ep) {
+            if (0 <= sp && 0 <= ep && sp == ep) {
                 pos++;
                 ep = EditText.Text.IndexOf("\n", pos);
             }

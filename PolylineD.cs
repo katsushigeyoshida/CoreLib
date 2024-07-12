@@ -387,7 +387,10 @@ namespace CoreLib
             for (int i = st; i < n; i++) {
                 if (i < mPolyline.Count - 1 && mPolyline[i + 1].type == 1) {
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
-                    len += arc.length();
+                    len += arc.length(mPolyline[i + 1]);
+                } else if (i < mPolyline.Count && mPolyline[i].type == 1) {
+                    ArcD arc = new ArcD(mPolyline[i - 1], mPolyline[i], mPolyline[i + 1]);
+                    len += arc.length() - arc.length(mPolyline[i]);
                 } else {
                     len += mPolyline[i].length(mPolyline[i + 1]);
                 }

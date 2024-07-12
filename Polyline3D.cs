@@ -967,15 +967,17 @@ namespace CoreLib
             PointD p = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
             int n = nearPosition(pos);
             PointD np;
-            if (mPolyline[n].type == 1) {
+            if (n < mPolyline.Count - 1 && mPolyline[n].type == 1) {
                 ArcD arc = new ArcD(mPolyline[n - 1], mPolyline[n], mPolyline[n + 1]);
                 np = arc.nearPoints(p, divideNo);
-            } else if (mPolyline[n + 1].type == 1) {
+            } else if (n < mPolyline.Count - 2 && mPolyline[n + 1].type == 1) {
                 ArcD arc = new ArcD(mPolyline[n], mPolyline[n + 1], mPolyline[n + 2]);
                 np = arc.nearPoints(p, divideNo);
-            } else {
+            } else if (n < mPolyline.Count - 1) {
                 LineD l = new LineD(mPolyline[n], mPolyline[n + 1]);
                 np = l.nearPoint(p, divideNo);
+            } else {
+                np = mPolyline[mPolyline.Count - 1];
             }
             return Point3D.cnvPlaneLocation(np, mCp, mU, mV);
         }
@@ -994,7 +996,7 @@ namespace CoreLib
                 if (len < polyline.length(i))
                     return i - 1;
             }
-            return 0;
+            return mPolyline.Count - 1;
         }
 
         /// <summary>

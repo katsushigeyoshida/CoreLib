@@ -15,7 +15,9 @@ namespace CoreLib
         public double mR = 1;                              //  半径
         public double mSa = 0;                             //  開始角
         public double mEa = Math.PI * 2;                   //  修了角
+        public bool mCcw = true;                            //  3点円弧の座標順
 
+        public double mOpenAngle { get { return mEa - mSa; } }
         private double mEps = 1E-8;
         private YLib ylib = new YLib();
 
@@ -125,6 +127,7 @@ namespace CoreLib
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
+            mCcw = arc.mCcw;
             normalize();
         }
 
@@ -184,10 +187,18 @@ namespace CoreLib
         public List<Point3D> toPoint3D(double divAng = Math.PI / 20)
         {
             List<Point3D> plist = new List<Point3D>();
-            double ang = mSa;
-            while (ang < mEa) {
-                plist.Add(getPosition(ang));
-                ang += divAng;
+            plist.Add(getPosition(mSa));
+            if (0 < divAng) {
+                double ang = mSa + divAng;
+                while (ang < mEa) {
+                    plist.Add(getPosition(ang));
+                    ang += divAng;
+                }
+            } else {
+                double ang = (mSa + mEa) / 2;
+                Point3D p = getPosition(ang);
+                p.type = 1;
+                plist.Add(p);
             }
             plist.Add(getPosition(mEa));
             return plist;
@@ -206,7 +217,6 @@ namespace CoreLib
             polyline.mU = mU.toCopy();
             polyline.mV = mV.toCopy();
             return polyline;
-            //return new Polyline3D(toPoint3D(divAng));
         }
 
         /// <summary>
@@ -217,7 +227,10 @@ namespace CoreLib
         public List<PointD> toPointD(double divAng = Math.PI / 20)
         {
             ArcD arc = new ArcD(new PointD(0, 0), mR, mSa, mEa);
-            return arc.toPointList(divAng);
+            if (0 < divAng)
+                return arc.toPointList(divAng);
+            else
+                return arc.to3PointList();
         }
 
         /// <summary>
