@@ -124,6 +124,20 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ
         /// </summary>
+        /// <param name="line">線分</param>
+        public Polyline3D(Line3D line)
+        {
+            List<Point3D> plist = new List<Point3D>() { line.mSp, line.endPoint() };
+            Polyline3D polyline = new Polyline3D(plist);
+            mPolyline = polyline.mPolyline;
+            mCp = polyline.mCp;
+            mU = polyline.mU;
+            mV = polyline.mV;
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
         /// <param name="arc">円弧</param>
         /// <param name="divAng">分割角度</param>
         /// <param name="face">2D平面</param>
@@ -132,6 +146,20 @@ namespace CoreLib
             mPolyline = arc.toPointD(divAng, face);
             mU = Point3D.getUVector(face);
             mV = Point3D.getVVector(face);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <param name="divAng">分割角度</param>
+        public Polyline3D(Arc3D arc, double divAng)
+        {
+            Polyline3D polyline = arc.toPolyline3D(divAng);
+            mPolyline = polyline.mPolyline;
+            mCp = polyline.mCp;
+            mU = polyline.mU;
+            mV = polyline.mV;
         }
 
         /// <summary>
@@ -145,7 +173,7 @@ namespace CoreLib
             if (plist.Count == 2) {
                 u = plist[1] - plist[0];
                 u.unit();
-                v = mU.toCopy();
+                v = u.toCopy();
                 if (mEps < plist[1].toPointXY().length(plist[0].toPointXY()))
                     v.rotate(new Point3D(), Math.PI / 2, FACE3D.XY);
                 else
