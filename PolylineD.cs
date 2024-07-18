@@ -1240,7 +1240,12 @@ namespace CoreLib
         private PointD interSection(int i, PointD p, bool on = true)
         {
             PointD ip;
-            if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
+            if (0 < i && mPolyline[i].type == 1 && i < mPolyline.Count - 1) {    //  円弧
+                ArcD arc = new ArcD(mPolyline[i - 1], mPolyline[i], mPolyline[i + 1]);
+                ip = arc.intersection(p);
+                if (on && !arc.onPoint(ip))
+                    ip = null;
+            } else if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
                 ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
                 ip = arc.intersection(p);
                 if (on && !arc.onPoint(ip))
