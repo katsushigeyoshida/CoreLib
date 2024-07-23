@@ -151,6 +151,18 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// face上の点座標を平面に投影したときの交点座標
+        /// </summary>
+        /// <param name="p">点座標</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点座標</returns>
+        public Point3D intersection(PointD p, FACE3D face)
+        {
+            Line3D line = new Line3D(new Point3D(p, face), new Point3D(p, face, 1));
+            return intersection(line);
+        }
+
+        /// <summary>
         /// 線分と平面との交点
         /// </summary>
         /// <param name="l">線分</param>
@@ -164,6 +176,7 @@ namespace CoreLib
             Point3D n = mU.crossProduct(mV);        //  平面の法線
             double wn = w * n;
             double tn = t * n;
+            if (Math.Abs(tn) < mEps) return null;
             return p - t * (wn / tn);
         }
 
