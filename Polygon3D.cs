@@ -297,13 +297,18 @@ namespace CoreLib
         /// <param name="divideNo">分割数</param>
         /// <param name="face">2D平面</param>
         /// <returns>2D座標</returns>
-        public PointD nearPoint(PointD pos, int divideNo, FACE3D face)
+        public Point3D nearPoint(PointD pos, int divideNo, FACE3D face)
         {
-            Point3D p3d = nearPoint(new Point3D(pos, face), divideNo);
-            if (p3d == null)
-                return null;
-            else
-                return p3d.toPoint(face);
+            if (mPolygon.Count == 2) {
+                Line3D line = new Line3D(toPoint3D(0), toPoint3D(1));
+                Line3D l = new Line3D(new Point3D(pos, face), new Point3D(pos, face, 1));
+                return line.intersection(l);
+            } else {
+                Plane3D plane = new Plane3D(mCp, mU, mV);
+                Point3D ip = plane.intersection(pos, face); //  投影点座標
+                if (ip == null) return null;
+                return nearPoint(ip, divideNo);
+            }
         }
 
         /// <summary>
