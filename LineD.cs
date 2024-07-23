@@ -369,6 +369,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定点までの長さ(線分上の垂点までの長さ)
+        /// </summary>
+        /// <param name="pos">指定点</param>
+        /// <returns>長さ</returns>
+        public double length(PointD pos)
+        {
+            PointD ip = intersection(pos);
+            return ps.length(ip);
+        }
+
+        /// <summary>
         /// 線分の長さを再設定する
         /// </summary>
         /// <param name="l">線分の長さ</param>
@@ -495,6 +506,8 @@ namespace CoreLib
         /// <returns>垂点座標</returns>
         public PointD intersection(PointD p)
         {
+            if (length() < mEps)
+                return ps;
             LineD lp = new LineD(ps, p);                            //  始点と点をつなぐ線分
             double ll = lp.length() * Math.Cos(angle2(lp));         //  始点と垂点との距離
             double a = angle();                                     //  線分の角度
