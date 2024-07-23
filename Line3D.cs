@@ -347,6 +347,38 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 分割
+        /// </summary>
+        /// <param name="pos">分割座標</param>
+        /// <returns></returns>
+        public List<Line3D> divide(Point3D pos)
+        {
+            Point3D p = intersection(pos);
+            List<Line3D> lines = new List<Line3D> {
+                new Line3D(mSp, p),
+                new Line3D(p, mSp + mV)
+            };
+            return lines;
+        }
+
+        /// <summary>
+        /// 線分を分割する座標リスト(始終点を含む)
+        /// </summary>
+        /// <param name="divNo">分割数</param>
+        /// <returns>分割座標リスト</returns>
+        public List<Point3D> divide(int divNo)
+        {
+            double len = length() / divNo;
+            List<Point3D> plist = new List<Point3D>();
+            for (int i = 0; i <= divNo; i++) {
+                Point3D v = mV.toCopy();
+                v.length(len * i);
+                plist.Add(mSp + v);
+            }
+            return plist;
+        }
+
+        /// <summary>
         /// 点を線分で反転した座標を求める
         /// </summary>
         /// <param name="pos">座標</param>
