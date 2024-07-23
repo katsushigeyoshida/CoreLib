@@ -259,9 +259,8 @@ namespace CoreLib
         /// <summary>
         /// 円周上の端点リスト(端点+4分割点)
         /// </summary>
-        /// <param name="face">座標点リスト</param>
-        /// <returns></returns>
-        public List<Point3D> toPeackList(FACE3D face)
+        /// <returns>座標点リスト</returns>
+        public List<Point3D> toPeackList()
         {
             ArcD arc = new ArcD(new PointD(0, 0), mR, mSa, mEa);
             List<PointD> plist = arc.toPeakList();
@@ -383,6 +382,28 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 分割
+        /// </summary>
+        /// <param name="pos">分割位置</param>
+        /// <returns>円弧リスト</returns>
+        public List<Arc3D> divide(Point3D pos)
+        {
+            List<Arc3D> arcs = new List<Arc3D>();
+            //  2D平面上で円弧に対する交点角度を求める
+            double ang = intersectionAngle(pos);
+            //  分割した円弧を作成
+            Arc3D arc = toCopy();
+            arc.mEa = ang;
+            arc.normalize();
+            arcs.Add(arc);
+            arc = toCopy();
+            arc.mSa = ang;
+            arc.normalize();
+            arcs.Add(arc);
+            return arcs;
+        }
+
+        /// <summary>
         /// トリム
         /// </summary>
         /// <param name="sp">始点</param>
@@ -392,6 +413,19 @@ namespace CoreLib
         {
             mSa = intersectionAngle(sp, face);
             mEa = intersectionAngle(ep, face);
+            normalize();
+        }
+
+        /// <summary>
+        /// トリム
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void trim(Point3D sp, Point3D ep)
+        {
+            mSa = intersectionAngle(sp);
+            mEa = intersectionAngle(ep);
+            System.Diagnostics.Debug.WriteLine($"{sp.ToString("F2")} {ep.ToString("F2")} {mSa.ToString("F2")} {mEa.ToString("F2")}");
             normalize();
         }
 
@@ -420,7 +454,9 @@ namespace CoreLib
         /// <returns>3D座標</returns>
         public Point3D intersection(PointD pos, FACE3D face)
         {
-            return intersection(new Point3D(pos, face));
+            Plane3D plane = new Plane3D(mCp, mU, mV);
+            Point3D p = plane.intersection(pos, face);
+            return intersection(p);
         }
 
         /// <summary>
@@ -451,15 +487,43 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 交点の円上の角度
+        /// </summary>
+        /// <param name="pos">3D座標</param>
+        /// <returns>角度</returns>
+        public double intersectionAngle(Point3D pos)
+        {
+            ArcD arcD = new ArcD(new PointD(0, 0), mR, mSa, mEa);
+            PointD p = cnvPosition(pos);
+            PointD ip = arcD.intersection(p);
+            return arcD.getAngle(ip);
+        }
+
+        /// <summary>
         /// 分割した座標点リストで最も近い座標゜
         /// </summary>
         /// <param name="pos">指定座標</param>
         /// <param name="divideNo">分割数</param>
         /// <param name="face">2D平面</param>
         /// <returns>座標</returns>
-        public PointD nearPoint(PointD pos, int divideNo, FACE3D face)
+        public Point3D nearPoint(PointD pos, int divideNo, FACE3D face)
         {
             List<PointD> plist = toPointD(divideNo, face);
+            Plane3D plane = new Plane3D(mCp, mU, mV);
+            PointD ip = plane.cnvPlaneLocation(plane.intersection(pos, face));
+            PointD p = plist.MinBy(p => p.length(ip));
+            return cnvPosition(p);
+        }
+
+        /// <summary>
+        /// 分割した座標点リストで最も近い座標
+        /// </summary>
+        /// <param name="pos">指定座標</param>
+        /// <param name="divideNo">分割数</param>
+        /// <returns>座標</returns>
+        public Point3D nearPoint(Point3D pos, int divideNo)
+        {
+            List<Point3D> plist = toPoint3D(divideNo);
             return plist.MinBy(p => p.length(pos));
         }
 
@@ -476,6 +540,7 @@ namespace CoreLib
 
         /// <summary>
         /// 平面の座標を3D座標に変換
+        /// Plane3D.cnvPlaneLocationと同じ
         /// P(mU,mV) = c + mU * x + mV * y
         /// </summary>
         /// <param name="p">2D座標</param>
@@ -488,6 +553,7 @@ namespace CoreLib
 
         /// <summary>
         /// 3D座標から平面座標に変換
+        /// Plane3D.cnvPlaneLocationと同じ
         /// </summary>
         /// <param name="pos">3D座標</param>
         /// <returns>2D座標</returns>
@@ -498,13 +564,16 @@ namespace CoreLib
             double a = (mU.y * mV.x - mU.x * mV.y);
             double b = (mU.z * mV.y - mU.y * mV.z);
             double c = (mU.x * mV.z - mU.z * mV.x);
-            if (a != 0) {
+            double A = Math.Abs(a);
+            double B = Math.Abs(b);
+            double C = Math.Abs(c);
+            if (B < A && C < A) {
                 t.x = (p.y * mV.x - p.x * mV.y) / a;
                 t.y = (p.x * mU.y - p.y * mU.x) / a;
-            } else if (b != 0) {
+            } else if (C < B && A < B) {
                 t.x = (p.z * mV.y - p.y * mV.z) / b;
                 t.y = (p.y * mU.z - p.z * mU.y) / b;
-            } else {
+            } else if (A < C && B < C) {
                 t.x = (p.x * mV.z - p.z * mV.x) / c;
                 t.y = (p.z * mU.x - p.x * mU.z) / c;
             }
