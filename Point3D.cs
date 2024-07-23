@@ -74,38 +74,52 @@ namespace CoreLib
         /// </summary>
         /// <param name="p">2D座標</param>
         /// <param face="p">面の向き(0:XY 1:YZ 2:ZX 3:YX 4:ZY 5:XZ)</param>
-        public Point3D(PointD p, FACE3D face = FACE3D.XY)
+        public Point3D(PointD p, FACE3D face = FACE3D.XY, double len = 0)
         {
+            if (p == null) {
+                x = double.NaN; y = double.NaN; z = double.NaN;
+                return;
+            } 
             if (face == FACE3D.XY) {
                 x = p.x;
                 y = p.y;
+                z = len;
             } else if (face == FACE3D.YZ) {
                 y = p.x;
                 z = p.y;
+                x = len;
             } else if(face == FACE3D.ZX) {
                 z = p.x;
                 x = p.y;
+                y = len;
             } else if (face == FACE3D.YX) {
                 y = p.x;
                 x = p.y;
+                z = len;
             } else if (face == FACE3D.ZY) {
                 z = p.x;
                 y = p.y;
+                x = len;
             } else if (face == FACE3D.XZ) {
                 x = p.x;
                 z = p.y;
+                y = len;
             } else if (face == FACE3D.FRONT) {
                 x = p.x;
                 y = p.y;
+                z = len;
             } else if (face == FACE3D.TOP) {
                 x = p.x;
                 z = -p.y;
+                y = len;
             } else if (face == FACE3D.RIGHT) {
                 z = -p.x;
                 y = p.y;
+                x = len;
             } else {
                 x = p.x;
                 y = p.y;
+                z = len;
             }
         }
 
