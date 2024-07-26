@@ -8,7 +8,18 @@
         Title="InputBox" Height="100" Width="450" Loaded="Window_Loaded" Closing="Window_Closing"
         PreviewKeyDown="Window_PreviewKeyDown" MouseDoubleClick="Window_MouseDoubleClick">
     <Grid>
-        <TextBox x:Name="EditText" TextWrapping="Wrap" Text="TextBox" Margin="10,0,10,40"/>
+        <TextBox x:Name="EditText" TextWrapping="Wrap" Text="TextBox" Margin="10,0,10,40">
+            <TextBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="コピー" Name="tbCopyMenu" Command="ApplicationCommands.Copy" />
+                    <MenuItem Header="切取り" Name="tbCutMenu" Command="ApplicationCommands.Cut" />
+                    <MenuItem Header="貼付け" Name="tbPasteMenu" Command="ApplicationCommands.Paste" />
+                    <MenuItem Header="開く" Name="tbOpenMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="計算" Name="tbCalculateMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="Webアドレス変換" Name="tbAdressMenu" Click="tbMenu_Click" />
+                </ContextMenu>
+            </TextBox.ContextMenu>
+        </TextBox>
         <Button Name="OK" Content="OK" IsDefault="True" Margin="0,0,100,10" Click="OK_Click" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom"/>
         <Button Name="Cancel" Content="Cancel" IsCancel="True" Margin="0,0,10,10" Click="Cancel_Click" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom"/>
         <Button x:Name="BtGZoomUp" Margin="10,0,0,10" Click="Button_Click" Height="25" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="25" >

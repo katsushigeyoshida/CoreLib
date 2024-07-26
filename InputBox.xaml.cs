@@ -207,8 +207,10 @@ namespace CoreLib
             //  選択文字列
             if (word.Length <= 0)
                 word = EditText.SelectedText;
-            if (0 < word.Length && 0 <= word.IndexOf("http")) {
+            if (0 < word.Length && (0 <= word.IndexOf("http") || 0 <= word.IndexOf("file:"))) {
                 int ps = word.IndexOf("http");
+                if (ps < 0)
+                    ps = word.IndexOf("file:");
                 if (0 < ps) {
                     int pe = word.IndexOfAny(new char[] { ' ', '\t', '\n' }, ps);
                     if (0 < pe) {
@@ -221,6 +223,15 @@ namespace CoreLib
             } else if (0 < word.Length && File.Exists(word)) {
                 ylib.openUrl(word);
             }
+        }
+
+        /// <summary>
+        /// 選択文字列のURIエスケープシーケンスを解除する
+        /// </summary>
+        private void cnvEscapeString()
+        {
+            string text = EditText.SelectedText;
+            EditText.SelectedText = Uri.UnescapeDataString(text);
         }
 
         /// <summary>
@@ -261,12 +272,30 @@ namespace CoreLib
             } else {
                 switch (key) {
                     case Key.Escape: break;                 //  ESCキーでキャンセル
+                    case Key.F10: cnvEscapeString(); break; //  ESCシーケンス文字列を解除す
                     case Key.F11: textCalculate(); break;   //  選択テキストを計算
                     case Key.F12: textOpen(); break;        //  選択テキストで開く
                     case Key.Back:                          //  ロケイト点を一つ戻す
                         break;
                     default: break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// コンテキストメニュー
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void tbMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)e.Source;
+            if (menuItem.Name.CompareTo("tbOpenMenu") == 0) {
+                textOpen();
+            } else if (menuItem.Name.CompareTo("tbCalculateMenu") == 0) {
+                textCalculate();
+            } else if (menuItem.Name.CompareTo("tbAdressMenu") == 0) {
+                cnvEscapeString();
             }
         }
     }
