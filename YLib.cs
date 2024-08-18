@@ -1625,22 +1625,32 @@ namespace CoreLib
             if (folder == null) {
                 files = getDrives();
             } else {
+                folder = Path.GetFullPath(folder);
                 files = getFilesDirectories(folder, fname);
                 files.Insert(0, "..");
             }
             for (int i = 0; i < files.Count; i++) {
                 if (Directory.Exists(files[i])) {
                     Console.WriteLine($"{i}: [{files[i]}]");
-                } else {
+                } else {  
                     Console.WriteLine($"{i}: {files[i]}");
                 }
             }
+            Console.Write("番号入力 >> ");
             string inp = Console.ReadLine();
-            if (Directory.Exists(files[int.Parse(inp)])) {
-                folder = files[int.Parse(inp)].CompareTo("..") == 0 ? Path.GetDirectoryName(folder) : files[int.Parse(inp)];
+            int n = 0;
+            if (!int.TryParse(inp, out n))
+                return "";
+            if (files.Count <= n)
+                return "";
+            if (Directory.Exists(files[n])) {
+                if (files[int.Parse(inp)].CompareTo("..") == 0) {
+                    folder = Path.GetDirectoryName(folder);
+                } else 
+                    folder = files[int.Parse(inp)];
                 return consoleFileSelect(folder, fname);
             }
-            return files[int.Parse(inp)];
+            return files[n];
         }
 
         /// <summary>

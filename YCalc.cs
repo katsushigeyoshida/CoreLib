@@ -424,7 +424,7 @@ namespace CoreLib
             string buf = "";
             for (int i = 0; i < str.Length; i++) {
                 if (Char.IsNumber(str[i]) || str[i] == '.' ||
-                    (i == 0 && str[i] == '-') ||
+                    (buf.Length == 0 && str[i] == '-') ||
                     (0 < i && (str[i] == 'E' || str[i] == 'e') && Char.IsNumber(str[i - 1])) ||
                     (0 < i && (str[i - 1] == 'E' || str[i - 1] == 'e') && (str[i] == '-' || str[i] == '+'))) {
                     //  数値
