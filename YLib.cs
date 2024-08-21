@@ -172,7 +172,7 @@ namespace CoreLib
     ///  void moveImage(Canvas canvas, BitmapSource bitmapSource, double dx, double dy, int offset = 0) Bitmap 図形を移動
     /// 
     ///  ---  数値処理関連  ------
-    ///  double mod(double a, double b)                                     2点間の距離
+    ///  double mod(double a, double b)                                     剰余関数 (負数の剰余を正数で返す)
     ///  int mod(int a, int b)                                              剰余関数 (負数の剰余を正数で返す)
     ///  List<double> solveQuadraticEquation(double a, double b, double c)  2次方程式の解
     ///  List<double> solveCubicEquation(double a, double b, double c, double d)    3次方程式の解(カルダノの公式)

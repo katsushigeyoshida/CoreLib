@@ -32,10 +32,51 @@
 
 ■ YLIB  
     数値計算
+        mod()                       剰余関数 (負数の剰余を正数で返す)
+        solveQuadraticEquation()    2次方程式の解
+        solveCubicEquation()        3次方程式の解(カルダノの公式)
+        solveQuarticEquation()      4次方程式の解(フェラリ(Ferrari)の公式)
+        Cuberoot()                  3乗根(x^1/3)
+        Squreroot()                 複素数の平方根
     行列計算
+        unitMatrix(int unit)                     単位行列
+        matrixTranspose(double[,] A)             転置行列  行列Aの転置A^T
+        matrixMulti(double[,] A, double[,] B)    行列の積  AxB
+        matrixAdd(double[,] A, double[,] B)      行列の和 A+B
+        matrixInverse(double[,] A)               逆行列 A^-1
+        copyMatrix(double[,] A)                  行列のコピー
     座標変換
 
 ■ 2次元座標
+    PointD
+    LineD
+    ArcD
+    EllipseD
+    PolylineD
+    PolygonD
+    Box
+    PartsD
+    TextD
 
 ■ 3次元座標
+    Point3D
+    Line3D
+    Arc3D
+    Polyline3D
+    Polygon3D
+    Box3D
+
+■ ダイヤログ
+    ChkListDialog
+    ColorDialog
+    DiffFolder
+    FullView
+    InputBox
+    InputBox2
+    InputSelect
+    InputSelect2
+    MenuDialog
+    MessageBoEx
+    SelectMenu
+    SelectMenu2
 
