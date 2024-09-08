@@ -245,6 +245,25 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2D平面の楕円に変換
+        /// </summary>
+        /// <param name="face">2D平面</param>
+        /// <returns>2D楕円</returns>
+        public EllipseD toEllipseD(FACE3D face)
+        {
+            EllipseD ellipse = new EllipseD();
+            ellipse.mCp = mCp.toPoint(face);
+            PointD sp = getPosition(0).toPoint(face);
+            PointD ep = getPosition(Math.PI/ 2).toPoint(face);
+            ellipse.mRx = ellipse.mCp.length(sp);
+            ellipse.mRy = ellipse.mCp.length(ep);
+            ellipse.mRotate = sp.angle(ellipse.mCp);
+            ellipse.mSa = mSa;
+            ellipse.mEa = mEa;
+            return ellipse;
+        }
+
+        /// <summary>
         /// 分割座標点リストを2D平面に変換
         /// </summary>
         /// <param name="divAng">分割角度</param>
@@ -509,10 +528,8 @@ namespace CoreLib
         public Point3D nearPoint(PointD pos, int divideNo, FACE3D face)
         {
             List<PointD> plist = toPointD(divideNo, face);
-            Plane3D plane = new Plane3D(mCp, mU, mV);
-            PointD ip = plane.cnvPlaneLocation(plane.intersection(pos, face));
-            PointD p = plist.MinBy(p => p.length(ip));
-            return cnvPosition(p);
+            PointD p = plist.MinBy(p => p.length(pos));
+            return intersection(p, face);
         }
 
         /// <summary>
