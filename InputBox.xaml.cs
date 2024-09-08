@@ -30,6 +30,9 @@ namespace CoreLib
         public bool mFontZoomButtomVisible = true;          //  文字ズームボタン表示/非表示
         public bool mCalcButtonVisible = true;              //  計算ボタン表示/非表示
 
+        public bool mCallBackOn = false;                    //  コールバック有り
+        public Action callback;                             //  コールバック関数
+
         private YLib ylib = new YLib();
 
         public InputBox()
@@ -80,11 +83,20 @@ namespace CoreLib
             else
                 BtCalc.Visibility = Visibility.Hidden;
 
+            if (mCallBackOn) {
+                OK.Visibility = Visibility.Hidden;
+                Cancel.Content = "終了";
+            }
+
             EditText.Focus();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (mCallBackOn) {
+                mEditText = EditText.Text;
+                callback();
+            }
             if (!mWindowSizeOutSet)
                 WindowFormSave();
         }
@@ -97,8 +109,9 @@ namespace CoreLib
         private void OK_Click(object sender, RoutedEventArgs e)
         {
             mEditText = EditText.Text;
-            this.DialogResult = true;
-            this.Close();
+            if (!mCallBackOn)
+                DialogResult = true;
+            Close();
         }
 
         /// <summary>
@@ -108,8 +121,9 @@ namespace CoreLib
         /// <param name="e"></param>
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = false;
-            this.Close();
+            if (!mCallBackOn)
+                DialogResult = false;
+            Close();
         }
 
         /// <summary>
