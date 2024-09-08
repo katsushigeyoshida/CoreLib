@@ -1042,11 +1042,25 @@ namespace CoreLib
         /// <returns>3D交点</returns>
         public Point3D intersection(PointD pos, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            if (0 <= n) {
-                Line3D line = getLine3D(n);
-                return line.intersection(pos, face);
-            } else
+            Point3D pos3d = new Point3D(pos, face);
+            PointD p = Point3D.cnvPlaneLocation(pos3d, mCp, mU, mV);
+            int n = nearPosition(pos3d);
+            PointD? ip = null;
+            if (n < mPolyline.Count - 1 && mPolyline[n].type == 1) {
+                ArcD arc = new ArcD(mPolyline[n - 1], mPolyline[n], mPolyline[n + 1]);
+                ip = arc.intersection(p);
+            } else if (n < mPolyline.Count - 2 && mPolyline[n + 1].type == 1) {
+                ArcD arc = new ArcD(mPolyline[n], mPolyline[n + 1], mPolyline[n + 2]);
+                ip = arc.intersection(p);
+            } else if (n < mPolyline.Count - 1) {
+                LineD line = new LineD(mPolyline[n], mPolyline[n + 1]);
+                ip = line.intersection(p);
+            } else {
+                ip = mPolyline[mPolyline.Count - 1];
+            }
+            if (ip != null)
+                return Point3D.cnvPlaneLocation(ip, mCp, mU, mV);
+            else
                 return null;
         }
     }

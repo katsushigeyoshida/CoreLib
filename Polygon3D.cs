@@ -772,5 +772,35 @@ namespace CoreLib
             }
             return plist;
         }
+
+        /// <summary>
+        /// 2D座標で交点(垂点)を求める
+        /// </summary>
+        /// <param name="pos">2D座標</param>
+        /// <param name="face"><2D平面/param>
+        /// <returns>3D交点</returns>
+        public Point3D intersection(PointD pos, FACE3D face)
+        {
+            Point3D pos3d = new Point3D(pos, face);
+            PointD p = Point3D.cnvPlaneLocation(pos3d, mCp, mU, mV);
+            int n = nearPosition(pos3d);
+            PointD? ip = null;
+            if (n < mPolygon.Count - 1 && mPolygon[n].type == 1) {
+                ArcD arc = new ArcD(mPolygon[n - 1], mPolygon[n], mPolygon[n + 1]);
+                ip = arc.intersection(p);
+            } else if (n < mPolygon.Count - 2 && mPolygon[n + 1].type == 1) {
+                ArcD arc = new ArcD(mPolygon[n], mPolygon[n + 1], mPolygon[n + 2]);
+                ip = arc.intersection(p);
+            } else if (n < mPolygon.Count - 1) {
+                LineD line = new LineD(mPolygon[n], mPolygon[n + 1]);
+                ip = line.intersection(p);
+            } else {
+                ip = mPolygon[mPolygon.Count - 1];
+            }
+            if (ip != null)
+                return Point3D.cnvPlaneLocation(ip, mCp, mU, mV);
+            else
+                return null;
+        }
     }
 }
