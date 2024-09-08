@@ -65,6 +65,7 @@
     Polyline3D
     Polygon3D
     Box3D
+    Plane3D
 
 ■ ダイヤログ
     ChkListDialog
