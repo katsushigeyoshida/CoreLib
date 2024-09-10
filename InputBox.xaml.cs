@@ -101,6 +101,11 @@ namespace CoreLib
                 WindowFormSave();
         }
 
+        public void updateData()
+        {
+            mEditText = EditText.Text;
+        }
+
         /// <summary>
         /// [OK] ＯＫボタン
         /// </summary>
