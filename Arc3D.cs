@@ -475,7 +475,9 @@ namespace CoreLib
         {
             Plane3D plane = new Plane3D(mCp, mU, mV);
             Point3D p = plane.intersection(pos, face);
-            return intersection(p);
+            if (p != null)
+                return intersection(p);
+            return null;
         }
 
         /// <summary>
@@ -488,7 +490,56 @@ namespace CoreLib
             ArcD arcD = new ArcD(new PointD(0, 0), mR, mSa, mEa);
             PointD p = cnvPosition(pos);
             PointD ip = arcD.intersection(p);
-            return cnvPosition(ip);
+            if (ip != null)
+                return cnvPosition(ip);
+            return null;
+        }
+
+        /// <summary>
+        /// 2D平面から投影した位置で点と交点を求める
+        /// </summary>
+        /// <param name="p">点座標</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Point3D p, FACE3D face)
+        {
+            return intersection(p.toPoint(face), face);
+        }
+
+        /// <summary>
+        /// 表示面で線分と交わる参照位置に最も近い円弧上の座標
+        /// </summary>
+        /// <param name="line">線分</param>
+        /// <param name="pos">参照位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Line3D line, PointD pos, FACE3D face)
+        {
+            EllipseD elli = toEllipseD(face);
+            LineD l = line.toLineD(face);
+            List<PointD> iplist = elli.intersection(l);
+            PointD ip = iplist.MinBy(p => p.length(pos));
+            if (ip != null)
+                return intersection(ip, face);
+            return null;
+        }
+
+        /// <summary>
+        /// 表示面で円弧と交わる参照位置に最も近い円弧上の座標
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <param name="pos">参照位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Arc3D arc, PointD pos, FACE3D face)
+        {
+            EllipseD elli = toEllipseD(face);
+            EllipseD elli2 = arc.toEllipseD(face);
+            List<PointD> iplist = elli.intersection(elli2);
+            PointD ip = iplist.MinBy(p => p.length(pos));
+            if (ip != null)
+                return intersection(ip, face);
+            return null;
         }
 
         /// <summary>

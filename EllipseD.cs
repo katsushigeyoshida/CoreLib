@@ -638,7 +638,7 @@ namespace CoreLib
             LineD l = line.toCopy();
             l.translate(mCp.inverse());
             l.rotate(-mRotate);
-            if (l.pe.x - l.ps.x == 0) {
+            if (Math.Abs(l.pe.x - l.ps.x) < mEps) {
                 //  垂線の場合
                 double d = (l.ps.x * l.ps.x) / (mRx * mRx);
                 if (1 < d)
@@ -761,6 +761,7 @@ namespace CoreLib
             List<PointD> plist = new List<PointD>();
             EllipseD elli = ellipse.toCopy();
             elli.translate(mCp.inverse());
+            elli.mCp.rotate(-mRotate);
             elli.rotate(-mRotate);
             List<double> impli = elli.canonical2Implicit();
             double a1 = 1 / (mRx * mRx);
@@ -794,6 +795,7 @@ namespace CoreLib
                 double y = ylist[i];
                 PointD p = new PointD(x, y);
                 p.rotate(mRotate);
+                elli.mCp.rotate(mRotate);
                 if (plist.FindIndex(pc => pc.isEqual(p)) < 0)
                     p.translate(mCp);
                 plist.Add(p);

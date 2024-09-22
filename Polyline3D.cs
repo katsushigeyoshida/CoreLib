@@ -15,6 +15,7 @@ namespace CoreLib
         public List<PointD> mPolyline;
 
         private double mEps = 1E-8;
+        private YLib ylib = new YLib();
 
         /// <summary>
         /// コンストラクタ
@@ -336,10 +337,28 @@ namespace CoreLib
         /// <returns>線分</returns>
         public Line3D getLine3D(int n)
         {
-            if (n < mPolyline.Count - 1)
-                return new Line3D(toPoint3D(n), toPoint3D(n + 1));
-            else
+            if (mPolyline.Count <= n || mPolyline[n].type == 1 ||
+                mPolyline[(n + 1) % mPolyline.Count].type == 1)
                 return null;
+            return new Line3D(toPoint3D(n), toPoint3D(n + 1));
+        }
+
+        /// <summary>
+        /// 指定位置の円弧の取得
+        /// </summary>
+        /// <param name="n">位置</param>
+        /// <returns>円弧</returns>
+        public Arc3D getArc3D(int n)
+        {
+            int n0 = ylib.mod(n - 1, mPolyline.Count);
+            int n1 = ylib.mod(n, mPolyline.Count);
+            int n2 = ylib.mod(n + 1, mPolyline.Count);
+            int n3 = ylib.mod(n + 2, mPolyline.Count);
+            if (mPolyline[n1].type == 1)
+                return new Arc3D(toPoint3D(n0), toPoint3D(n1), toPoint3D(n2));
+            else if (mPolyline[n2].type == 1)
+                return new Arc3D(toPoint3D(n1), toPoint3D(n2), toPoint3D(n3));
+            return null;
         }
 
         /// <summary>
@@ -1062,6 +1081,103 @@ namespace CoreLib
                 return Point3D.cnvPlaneLocation(ip, mCp, mU, mV);
             else
                 return null;
+        }
+
+        /// <summary>
+        /// 2D平面から投影した位置で点と交点を求める
+        /// </summary>
+        /// <param name="p">点座標</param>
+        /// <param name="pos">参照位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Point3D p, PointD pos, FACE3D face)
+        {
+            int n = nearLine(pos, face);
+            Line3D line = getLine3D(n);
+            if (line != null) {
+                return line.intersection(p.toPoint(face), face);
+            } else {
+                Arc3D arc2 = getArc3D(n);
+                if (arc2 != null)
+                    return arc2.intersection(p.toPoint(face), face);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 2D平面から投影した位置で線分と交点を求める
+        /// </summary>
+        /// <param name="l">線分</param>
+        /// <param name="pos">参照位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Line3D l, PointD pos, FACE3D face)
+        {
+            int n = nearLine(pos, face);
+            Line3D line = getLine3D(n);
+            if (line != null) {
+                return line.intersection(l, face);
+            } else {
+                Arc3D arc2 = getArc3D(n);
+                if (arc2 != null)
+                    return arc2.intersection(l, pos, face);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 2D平面から投影した位置で円弧と交点を求める
+        /// </summary>
+        /// <param name="arc">円弧</param>
+        /// <param name="pos">参照位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Arc3D arc, PointD pos, FACE3D face)
+        {
+            int n = nearLine(pos, face);
+            Line3D line = getLine3D(n);
+            if (line != null) {
+                return arc.intersection(line, pos, face);
+            } else {
+                Arc3D arc2 = getArc3D(n);
+                if (arc2 != null)
+                    return arc2.intersection(arc, pos, face);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 2D平面から投影した位置でポリラインと交点を求める
+        /// </summary>
+        /// <param name="polyline">ポリライン</param>
+        /// <param name="pos">参照位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Polyline3D polyline, PointD pos, FACE3D face)
+        {
+            int n = nearLine(pos, face);
+            int n2 = polyline.nearLine(pos, face);
+            Line3D line = getLine3D(n);
+            Line3D line2 = polyline.getLine3D(n2);
+            if (line != null) {
+                if (line2 != null) {
+                    return line.intersection(line2, face);
+                } else {
+                    Arc3D arc = polyline.getArc3D(n2);
+                    if (arc != null)
+                        return arc.intersection(line, pos, face);
+                }
+            } else {
+                Arc3D arc = getArc3D(n);
+                if (line2 != null) {
+                    return arc.intersection(line2, pos, face);
+                } else {
+                    Arc3D arc2 = polyline.getArc3D(n2);
+                    if (arc2 != null)
+                        return arc.intersection(arc2, pos, face);
+                }
+            }
+            return null;
         }
     }
 }

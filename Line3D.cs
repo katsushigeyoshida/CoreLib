@@ -281,6 +281,34 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2D平面から投影した位置で点と交点を求める
+        /// </summary>
+        /// <param name="p">点座標</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>交点</returns>
+        public Point3D intersection(Point3D p, FACE3D face)
+        {
+            return intersection(p.toPoint(face), face);
+        }
+
+        /// <summary>
+        /// 表示面で線分と交わる位置の線分上の座標
+        /// </summary>
+        /// <param name="line">線分</param>
+        /// <param name="face">2D平面</param>
+        /// <returns></returns>
+        public Point3D intersection(Line3D line, FACE3D face)
+        {
+            LineD l = toLineD(face);
+            LineD l2 = line.toLineD(face);
+            PointD p = l.intersection(l2);
+            if (p != null)
+                return intersection(p, face);
+            return null;
+        }
+
+
+        /// <summary>
         /// 線上の点かを判断
         /// </summary>
         /// <param name="p">点座標</param>
