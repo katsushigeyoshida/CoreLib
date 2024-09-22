@@ -112,6 +112,7 @@ namespace CoreLib
     ///  string arrayStr2CsvData(string[] data)                     配列データをCSVデータに変換
     ///  string[] csvData2ArrayStr(string line)                     CSVデータを配列データに戻す
     ///  List<string[]> loadJsonData(string filePath)               JSON形式のファイルを読み込む
+    ///  List<string> loadListData(string filePath)                 ファイルを読み込んでリストデータにする
     ///  string loadTextFile(string path)                           テキストファイルの読込
     ///  void saveTextFile(string path, string buffer)              テキストファイルの保存
     ///  byte[] loadBinData(string path, int size = 0)              バイナリファイルの読込
@@ -1957,6 +1958,27 @@ namespace CoreLib
                     }
                     //dataFile.Close(); //  usingの場合は不要 Disposeを含んでいる
                 }
+            }
+        }
+
+        /// <summary>
+        /// リストデータをファイルに書き込む
+        /// </summary>
+        /// <param name="path">パス</param>
+        /// <param name="data">リストデータ</param>
+        public void saveListData(string path, List<string> data)
+        {
+            if (data == null || data.Count == 0)
+                return;
+            string folder = Path.GetDirectoryName(path);
+            if (0 < folder.Length && !Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            using (StreamWriter dataFile = new StreamWriter(path, false, mEncoding[mEncordingType])) {
+                foreach (string buf in data) {
+                    dataFile.WriteLine(buf);
+                }
+                //dataFile.Close(); //  usingの場合は不要 Disposeを含んでいる
             }
         }
 
