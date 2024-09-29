@@ -91,6 +91,7 @@ namespace CoreLib
     ///  List<string> getPattern(string html, string pattern, string group) 正規表現を使ったHTMLデータからパターン抽出
     ///  List<string[]> getPattern(string html, string pattern)     正規表現を使ったHTMLからのパターン抽出
     ///  List<string[]> getPattern2(string html, string pattern)    正規表現を使ったHTMLからのパターン抽出
+    ///  int getStrByteCount(string str)                            文字列の長さをbyte数で求める
     ///  
     ///  ---  ファイル・ディレクトリ関連  ------
     ///  bool makeDir(string path)                                  ファイルパスからディレクトリを作成
@@ -386,7 +387,6 @@ namespace CoreLib
 
         private Encoding[] mEncoding;
         public int mEncordingType = 0;
-
         public bool mError = false;
         public string mErrorMessage = "";
         private double mEps = 1E-8;
@@ -1517,7 +1517,37 @@ namespace CoreLib
             return listData;
         }
 
+        /// <summary>
+        /// 文字列の長さをbyte数で求める
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <returns>byte数</returns>
+        public int getStrByteCount(string str)
+        {
+            Encoding sjisEnc = Encoding.GetEncoding("Shift_JIS");
+            return sjisEnc.GetByteCount(str);
+        }
 
+        /// <summary>
+        /// タブをスペースに変換
+        /// </summary>
+        /// <param name="text">文字列</param>
+        /// <param name="tabsize">タブサイズ</param>
+        /// <returns>変換文字列</returns>
+        public string tab2space(string text, int tabsize = 4)
+        {
+            string buf = "";
+            foreach (var c in text) {
+                if (c == '\t') {
+                    int pos = getStrByteCount(buf);
+                    int tab = tabsize - pos % tabsize;
+                    buf += new string(' ', tab);
+                } else {
+                    buf += c.ToString();
+                }
+            }
+            return buf;
+        }
 
         //  ---  ファイル・ディレクトリ関連  ------
 
