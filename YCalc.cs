@@ -92,7 +92,7 @@ namespace CoreLib
             "hour2deg(x) 時単位を度に変換する",
             "rad2hour(x) ラジアンを時単位に変換する",
             "hour2rad(x) 時単位をラジアンに変換する",
-            "mod(x,y) 剰余(割算の余り",
+            "mod(x,y) 剰余(割算の余り)",
             "pow(x,y) 累乗",
             "max(x,y) 大きい方",
             "min(x,y) 小さい方",
@@ -145,7 +145,7 @@ namespace CoreLib
             "repeat(f([@],[%]),i,n,k) 計算式の[@]にnからkまで入れて繰返す,[%]に計算結果が入る,iは[%]の初期値",
         };
         //  数式処理で使うキーワード(予約語)
-        private string[] mKeyWord = {
+        public static string[] mKeyWord = {
             "+", "-", "*", "/", "%", "^", "PI", "E",
             "RAD", "DEG", "deg2hour", "hour2deg", "rad2hour", "hour2rad",
             "mod", "pow", "max", "min", "combi", "permu", "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
