@@ -176,6 +176,13 @@ namespace CoreLib
     ///  ---  数値処理関連  ------
     ///  double mod(double a, double b)                                     剰余関数 (負数の剰余を正数で返す)
     ///  int mod(int a, int b)                                              剰余関数 (負数の剰余を正数で返す)
+    ///  double log(double a, double b)                                     底指定の対数(log b a)
+    ///  float roundFloor(float val, int n)                                 指定の有効桁で切り捨てる
+    ///  float roundCeil(float val, int n)                                  指定の有効桁で切り上げる
+    ///  float roundRound(float val, int n)                                 指定の有効桁数で四捨五入する
+    ///  double floorStepSize(double val)                                   最上位桁が1,2,5になるように下側に丸める
+    ///  double graphStepSize(double range, double targetSteps, int fromBase = 10)  グラフ作成時の補助線間隔を求める
+    ///  double graphHeightSize(double height, double stepSize)             グラフの最大値を求める
     ///  List<double> solveQuadraticEquation(double a, double b, double c)  2次方程式の解
     ///  List<double> solveCubicEquation(double a, double b, double c, double d)    3次方程式の解(カルダノの公式)
     ///  List<double> solveQuarticEquation(double a, double b, double c, double d, double e)    4次方程式の解(フェラリ(Ferrari)の公式)
@@ -3299,6 +3306,136 @@ namespace CoreLib
             int c = (a % b);
             c += c < 0 ? b : 0;
             return c;
+        }
+
+        /// <summary>
+        /// 底指定の対数(log b a)
+        /// </summary>
+        /// <param name="a">数値</param>
+        /// <param name="b">底(10進,60進とか)</param>
+        /// <returns></returns>
+        public double log(double a, double b)
+        {
+            return Math.Log10(a) / Math.Log10(b);
+        }
+
+        /// <summary>
+        /// 指定の有効桁で切り捨てる
+        /// </summary>
+        /// <param name="val">数値</param>
+        /// <param name="n">丸める有効桁</param>
+        /// <returns>丸めた値</returns>
+        public float roundFloor(float val, int n)
+        {
+            if (val == 0f)
+                return val;
+            float sign = Math.Sign(val);
+            if (val < 0)
+                val *= sign;
+            float mag = (float)Math.Floor(Math.Log10(val));     //  桁数を求める
+            float magPow = (float)Math.Pow(10, mag - n + 1);    //  
+            return (float)Math.Floor(val * sign / magPow) * magPow;
+        }
+
+        /// <summary>
+        /// 指定の有効桁で切り上げる
+        /// </summary>
+        /// <param name="val">数値</param>
+        /// <param name="n">丸める有効桁</param>
+        /// <returns>丸めた値</returns>
+        public float roundCeil(float val, int n)
+        {
+            if (val == 0f)
+                return val;
+            float sign = Math.Sign(val);
+            if (val < 0)
+                val *= sign;
+            float mag = (float)Math.Floor(Math.Log10(val));
+            float magPow = (float)Math.Pow(10, mag - n + 1);
+            return (float)Math.Ceiling(val * sign / magPow) * magPow;
+        }
+
+        /// <summary>
+        /// 指定の有効桁数で四捨五入する
+        /// </summary>
+        /// <param name="val">数値</param>
+        /// <param name="n">丸める有効桁数</param>
+        /// <returns>丸めた値</returns>
+        public float roundRound(float val, int n)
+        {
+            if (val == 0f)
+                return val;
+            float sign = Math.Sign(val);
+            if (val < 0)
+                val *= sign;
+            float mag = (float)Math.Floor(Math.Log10(val));
+            float magPow = (float)Math.Pow(10, mag - n + 1);
+            return (float)Math.Round(val * sign / magPow) * magPow;
+        }
+
+        /// <summary>
+        /// 最上位桁が1,2,5になるように下側に丸める
+        /// </summary>
+        /// <param name="val">数値</param>
+        /// <returns>丸めた値</returns>
+        public double floorStepSize(double val)
+        {
+            double mag = Math.Floor(Math.Log10(Math.Abs(val)));
+            double magPow = Math.Floor(Math.Abs(val) / Math.Pow(10, mag));
+            double magMsd = 0;
+            if (magPow >= 5)
+                magMsd = 5 * Math.Pow(10, mag);
+            else if (magPow >= 2)
+                magMsd = 2 * Math.Pow(10, mag);
+            else
+                magMsd = Math.Pow(10, mag);
+            return magMsd * Math.Sign(val);
+        }
+
+        /// <summary>
+        /// グラフ作成時の補助線間隔を求める
+        /// 補助線の間隔は1,2,5の倍数
+        /// </summary>
+        /// <param name="range">補助線の範囲</param>
+        /// <param name="targetSteps">補助線の数</param>
+        /// <param name="fromBase">基底数(10進,60進,24進...)</param>
+        /// <returns>補助線の間隔</returns>
+        public double graphStepSize(double range, double targetSteps, int fromBase = 10)
+        {
+            // calculate an initial guess at step size
+            double tempStep = range / targetSteps;                  //  仮の間隔
+
+            // get the magnitude of the step size
+            double mag = Math.Floor(log(tempStep, fromBase));       //  ステップサイズの桁数
+            double magPow = Math.Pow(fromBase, mag);                //  最上位数
+
+            // calculate most significant digit of the new step size
+            double magMsd = (int)(tempStep / magPow + 0.5);         //  ステップサイズの最上位桁
+
+            // promote the MSD to either 1, 2, or 5
+            if (magMsd > fromBase / 2.0)
+                magMsd = fromBase;
+            else if (magMsd > fromBase / 5.0)
+                magMsd = Math.Floor(fromBase / 2.0);
+            else if (magMsd > fromBase / 10.0)
+                magMsd = Math.Floor(fromBase / 5.0);
+
+            return magMsd * magPow;
+        }
+
+        /// <summary>
+        /// グラフの最大値を求める
+        /// </summary>
+        /// <param name="height">データの最大値</param>
+        /// <param name="stepSize">目盛間隔</param>
+        /// <returns></returns>
+        public double graphHeightSize(double height, double stepSize)
+        {
+            //  グラフ高さの調整
+            if (height < 0)
+                return ((int)(height / stepSize) - 1) * stepSize;
+            else
+                return ((int)(height / stepSize) + 1) * stepSize;
         }
 
         /// <summary>
