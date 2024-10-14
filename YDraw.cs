@@ -22,6 +22,8 @@ namespace CoreLib
     /// void clear()                                            登録した図形をすべて削除する
     /// string getColorName(Brush color)                        Brush を色名に変換
     /// Brush getColor(string color)                            色名を Brush値に変換
+    /// void setLineType(string type)                           線種を名前で設定
+    /// void setPointType(string type)                          点種を名前で設定
     /// void setBackColor(Brush color)                          キャンパスの背景色を設定
     /// 
     /// void drawPoint(PointD p, int size = 1, int type = 0)    点の描画
@@ -224,6 +226,27 @@ namespace CoreLib
             new ColorTitle("YellowGreen",Brushes.YellowGreen),
         };
 
+        public string[] mLineTypeName = new string[] {
+            "solid",  "dash", "center", "phantom"
+        };
+        public string[] mPointTypeName = new string[] {
+            "dot", "cross", "plus",  "box", "circle", "triangle",
+        };
+        public static string[] mLineTypeHelp = {
+            "solid 実線",
+            "dash 破線",
+            "center 一点鎖線",
+            "phantom 二点鎖線",
+        };
+        public static string[] mPointTypeHelp = {
+            "dot 点形状の点",
+            "cross クロス形状の点",
+            "plus 十字形上の点",
+            "box 箱形状の点",
+            "circle 円形上の点",
+            "triangle 三角形上の点",
+        };
+
         protected Canvas mCanvas;   //  通常はCanvasを使う
                                     //  StackPanelだとLineとEllipseは表示されるかRectAngleやTextBlockが表示されない
 
@@ -319,6 +342,26 @@ namespace CoreLib
         public void setBackColor(Brush color)
         {
             mCanvas.Background = color;
+        }
+
+        /// <summary>
+        /// 線種を名前で設定する
+        /// </summary>
+        /// <param name="type">線種名</param>
+        public void setLineType(string type)
+        {
+            mLineType = mLineTypeName.FindIndex(type);
+            if (mLineType < 0) mLineType = 0;
+        }
+
+        /// <summary>
+        /// 点種を名前で設定する
+        /// </summary>
+        /// <param name="type">点種名</param>
+        public void setPointType(string type)
+        {
+            mPointType = mPointTypeName.FindIndex(type);
+            if (mPointType < 0) mPointType = 0;
         }
 
         /// <summary>
