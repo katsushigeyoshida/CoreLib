@@ -64,41 +64,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// ダブルクリックによる選択終了
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void lbMenuList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            selectMenu();
-        }
-
-        /// <summary>
-        /// [Key]ダウン エンターキーで選択終了
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void lbMenuList_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter) {
-                selectMenu();
-            }
-        }
-
-        /// <summary>
-        /// ワンクリックで選択終了
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void lbMenuList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (mOneClick) {
-                selectMenu();
-            }
-        }
-
-
-        /// <summary>
         /// Windowの状態を前回の状態にする
         /// </summary>
         private void WindowFormLoad()
@@ -130,6 +95,59 @@ namespace CoreLib
             Properties.Settings.Default.MenuDialgHeight = Height;
             Properties.Settings.Default.Save();
         }
+
+        /// <summary>
+        /// ダブルクリックによる選択終了
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void lbMenuList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            selectMenu();
+        }
+
+        /// <summary>
+        /// [Key]ダウン エンターキーで選択終了
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void lbMenuList_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            bool oneclick = mOneClick;
+            mOneClick = false;
+            switch (e.Key) {
+                case Key.Enter: selectMenu(); break;
+                case Key.Escape: Close(); break;
+                case Key.Space:
+                case Key.Down: {
+                        int n = lbMenuList.SelectedIndex;
+                        if (n < lbMenuList.Items.Count - 1)
+                            lbMenuList.SelectedIndex = n + 1;
+                        break;
+                    }
+                case Key.Up: {
+                        int n = lbMenuList.SelectedIndex;
+                        if (0 < n)
+                            lbMenuList.SelectedIndex = n - 1;
+                        break;
+                    }
+            }
+            e.Handled = true;
+            mOneClick = oneclick;
+        }
+
+        /// <summary>
+        /// ワンクリックで選択終了
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void lbMenuList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (mOneClick) {
+                selectMenu();
+            }
+        }
+
 
         /// <summary>
         /// メニューを選択して終了
