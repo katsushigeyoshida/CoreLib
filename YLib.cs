@@ -87,6 +87,8 @@ namespace CoreLib
     ///  string stripControlCode(string str)                        文字列からコントロールコードを除外する
     ///  string[] seperateString(string str)                        文字列をカンマセパレータで分解して配列に格納
     ///  List<string> splitString(string str, string[] sep)         文字列を指定文字列で分ける
+    ///  string stripBracketString(string str, char bracket = '(')  括弧付き文字列で前後の括弧を除いた文字列
+    ///  string getBracketString(string str, int n, char bracket = '(') 括弧で囲まれた文字列の抽出(括弧含む)
     ///  string insertLinefeed(string str, string word, int lineSize)   一行が指定文字数を超えたら改行を入れる
     ///  List<string> getPattern(string html, string pattern, string group) 正規表現を使ったHTMLデータからパターン抽出
     ///  List<string[]> getPattern(string html, string pattern)     正規表現を使ったHTMLからのパターン抽出
@@ -381,6 +383,7 @@ namespace CoreLib
             new ColorTitle("YellowGreen", System.Windows.Media.Brushes.YellowGreen),
         };
 
+
         public int VK_BACK    = 0x08;
         public int VK_TAB     = 0x09;
         public int VK_RETURN  = 0x0D;
@@ -391,7 +394,7 @@ namespace CoreLib
         System.Diagnostics.Stopwatch mSw;       //  ストップウォッチクラス
         private TimeSpan mStopWatchTotalTime;   //  mSwの経過時間
         public ColorTitle[] mBrushList;
-
+        private char[] mBrackets = { '(', ')', '{', '}', '[', ']', '\"', '\"' };    //  括弧リスト
         private Encoding[] mEncoding;
         public int mEncordingType = 0;
         public bool mError = false;
@@ -1420,6 +1423,55 @@ namespace CoreLib
             if (0 < buf.Length)
                 strList.Add(buf);
             return strList;
+        }
+
+
+        /// <summary>
+        /// 括弧付き文字列で前後の括弧を除いた文字列
+        /// </summary>
+        /// <param name="str">括弧付き文字列</param>
+        /// <param name="bracket">括弧の種類</param>
+        /// <returns>文字列</returns>
+        public string stripBracketString(string str, char bracket = '(')
+        {
+            int offset = Array.IndexOf(mBrackets, bracket);
+            if (offset < 0)
+                return str;
+            str = str.Trim();
+            int sp = str.IndexOf(mBrackets[offset]);
+            int ep = str.LastIndexOf(mBrackets[offset + 1]);
+            if (sp != 0 || ep < 0 || sp >= ep)
+                return str;
+            return str.Substring(sp + 1, ep - sp - 1);
+        }
+
+        /// <summary>
+        /// 括弧で囲まれた文字列の抽出(括弧含む)
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <param name="n">開始位置</param>
+        /// <param name="bracket">括弧の種類</param>
+        /// <returns>抽出文字列</returns>
+        public string getBracketString(string str, int n, char bracket = '(')
+        {
+            int offset = Array.IndexOf(mBrackets, bracket);
+            if (offset < 0)
+                return str;
+            int sp = str.IndexOf(mBrackets[offset], n);
+            int pos = sp;
+            if (pos < 0) return str;
+            int count = 1;
+            pos++;
+            while (pos < str.Length && 0 < count) {
+                if (bracket != '"' && str[pos] == '"') {
+                    while (pos + 1 < str.Length && str[++pos] != '"') ;
+                }
+                if (str[pos] == '\\') pos++;
+                else if (str[pos] == mBrackets[offset + 1]) count--;
+                else if (str[pos] == mBrackets[offset]) count++;
+                pos++;
+            }
+            return str.Substring(sp, pos - sp);
         }
 
         /// <summary>
