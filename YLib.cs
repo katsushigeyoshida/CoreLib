@@ -966,7 +966,7 @@ namespace CoreLib
             int bOffset = withBracket ? 1 : 0;
             int pos = 0;
             int sp = text.IndexOf(sb);
-            int ep = text.IndexOf(eb);
+            int ep = text.IndexOf(eb, sp + 1);
             if ((0 <= sp && 0 <= ep && ep < sp) || (sp < 0 && 0 <= ep)) {
                 string data = text.Substring(0, ep + bOffset);
                 if (0 < data.Length)
@@ -977,7 +977,7 @@ namespace CoreLib
                 int st = text.IndexOf(sb, pos);
                 string data = "";
                 if (pos <= st) {
-                    int ct = text.IndexOf(eb, st);
+                    int ct = text.IndexOf(eb, st + 1);
                     if (0 <= ct) {
                         data = text.Substring(st + 1 - bOffset, ct - st - 1 + 2 * bOffset);
                         pos = ct + 1;
@@ -994,6 +994,7 @@ namespace CoreLib
             }
             return extractText;
         }
+
         /// <summary>
         /// 文字列内のコントロールコードを除去する
         /// 0x20 <= (半角文字) <0xf0 and 0x100<= (全角文字)を通過させる
