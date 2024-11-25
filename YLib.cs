@@ -1453,12 +1453,12 @@ namespace CoreLib
         /// <param name="n">開始位置</param>
         /// <param name="bracket">括弧の種類</param>
         /// <returns>抽出文字列</returns>
-        public string getBracketString(string str, int n, char bracket = '(')
+        public string getBracketString(string str, int n, char bracket = '(', bool withBracket = true)
         {
             int offset = Array.IndexOf(mBrackets, bracket);
             if (offset < 0)
                 return str;
-            int sp = str.IndexOf(mBrackets[offset], n);
+            int sp = str.IndexOf(mBrackets[offset], n) + (withBracket ? 0 : 1);
             int pos = sp;
             if (pos < 0) return str;
             int count = 1;
@@ -1472,6 +1472,7 @@ namespace CoreLib
                 else if (str[pos] == mBrackets[offset]) count++;
                 pos++;
             }
+            pos -= withBracket ? 0 : 1;
             return str.Substring(sp, pos - sp);
         }
 
@@ -3644,6 +3645,58 @@ namespace CoreLib
             }
             return y;
         }
+
+        //  ---  配列処理  ---
+
+        /// <summary>
+        /// 2次元配列のソート
+        /// </summary>
+        /// <param name="data">2D配列データ</param>
+        /// <param name="col">ソートカラム</param>
+        /// <returns>配列データ/returns>
+        public double[,] doubleArray2Sort(double[,] data, int col = 0)
+        {
+            List<double[]> b = new();
+            col = Math.Min(data.GetLength(0) - 1, col);
+            for (int i = 0; i < data.GetLength(0); i++) {
+                double[] buf = new double[data.GetLength(1)];
+                for (int j = 0; j < data.GetLength(1); j++)
+                    buf[j] = data[i, j];
+                b.Add(buf);
+            }
+            b.Sort((a, b) => (int)(a[col] - b[col]));
+            for (int i = 0; i < data.GetLength(0); i++) {
+                for (int j = 0; j < data.GetLength(1); j++)
+                    data[i, j] = b[i][j];
+            }
+            return data;
+        }
+
+        /// <summary>
+        /// 2次元配列のソート
+        /// </summary>
+        /// <param name="data">2D配列データ</param>
+        /// <param name="col">ソートカラム</param>
+        /// <returns>配列データ</returns>
+        public string[,] stringArray2Sort(string[,] data, int col = 0)
+        {
+            List<string[]> b = new();
+            col = Math.Min(data.GetLength(0) - 1, col);
+            for (int i = 0; i < data.GetLength(0); i++) {
+                string[] buf = new string[data.GetLength(1)];
+                for (int j = 0; j < data.GetLength(1); j++)
+                    buf[j] = data[i, j];
+                b.Add(buf);
+            }
+            b.Sort((a, b) => a[col].CompareTo(b[col]));
+            for (int i = 0; i < data.GetLength(0); i++) {
+                for (int j = 0; j < data.GetLength(1); j++)
+                    data[i, j] = b[i][j];
+            }
+            return data;
+        }
+
+
 
         //  ---  行列計算  ---
         //  https://qiita.com/sekky0816/items/8c73a7ec32fd9b040127
