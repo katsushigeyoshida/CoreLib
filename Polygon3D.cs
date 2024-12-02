@@ -7,6 +7,65 @@ namespace CoreLib
 {
     /// <summary>
     /// ポリゴンクラス
+    /// 
+    /// Polygon3D()                                         コンストラクタ
+    /// Polygon3D(List<Point3D> polyline)
+    /// Polygon3D(List<Point3D> polyline, FACE3D face)
+    /// Polygon3D(List<PointD> polyline, FACE3D face)
+    /// Polygon3D(Polyline3D polyline)
+    /// Polygon3D(Polygon3D polygon3)
+    /// 
+    /// bool IsMultiType()                                  線分以外の要素を含む
+    /// Polygon3D toCopy()                                  コピーの作成
+    /// List<PointD> toPointD()                             2Dの座標点リストに変換
+    /// List<Point3D> toPoint3D(double divAng = 0, bool close = false)          /// 3D座標リストの抽出
+    /// Point3D toPoint3D(int n)                            3D座標で指定位置の座標を抽出
+    /// List<Line3D> toLine3D()                             線分に変換
+    /// List<LineD> toLineD(FACE3D face)                    2D線分に変換
+    /// PolygonD toPolygonD(FACE3D face)                    2Dポリゴンに変換
+    /// Polyline3D toPolyline3D(int n = 0, bool loop = true)    指定位置で分割してポリラインに変換
+    /// Line3D getLine3D(int n)                             指定位置の線分を取得
+    /// Arc3D getArc3D(int n)                               指定位置の円弧の取得
+    /// int nearLine(Point3D pos)                           指定座標に最も近い線分位置を求める
+    /// int nearLine(PointD pos, FACE3D face)               2D座標で最も近い線分の位置を求める
+    /// Point3D nearPoint(PointD pos, int divideNo, FACE3D face)    指定点に最も近い線分または円弧の分割座標から最も近い2D座標を求める
+    /// Point3D nearPoint(Point3D pos, int divideNo)        指定点に最も近い線分または円弧の分割座標から最も近い3D座標を求める
+    /// int nearPosition(Point3D pos)                       指定点に最も近い座標点の位置
+    /// void changeStart(int st)                            座標リストの開始位置を変更する
+    /// void insert(int n, Point3D p)                       座標点の挿入
+    /// void translate(Point3D v)                           移動
+    /// void rotate(Point3D cp, double ang, FACE3D face)    回転
+    /// void offset(Point3D sp, Point3D ep)                 オフセット
+    /// void mirror(Point3D sp, Point3D ep)                 ミラー
+    /// void mirror(Line3D line, FACE3D face)               ミラー
+    /// Polyline3D divide(PointD pos, FACE3D face)          ポリゴンの分割(ポリラインに変換)
+    /// Polyline3D divide(Point3D pos)                      ポリゴンの分割(ポリラインに変換)
+    /// void scale(Point3D cp, double scale)                拡大縮小
+    /// void stretch(Point3D vec, Point3D pickPos, bool arc = false)    指定点に最も近い座標点を移動する
+    /// Point3D getNormal()                                 法線ベクトル
+    /// Point3D getNormalLine()                             多角形の法線
+    /// bool isClockwise(FACE3D face)                       座標点が平面上で時計回りかの判定(NG)
+    /// bool isCounterClockWise()                           多角形の回転方向(角度で判定)
+    /// bool isCounterClockWise(FACE3D face)                多角形の回転方向(角度で判定)
+    /// bool isCounterClockWise(List<PointD> plist)         多角形の回転方向(角度で判定)
+    /// double length()                                     ポリゴンの長さ(周長)
+    /// double length(Point3D pos)                          始点からの周長
+    /// void reverse()                                      座標点を逆順にする
+    /// void squeeze()                                      隣り合う座標が同じものを削除する
+    /// (List<Point3D> triangles, bool reverse) cnvTriangles(double divAng = 0) 多角形を三角形の集合に変換(座標リスト = 3座標 x 三角形の数)
+    /// (List<PointD>, int) cnvTriangles(List<PointD> pplist)   多角形を三角形の集合に変換(座標リスト=3座標x三角形の数)
+    /// bool triangleInsideChk(List<PointD> polygon3, List<PointD> plist)    多角形内に座標点の有無をチェック
+    /// bool insideChk(List<PointD> plist, PointD p)        多角形の内外判定
+    /// List<PointD> plistSqueeze(List<PointD> plist, List<PointD> clist)   座標リストから特定の座標を除外
+    /// Point3D intersection(PointD pos, FACE3D face)       2D座標で交点(垂点)を求める
+    /// Point3D intersection(Point3D p, PointD pos, FACE3D face)    2D平面から投影した位置で線分と交点を求める
+    /// Point3D intersection(Line3D l, PointD pos, FACE3D face) 2D平面から投影した位置で線分と交点を求める
+    /// Point3D intersection(Arc3D arc, PointD pos, FACE3D face)    2D平面から投影した位置で円弧と交点を求める
+    /// Point3D intersection(Polyline3D polyline, PointD pos, FACE3D face)  2D平面から投影した位置でポリラインと交点を求める
+    /// Point3D intersection(Polygon3D polygon3, PointD pos, FACE3D face)    2D平面から投影した位置でポリゴンとの交点を求める
+    /// 
+    /// 
+    /// 
     /// </summary>
     public class Polygon3D
     {
@@ -971,6 +1030,92 @@ namespace CoreLib
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// ポリゴン穴の存在するポリゴン枠を四角形で分割する
+        /// 穴付き面を四角形(QUADS)で分割
+        /// </summary>
+        /// <param name="polygons3">ポリゴンリスト</param>
+        /// <returns>四角形の座標リスト(QUADS)</returns>
+        public List<Point3D> holePlate2Quads(List<Polygon3D> polygons3)
+        {
+            Plane3D plane = new Plane3D(mCp, mU, mV);
+            List<PolygonD> polygons = new List<PolygonD>();
+            foreach (var polygon3 in polygons3) {
+                List<Point3D> plist = polygon3.toPoint3D();
+                polygons.Add(new PolygonD(plane.cnvPlaneLocation(plist)));
+            }
+            PolygonD polygon = new PolygonD(mPolygon);
+            List<PointD> quads = polygon.holePlate2Quads(polygons);
+            return plane.cnvPlaneLocation(quads);
+        }
+
+        /// <summary>
+        /// ポリゴンの側面データの作成
+        /// </summary>
+        /// <param name="t">厚み</param>
+        /// <returns>QUAD_STRIPデータ</returns>
+        public List<Point3D> sideFace2QuadStrip(double t)
+        {
+            Point3D v = mU.crossProduct(mV);
+            v.length(t);
+            return sideFace2QuadStrip(v);
+        }
+
+        /// <summary>
+        /// ポリゴンの側面データの作成
+        /// </summary>
+        /// <param name="vec">押出方向ベクトル</param>
+        /// <returns>QUAD_STRIPデータ</returns>
+        public List<Point3D> sideFace2QuadStrip(Point3D vec)
+        {
+            List<Point3D> plist = new List<Point3D>();
+            List<Point3D> polygonList = toPoint3D();
+            for (int i = 0; i < polygonList.Count; i++) {
+                plist.Add(polygonList[i]);
+                Point3D p = polygonList[i].toCopy();
+                p.translate(vec);
+                plist.Add(p);
+            }
+            plist.Add(plist[0].toCopy());
+            plist.Add(plist[1].toCopy());
+            return plist;
+        }
+
+        /// <summary>
+        /// ポリゴンの側面データの作成
+        /// </summary>
+        /// <param name="t">厚み</param>
+        /// <returns>QUADSデータ</returns>
+        public List<Point3D> sideFace2Quads(double t)
+        {
+            Point3D v = mU.crossProduct(mV);
+            v.length(t);
+            return sideFace2Quads(v);
+        }
+
+        /// <summary>
+        /// ポリゴンの側面データの作成
+        /// </summary>
+        /// <param name="vec">押出方向ベクトル</param>
+        /// <returns>QUADSデータ</returns>
+        public List<Point3D> sideFace2Quads(Point3D vec)
+        {
+            List<Point3D> plist = new List<Point3D>();
+            List<Point3D> polygonList = toPoint3D();
+            for (int i = 0; i < polygonList.Count; i++) {
+                plist.Add(polygonList[i]);
+                Point3D p = polygonList[i].toCopy();
+                p.translate(vec);
+                plist.Add(p);
+                int i1 = (i + 1) % polygonList.Count;
+                p = polygonList[i1].toCopy();
+                p.translate(vec);
+                plist.Add(p);
+                plist.Add(polygonList[i1]);
+            }
+            return plist;
         }
     }
 }

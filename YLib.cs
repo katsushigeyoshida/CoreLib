@@ -1598,12 +1598,16 @@ namespace CoreLib
         public string tab2space(string text, int tabsize = 4)
         {
             string buf = "";
+            string cbuf = "";
             foreach (var c in text) {
                 if (c == '\t') {
-                    int pos = getStrByteCount(buf);
+                    int pos = getStrByteCount(cbuf);
                     int tab = tabsize - pos % tabsize;
                     buf += new string(' ', tab);
                 } else {
+                    if (c == '\n' || c == '\r')
+                        cbuf = "";
+                    cbuf += c.ToString();
                     buf += c.ToString();
                 }
             }

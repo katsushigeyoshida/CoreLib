@@ -48,6 +48,7 @@ namespace CoreLib
     /// int nearCrossLinePos(PointD p)                  交点の中で最も近い点の線分位置
     /// ointD nearPeackPoint(PointD p)                  頂点の中で最も近い点の座標
     /// int nearPeackPos(PointD p)                      頂点の中で最も近い点の位置
+    /// List<PointD> holePlate2Quads(List<PolygonD> polygons)   中抜き面の作成
     /// 
     /// </summary>
     public class PolygonD
@@ -984,6 +985,133 @@ namespace CoreLib
                 }
             }
             return nearNo;
+        }
+
+        /// <summary>
+        /// ポリゴン穴の存在するポリゴン枠を四角形で分割する
+        /// 穴付き面を四角形(QUADS)で分割
+        /// </summary>
+        /// <param name="polygons">内部ポリゴンリスト</param>
+        /// <returns>四角座標データリスト</returns>
+        public List<PointD> holePlate2Quads(List<PolygonD> polygons)
+        {
+            List<PolygonD> polyList = new List<PolygonD>();
+            polyList.Add(new PolygonD(mPolygon));
+            foreach (var polygon in polygons) {
+                polyList.Add(polygon);
+            }
+            List<List<PointD>> ps = scanMultiPolygon(polyList);
+            return scanData2Quads(ps);
+        }
+
+        /// <summary>
+        /// ポリゴンで中抜きのポリゴンがある時四角形で分割した平面の作成
+        /// </summary>
+        /// <param name="scanPoints"></param>
+        /// <returns>四角形の座標リスト</returns>
+        private List<PointD> scanData2Quads(List<List<PointD>> scanPoints)
+        {
+            List<PointD> quads = new List<PointD>();
+            for (int i = 0; i < scanPoints.Count; i++) {
+                scanPoints[i].Sort((a, b) => scanCompare(a, b));
+                int step = scanPoints[i].Count / 2;
+                for (int j = 0; j < step; j += 2) {
+                    quads.Add(scanPoints[i][j + 0]);
+                    quads.Add(scanPoints[i][j + 1]);
+                    quads.Add(scanPoints[i][j + 1 + step]);
+                    quads.Add(scanPoints[i][j + 0 + step]);
+                }
+            }
+            return quads;
+        }
+
+        /// <summary>
+        /// 水平座標データの比較
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private int scanCompare(PointD a, PointD b)
+        {
+            if (Math.Abs(a.y - b.y) < mEps)
+                return Math.Sign(a.x - b.x);
+            return Math.Sign(a.y - b.y);
+        }
+
+        /// <summary>
+        /// ポリゴン内にポリゴンがある時四角形で分割する座標点を求める
+        /// 隣り合う水平線の座標点リスト
+        /// </summary>
+        /// <param name="polygons">ポリゴン</param>
+        /// <returns>座標点リスト</returns>
+        private List<List<PointD>> scanMultiPolygon(List<PolygonD> polygons)
+        {
+            //  全座標リスト → 水平線基準座標
+            List<PointD> points = new List<PointD>();
+            for (int i = 0; i < polygons.Count; i++)
+                points.AddRange(polygons[i].toPointList());
+            points.Sort((a, b) => Math.Sign(a.y - b.y));
+            for (int i = points.Count - 1; i > 0; i--) {
+                if (Math.Abs(points[i].y - points[i - 1].y) < mEps)
+                    points.RemoveAt(i);
+            }
+            //  全線分リスト
+            List<List<LineD>> linesList = new List<List<LineD>>();
+            for (int i = 0; i < polygons.Count; i++) {
+                List<LineD> lines = polygons[i].toLineList();
+                linesList.Add(lines);
+            }
+
+            //  水平線交点リスト
+            List<List<PointD>> scanPoints = new List<List<PointD>>();
+            for (int i = 0; i < points.Count - 1; i++) {
+                List<PointD> plist = new List<PointD>();
+                //  下部
+                for (int j = 0; j < linesList.Count; j++) {
+                    for (int k = 0; k < linesList[j].Count; k++) {
+                        if (Math.Abs(linesList[j][k].ps.y - linesList[j][k].pe.y) < mEps)
+                            continue;
+                        if (Math.Abs(points[i].y - linesList[j][k].pe.y) < mEps &&
+                            points[i].y < linesList[j][k].ps.y) {
+                            plist.Add(linesList[j][k].pe);
+                        } else if (Math.Abs(points[i].y - linesList[j][k].ps.y) < mEps &&
+                            points[i].y < linesList[j][k].pe.y) {
+                            plist.Add(linesList[j][k].ps);
+                        } else if ((Math.Abs(points[i].y - linesList[j][k].ps.y) > mEps) &&
+                            (Math.Abs(points[i].y - linesList[j][k].pe.y) > mEps) &&
+                                    linesList[j][k].intersectionHorizon(points[i])) {
+                            //  線分との交差点
+                            PointD p = linesList[j][k].intersectHorizonPoint(points[i]);
+                            if (linesList[j][k].onPoint(p))
+                                plist.Add(p);
+                        }
+                    }
+                }
+                //  上部
+                for (int j = 0; j < linesList.Count; j++) {
+                    for (int k = 0; k < linesList[j].Count; k++) {
+                        if (Math.Abs(linesList[j][k].ps.y - linesList[j][k].pe.y) < mEps)
+                            continue;
+                        if (Math.Abs(points[i + 1].y - linesList[j][k].pe.y) < mEps &&
+                            points[i + 1].y > linesList[j][k].ps.y) {
+                            plist.Add(linesList[j][k].pe);
+                        } else if (Math.Abs(points[i + 1].y - linesList[j][k].ps.y) < mEps &&
+                            points[i + 1].y > linesList[j][k].pe.y) {
+                            plist.Add(linesList[j][k].ps);
+                        } else if ((Math.Abs(points[i + 1].y - linesList[j][k].ps.y) > mEps) &&
+                            (Math.Abs(points[i + 1].y - linesList[j][k].pe.y) > mEps) &&
+                                    linesList[j][k].intersectionHorizon(points[i + 1])) {
+                            //  線分との交差点
+                            PointD p = linesList[j][k].intersectHorizonPoint(points[i + 1]);
+                            if (linesList[j][k].onPoint(p))
+                                plist.Add(p);
+                        }
+                    }
+                }
+                if (0 < plist.Count)
+                    scanPoints.Add(plist);
+            }
+            return scanPoints;
         }
     }
 }

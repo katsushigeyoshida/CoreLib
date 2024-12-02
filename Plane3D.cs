@@ -98,6 +98,19 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2D平面の座標リストを3D座標に変換
+        /// </summary>
+        /// <param name="plist">2D座標リスト</param>
+        /// <returns>3D座標リスト</returns>
+        public List<Point3D> cnvPlaneLocation(List<PointD> plist)
+        {
+            List<Point3D> p3list = new List<Point3D>();
+            foreach (PointD p in plist)
+                p3list.Add(cnvPlaneLocation(p));
+            return p3list;
+        }
+
+        /// <summary>
         /// 2D平面上の3D座標から平面座標に変換
         /// </summary>
         /// <param name="pos">3D座標</param>
@@ -123,6 +136,19 @@ namespace CoreLib
                 t.y = (p.z * mU.x - p.x * mU.z) / c;
             }
             return t;
+        }
+
+        /// <summary>
+        /// 2D平面上の3D座標リストを平面座標に変換
+        /// </summary>
+        /// <param name="p3list">3D座標リスト</param>
+        /// <returns>2D座標リスト</returns>
+        public List<PointD> cnvPlaneLocation(List<Point3D> p3list)
+        {
+            List<PointD> plist = new List<PointD>();
+            foreach (Point3D p in p3list)
+                plist.Add(cnvPlaneLocation(p));
+            return plist;
         }
 
         /// <summary>
