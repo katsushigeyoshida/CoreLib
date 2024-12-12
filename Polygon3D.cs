@@ -131,6 +131,8 @@ namespace CoreLib
         public Polygon3D(List<PointD> polyline, FACE3D face)
         {
             mPolygon = polyline.ConvertAll(p => p.toCopy());
+            if (mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
+                mPolygon.RemoveAt(mPolygon.Count - 1);
             mU = Point3D.getUVector(face);
             mV = Point3D.getVVector(face);
         }
@@ -142,6 +144,8 @@ namespace CoreLib
         public Polygon3D(Polyline3D polyline)
         {
             mPolygon = polyline.mPolyline.ConvertAll(p => p.toCopy());
+            if (mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
+                mPolygon.RemoveAt(mPolygon.Count - 1);
             mCp = polyline.mCp.toCopy();
             mU = polyline.mU.toCopy();
             mV = polyline.mV.toCopy();
@@ -387,6 +391,8 @@ namespace CoreLib
                 return line.intersection(l);
             } else {
                 int np = nearLine(pos, face);
+                if (np < 0)
+                    return new Point3D(double.NaN, double.NaN, double.NaN);
                 int np0 = ylib.mod(np - 1, mPolygon.Count);
                 int np1 = ylib.mod(np + 1, mPolygon.Count);
                 int np2 = ylib.mod(np + 2, mPolygon.Count);
