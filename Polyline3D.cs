@@ -6,6 +6,83 @@ namespace CoreLib
 {
     /// <summary>
     /// ポリラインクラス
+    /// Polyline3D()                                        コンストラクタ
+    /// Polyline3D(List<PointD> polyline, FACE3D face)
+    /// Polyline3D(PolylineD polyline, FACE3D face)
+    /// Polyline3D(PolylineD polyline, Point3D cp, Point3D u, Point3D v)
+    /// Polyline3D(List<Point3D> polyline, bool squeezeFlg = true)
+    /// Polyline3D(List<Point3D> polyline, FACE3D face)
+    /// Polyline3D(Polyline3D polyline)
+    /// Polyline3D(Polygon3D polygon)
+    /// Polyline3D(Line3D line, FACE3D face)
+    /// Polyline3D(Line3D line)
+    /// Polyline3D(Arc3D arc, double divAng, FACE3D face)
+    /// Polyline3D(Arc3D arc, double divAng)
+    /// (Point3D u, Point3D v) getFace(List<Point3D> plist) 座標点からポリラインの平面を求める
+    /// bool IsMultiType()                                  線分以外の要素を含むポリラインデータの確認
+    /// void setData(List<Point3D> polyline, bool squeezeFlg = true)    データを設定する
+    /// Polyline3D toCopy()                                 コピーを作成
+    /// List<Point3D> toPoint3D(double divAng = 0)          3D座標点リストに変換
+    /// Point3D toPoint3D(int n)                            3D座標で指定位置の座標を抽出
+    /// Point3D toFirstPoint3D()                            始点の座標
+    /// Point3D toLastPoint3D()                             終端の座標
+    /// List<PointD> toPointD()                             2Dの座標点リストに変換
+    /// List<PointD> toPointD(FACE3D face)                  2Dの座標点リストに変換
+    /// List<Line3D> toLine3D()                             線分リストに変換する
+    /// List<LineD> toLineD(FACE3D face)                    2D線分に変換
+    /// Line3D getLine3D(int n)                             指定位置の線分を取得
+    /// Arc3D getArc3D(int n)                               指定位置の円弧の取得
+    /// PolylineD toPolylineD(FACE3D face)                  2Dのポリラインに変換する
+    /// bool isParallel(Arc3D arc)                          平行確認
+    /// bool isParallel(Polyline3D polyline)                平行確認
+    /// bool isParallel(Polygon3D polygon)                  平行確認
+    /// void add(Point3D p)                                 座標点の追加
+    /// void add(Line3D l)                                  座標点の追加
+    /// void add(Arc3D arc, double divAng = Math.PI / 20)   座標点の追加
+    /// void add(List<Point3D> plist)                       座標点リストの追加
+    /// void add(List<Point3D> plist, PointD loc, FACE3D face, bool near)    指定点に近い方を始点として座標データを追加
+    /// void addFirst(Point3D p)                            座標点を先頭に追加
+    /// void addFirst(Arc3D arc, double divAng = Math.PI / 20)  円弧の座標リストを先頭に追加
+    /// void addFirst(List<Point3D> plist)                  座標リストを先頭に追加
+    /// void setPointList(List<Point3D> plist)              3D座標リストを値として設定
+    /// void insert(int n, Point3D p)                       座標点の挿入
+    /// void insert(int n, Polyline3D polyline)             ポリラインの挿入
+    /// void offset(double d)                               オフセット
+    /// void offset(Point3D sp, Point3D ep)                 オフセット
+    /// void translate(Point3D v)                           移動
+    /// void rotate(Point3D cp, double ang, FACE3D face)    回転
+    /// void trim(Point3D sp, Point3D ep)                   トリム
+    /// void mirror(Point3D sp, Point3D ep)                 ミラー
+    /// void mirror(Line3D l, FACE3D face)                  ミラー
+    /// void scale(Point3D cp, double scale)                拡大縮小
+    /// void stretch(Point3D vec, Point3D pickPos, bool arc = false)    指定点に最も近い座標点を移動する
+    /// List<Polyline3D> divide(PointD pos, FACE3D face)    2D分割(2D分割位置による分割)
+    /// List<Polyline3D> divide(Point3D pos)                分割
+    /// void connect(Polyline3D polyline)                   ポリライン同士の接続
+    /// void connect(Point3D pos, Polyline3D polyline, Point3D pos2, double divAng = 0)
+    /// void reverse()                                      座標順を反転する
+    /// void squeeze()                                      隣り合う座標が同じもの、角度が180°になるものを削除
+    /// void lastCrossCheck()                               始終線分交差をチェックしあれば削除
+    /// List<Point3D> squeeze(List<Point3D> polyline)       隣り合う座標が同じもの、角度が180°になるものを削除
+    /// double length()                                     ポリラインの長さ
+    /// double length(Point3D pos)                          始点からの周長
+    /// bool onPoint(Point3D pos)                           指定座標が線上の点かの判定
+    /// bool nearStart(Point3D loc)                         指定点が周長で終点よりも始点に近いかどうかの判定
+    /// int nearLine(Point3D pos)                           指定点に最も近い線分の位置を求める
+    /// int nearLine(PointD pos, FACE3D face)               2D座標で最も近い線分を抽出
+    /// Point3D nearPoint(PointD pos, int divideNo, FACE3D face)    指定点に最も近い線分または円弧の分割座標から最も近い2D座標
+    /// Point3D nearPoint(Point3D pos, int divideNo)        指定点に最も近い線分または円弧の分割座標から最も近い3D座標
+    /// int nearPosition(Point3D pos)                       線上の距離で指定点を超えない最も近い座標点の位置
+    /// Point3D intersection(PointD pos, FACE3D face)       2D座標で交点(垂点)を求める
+    /// Point3D intersection(Point3D p, PointD pos, FACE3D face)    2D平面から投影した位置で点と交点を求める
+    /// Point3D intersection(Line3D l, PointD pos, FACE3D face) 2D平面から投影した位置で線分と交点を求める
+    /// Point3D intersection(Arc3D arc, PointD pos, FACE3D face)    2D平面から投影した位置で円弧と交点を求める
+    /// Point3D intersection(Polyline3D polyline, PointD pos, FACE3D face)  2D平面から投影した位置でポリラインと交点を求める
+    /// List<Point3D> rotate2Quads(Line3D centerline, double divAngle, double sang, double eang)    回転体の作成(QUADS)
+    /// List<List<Point3D>> rotate2QuadStrip(Line3D centerline, double divAngle, double sang, double eang)  回転体の作成(QUAD_STRIP)
+    /// List<List<Point3D>> getCenterLineRotate(Line3D centerline, List<Point3D> outline, double divideAngle, double sa = 0, double ea = 2 * Math.PI)   回転体の外形線作成
+    /// 
+    /// 
     /// </summary>
     public class Polyline3D
     {
@@ -13,6 +90,7 @@ namespace CoreLib
         public Point3D mU = new Point3D(1, 0, 0);           //  平面のX軸の向き(単位ベクトル
         public Point3D mV = new Point3D(0, 1, 0);           //  平面のY軸の向き(単位ベクトル)
         public List<PointD> mPolyline;
+        public double mDivAngle = 0;
 
         private double mEps = 1E-8;
         private YLib ylib = new YLib();
@@ -924,7 +1002,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 指定座標が線上の点かの各線
+        /// 指定座標が線上の点かの判定
         /// </summary>
         /// <param name="pos">3D座標</param>
         /// <returns>線上</returns>
@@ -1178,6 +1256,85 @@ namespace CoreLib
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// 回転体の作成(QUADS)
+        /// </summary>
+        /// <param name="centerline">中心線</param>
+        /// <param name="divAngle">分割角度</param>
+        /// <param name="sang">開始角</param>
+        /// <param name="eang">終了角</param>
+        /// <returns>座標リスト(QUADS)</returns>
+        public List<Point3D> rotate2Quads(Line3D centerline, double divAngle, double sang, double eang)
+        {
+            List<Point3D> quads = new List<Point3D>();
+            List<Point3D> outLine = toPoint3D(mDivAngle);
+            List<List<Point3D>> outlines = getCenterLineRotate(centerline, outLine, divAngle, sang, eang);
+            for (int i = 0; i < outlines.Count - 1; i++) {
+                for (int j = 0; j < outlines[i].Count - 1; j++) {
+                    quads.Add(outlines[i][j]);
+                    quads.Add(outlines[i+1][j]);
+                    quads.Add(outlines[i+1][j+1]);
+                    quads.Add(outlines[i][j+1]);
+                }
+            }
+            return quads;
+        }
+
+        /// <summary>
+        /// 回転体の作成(QUAD_STRIP)
+        /// </summary>
+        /// <param name="centerline">中心線</param>
+        /// <param name="divAngle">分割角度</param>
+        /// <param name="sang">開始角</param>
+        /// <param name="eang">終了角</param>
+        /// <returns>座標リスト(QUAD_STRIP)</returns>
+        public List<List<Point3D>> rotate2QuadStrip(Line3D centerline, double divAngle, double sang, double eang)
+        {
+            List<List<Point3D>> quadStrip = new List<List<Point3D>>();
+            List<Point3D> outLine = toPoint3D(mDivAngle);
+            List<List<Point3D>> outlines = getCenterLineRotate(centerline, outLine, divAngle, sang, eang);
+            for (int i = 0; i < outlines.Count - 1; i++) {
+                List<Point3D> buf = new List<Point3D> ();
+                for (int j = 0; j < outlines[i].Count - 1; j++) {
+                    buf.Add(outlines[i][j]);
+                    buf.Add(outlines[i + 1][j]);
+                }
+                quadStrip.Add(buf);
+            }
+            return quadStrip;
+        }
+
+        /// <summary>
+        /// 回転体の外形線作成
+        /// </summary>
+        /// <param name="centerline">中心線</param>
+        /// <param name="outline">外形線</param>
+        /// <param name="divideAngle">分割角度</param>
+        /// <param name="sa">開始角</param>
+        /// <param name="ea">終了角</param>
+        /// <returns>外形線リスト</returns>
+        private List<List<Point3D>> getCenterLineRotate(Line3D centerline, List<Point3D> outline, double divideAngle, double sa = 0, double ea = 2 * Math.PI)
+        {
+            List<List<Point3D>> outLines = new List<List<Point3D>>();
+            Point3D cp = centerline.mSp;
+            Point3D cv = cp.vector(centerline.endPoint());    //  中心線ベクトル
+            cp.inverse();
+            outline.ForEach(p => p.add(cp));
+            cp.inverse();
+            double ang = sa;
+            double dang = divideAngle;
+            while ((ang - dang) < ea) {
+                if (ea < ang)
+                    ang = ea;
+                List<Point3D> plist = outline.ConvertAll(p => p.toCopy());
+                plist.ForEach(p => p.rotate(cv, ang));
+                plist.ForEach(p => p.add(cp));
+                outLines.Add(plist);
+                ang += dang;
+            }
+            return outLines;
         }
     }
 }
