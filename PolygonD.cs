@@ -54,6 +54,7 @@ namespace CoreLib
     public class PolygonD
     {
         public List<PointD> mPolygon;
+        public double mArcDivideAng = Math.PI / 12;         //  円弧の分割角度
         private double mEps = 1E-8;
 
         private YLib ylib = new YLib();
@@ -996,9 +997,10 @@ namespace CoreLib
         public List<PointD> holePlate2Quads(List<PolygonD> polygons)
         {
             List<PolygonD> polyList = new List<PolygonD>();
-            polyList.Add(new PolygonD(mPolygon));
+            PolygonD pg = new PolygonD(mPolygon);
+            polyList.Add(new PolygonD(pg.toPointList(mArcDivideAng)));
             foreach (var polygon in polygons) {
-                polyList.Add(polygon);
+                polyList.Add(new PolygonD(polygon.toPointList(mArcDivideAng)));
             }
             List<List<PointD>> ps = scanMultiPolygon(polyList);
             return scanData2Quads(ps);

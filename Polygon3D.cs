@@ -63,7 +63,11 @@ namespace CoreLib
     /// Point3D intersection(Arc3D arc, PointD pos, FACE3D face)    2D平面から投影した位置で円弧と交点を求める
     /// Point3D intersection(Polyline3D polyline, PointD pos, FACE3D face)  2D平面から投影した位置でポリラインと交点を求める
     /// Point3D intersection(Polygon3D polygon3, PointD pos, FACE3D face)    2D平面から投影した位置でポリゴンとの交点を求める
-    /// 
+    /// List<Point3D> holePlate2Quads(List<Polygon3D> polygons3)    リゴン穴の存在するポリゴン枠を四角形で分割する
+    /// List<Point3D> sideFace2QuadStrip(double t)          ポリゴンの側面データの作成
+    /// List<Point3D> sideFace2QuadStrip(Point3D vec)       ポリゴンの側面データの作成
+    /// List<Point3D> sideFace2Quads(double t)              ポリゴンの側面データの作成
+    /// List<Point3D> sideFace2Quads(Point3D vec)           ポリゴンの側面データの作成
     /// 
     /// 
     /// </summary>
@@ -73,6 +77,7 @@ namespace CoreLib
         public Point3D mU = new Point3D(1, 0, 0);           //  平面のX軸の向き(単位ベクトル
         public Point3D mV = new Point3D(0, 1, 0);           //  平面のY軸の向き(単位ベクトル)
         public List<PointD> mPolygon;
+        public double mArcDivideAng = Math.PI / 12;         //  円弧の分割角度
         private double mEps = 1E-8;
         private YLib ylib = new YLib();
 
@@ -1049,7 +1054,7 @@ namespace CoreLib
             Plane3D plane = new Plane3D(mCp, mU, mV);
             List<PolygonD> polygons = new List<PolygonD>();
             foreach (var polygon3 in polygons3) {
-                List<Point3D> plist = polygon3.toPoint3D();
+                List<Point3D> plist = polygon3.toPoint3D(mArcDivideAng);
                 polygons.Add(new PolygonD(plane.cnvPlaneLocation(plist)));
             }
             PolygonD polygon = new PolygonD(mPolygon);
@@ -1077,7 +1082,7 @@ namespace CoreLib
         public List<Point3D> sideFace2QuadStrip(Point3D vec)
         {
             List<Point3D> plist = new List<Point3D>();
-            List<Point3D> polygonList = toPoint3D();
+            List<Point3D> polygonList = toPoint3D(mArcDivideAng);
             for (int i = 0; i < polygonList.Count; i++) {
                 plist.Add(polygonList[i]);
                 Point3D p = polygonList[i].toCopy();
@@ -1109,7 +1114,7 @@ namespace CoreLib
         public List<Point3D> sideFace2Quads(Point3D vec)
         {
             List<Point3D> plist = new List<Point3D>();
-            List<Point3D> polygonList = toPoint3D();
+            List<Point3D> polygonList = toPoint3D(mArcDivideAng);
             for (int i = 0; i < polygonList.Count; i++) {
                 plist.Add(polygonList[i]);
                 Point3D p = polygonList[i].toCopy();
