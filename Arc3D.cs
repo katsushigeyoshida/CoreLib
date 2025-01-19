@@ -205,6 +205,36 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 円弧を含む座標点リストに変換
+        /// </summary>
+        /// <returns>座標点リスト</returns>
+        public List<Point3D> toArcPoint3D(double divAng = Math.PI / 20)
+        {
+            if ((Math.Abs(mV.x) < mEps || Math.Abs(mV.y) < mEps || Math.Abs(mV.z) < mEps) &&
+                (Math.Abs(mU.x) < mEps || Math.Abs(mU.y) < mEps || Math.Abs(mU.z) < mEps)) {
+                //  XY,YZ,ZX平面上の場合、3点円弧の座標点に変換
+                List<Point3D> plist = new List<Point3D>();
+                plist.Add(getPosition(mSa));
+                if (mOpenAngle < Math.PI) {
+                    plist.Add(getPosition(mSa + mOpenAngle / 2));
+                    plist[1].type = 1;
+                } else {
+                    plist.Add(getPosition(mSa + mOpenAngle / 4));
+                    plist[1].type = 1;
+                    plist.Add(getPosition(mSa + mOpenAngle / 2));
+                    plist.Add(getPosition(mSa + mOpenAngle * 3 / 4));
+                    plist[3].type = 1;
+
+                }
+                plist.Add(getPosition(mEa));
+                return plist;
+            } else {
+                //  軸平面から外れる場合、単なる座標点リストに変換
+                return toPoint3D(divAng);
+            }
+        }
+
+        /// <summary>
         /// ポリラインに変換する
         /// </summary>
         /// <param name="divAng"></param>
