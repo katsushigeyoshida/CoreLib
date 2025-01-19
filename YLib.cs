@@ -94,6 +94,8 @@ namespace CoreLib
     ///  List<string[]> getPattern(string html, string pattern)     正規表現を使ったHTMLからのパターン抽出
     ///  List<string[]> getPattern2(string html, string pattern)    正規表現を使ったHTMLからのパターン抽出
     ///  int getStrByteCount(string str)                            文字列の長さをbyte数で求める
+    ///  string stringUncode2String(string text)                    Unicodeの文字列を文字列に変換
+    ///  string tab2space(string text, int tabsize = 4)             タブをスペースに変換
     ///  
     ///  ---  ファイル・ディレクトリ関連  ------
     ///  bool makeDir(string path)                                  ファイルパスからディレクトリを作成
@@ -232,6 +234,9 @@ namespace CoreLib
     ///  double DM2deg(string dm)
     ///  double dm2deg(string dm)
     ///  double hm2hour(string hm)
+    /// 
+    /// ---  bit演算  -----
+    /// 
     /// 
     /// </summary>
     public class YLib
@@ -1587,6 +1592,28 @@ namespace CoreLib
         {
             Encoding sjisEnc = Encoding.GetEncoding("Shift_JIS");
             return sjisEnc.GetByteCount(str);
+        }
+
+        /// <summary>
+        /// Unicode文字コードの文字列を文字列に変換
+        /// "\\U+30A2\\U+30CE\\U+30FC\\U+30C9" → "アノード"
+        /// </summary>
+        /// <param name="text">Unicode文字列</param>
+        /// <returns>文字列</returns>
+        public string stringUncode2String(string text)
+        {
+            string buf = "";
+            for (int i = 0; i < text.Length; i++) {
+                if (i < text.Length - 6 && text.Substring(i,3) == "\\U+") {
+                    string str = text.Substring(i + 3, 4);
+                    int charCode = Convert.ToInt32(str, 16);
+                    char c = Convert.ToChar(charCode);
+                    buf += c.ToString();
+                    i += 6;
+                } else
+                    buf += text[i].ToString();
+            }
+            return buf;
         }
 
         /// <summary>
@@ -4437,5 +4464,122 @@ namespace CoreLib
             }
             return 0.0;
         }
+
+        //  ---  bit演算関連  ------
+
+        /// <summary>
+        /// OnBit位置の取得
+        /// </summary>
+        /// <param name="bytes">bitリスト</param>
+        /// <returns>On位置リスト</returns>
+        public List<int> getBitOnNo(byte[] bytes)
+        {
+            List<int> bitNoList = new List<int>();
+            for (int i = 0; i < bytes.Length * 8; i++) {
+                if (getBitOn(bytes, i))
+                    bitNoList.Add(i);
+            }
+            return bitNoList;
+        }
+
+        /// <summary>
+        /// Bit配列がすべて 0 かの確認
+        /// </summary>
+        /// <param name="bytes">bitリスト</param>
+        /// <returns></returns>
+        public bool IsEmpty(byte[] bytes)
+        {
+            for (int i = 0; i < bytes.Length; i++)
+                if (bytes[i] != 0)
+                    return false;
+            return true;
+        }
+
+        /// <summary>
+        /// 2つの　bitリストの and で同一のbitがあればtrue
+        /// </summary>
+        /// <param name="bytesA">bitリストA</param>
+        /// <param name="bytesB">bitリストB</param>
+        /// <returns>同一bitの有無</returns>
+        public bool bitAnd(byte[] bytesA, byte[] bytesB)
+        {
+            for (int i = 0; i < bytesA.Length; i++) {
+                byte b = (byte)(bytesA[i] & bytesB[i]);
+                if (b != 0)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Bitデータで指定位置のBitがOnかの確認
+        /// </summary>
+        /// <param name="bytes">Bitデータ</param>
+        /// <param name="n">Bit位置</param>
+        /// <returns>On</returns>
+        public bool getBitOn(byte[] bytes, int n)
+        {
+            byte lb = bytes[n / 8];
+            byte b = 1;
+            b <<= n % 8;
+            return 0 != (lb & b);
+        }
+
+        /// <summary>
+        /// すべてのBitをOn/Offにする
+        /// </summary>
+        /// <param name="bytes">Bitデータ</param>
+        /// <param name="off">0クリア</param>
+        public void bitOnAll(byte[] bytes, bool off = false)
+        {
+            for (int i = 0; i < bytes.Length; i++) {
+                if (off)
+                    bytes[i] = 0x00;
+                else
+                    bytes[i] = 0xff;
+            }
+        }
+
+        /// <summary>
+        /// BitデータをBit位置指定でOnにする
+        /// </summary>
+        /// <param name="bytes">Bitデータ</param>
+        /// <param name="n">Bit位置</param>
+        public void bitOn(byte[] bytes, int n)
+        {
+            byte b = 1;
+            b <<= n % 8;
+            bytes[n / 8] |= b;
+        }
+
+        /// <summary>
+        /// BitデータをBit位置指定でOffにする
+        /// </summary>
+        /// <param name="bytes">Bitデータ</param>
+        /// <param name="n">Bit位置</param>
+        public void bitOff(byte[] bytes, int n)
+        {
+            byte b = 1;
+            b <<= n % 8;
+            bytes[n / 8] &= (byte)~b;
+        }
+
+        /// <summary>
+        /// 16進文字列に変換
+        /// </summary>
+        /// <param name="bytes">Bitデータ</param>
+        /// <param name="start">開始位置</param>
+        /// <param name="size">サイズ</param>
+        /// <returns>16進文字列</returns>
+        public string binary2HexString(byte[] bytes, int start = 0, int size = 0)
+        {
+            string buf = "";
+            if (size == 0) size = bytes.Length;
+            for (int i = start; i < start + size && i < bytes.Length; i++) {
+                buf += string.Format("{0:X2} ", bytes[i]);
+            }
+            return buf;
+        }
+
     }
 }
