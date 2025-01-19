@@ -40,6 +40,7 @@ namespace CoreLib
         public List<(int code, string val)> mStringList = new List<(int code, string val)>();
         public List<PointD> mPoints = new List<PointD>();
 
+        private double mEps = 1e-8;
         private YLib ylib = new YLib();
 
         public DxfEntity(string name)
@@ -90,7 +91,31 @@ namespace CoreLib
                 arc.mSa = ylib.D2R(mDoubleList.Find(p => p.code == 50).val);
                 arc.mEa = ylib.D2R(mDoubleList.Find(p => p.code == 51).val);
             }
+            if (arc.mOpenAngle < 0)
+                arc.mEa += Math.PI * 2;
+            else if (arc.mOpenAngle < mEps)
+                arc.mEa = arc.mSa + Math.PI * 2;
             return arc;
+        }
+
+        /// <summary>
+        /// 楕円データに変換
+        /// </summary>
+        /// <returns></returns>
+        public EllipseD getEllipse()
+        {
+            EllipseD ellipse = new EllipseD();
+            ellipse.mCp = mPoints[0];
+            ellipse.mRx = mPoints[1].length();
+            ellipse.mRy = ellipse.mRx * mDoubleList.Find(p => p.code == 40).val;
+            ellipse.mSa = mDoubleList.Find(p => p.code == 41).val;
+            ellipse.mEa = mDoubleList.Find(p => p.code == 42).val;
+            ellipse.mRotate = mPoints[1].angle();
+            if (ellipse.mEa < ellipse.mSa)
+                ellipse.mEa += Math.PI * 2;
+            else if (ellipse.mOpenAngle < mEps)
+                ellipse.mEa = ellipse.mSa + Math.PI * 2;
+            return ellipse;
         }
 
         /// <summary>
@@ -118,7 +143,7 @@ namespace CoreLib
             text.mText = textCnv(buf);
             text.mPos = mPoints[0];
             text.mTextSize = mDoubleList.Find(p => p.code == 40).val;
-            text.mRotate = mDoubleList.Find(p => p.code == 50).val;
+            text.mRotate =　ylib.D2R(mDoubleList.Find(p => p.code == 50).val);
             if (mEntityName == "MTEXT") {
                 int aliment = mIntList.Find(p => p.code == 71).val;
                 int ha = aliment % 3;
@@ -143,6 +168,7 @@ namespace CoreLib
         /// <returns>コントロールコード除外文字列</returns>
         private string textCnv(string text)
         {
+            text = ylib.stringUncode2String(text);
             string buf = "";
             for (int i = 0; i < text.Length; i++) {
                 if (text[i] == '{' || text[i] == '}') {
@@ -161,6 +187,7 @@ namespace CoreLib
                     buf += text[i];
                 }
             }
+
             return buf;
         }
     }
@@ -271,9 +298,10 @@ namespace CoreLib
                         break;
                     case 39:
                     case 40:            //  円弧の半径/文字高さ
-                    case 41:            //  
-                    case 50:            //  開始角度
-                    case 51:            //  終了角度
+                    case 41:            //  楕円の開始角(RAD)
+                    case 42:            //  楕円の修了角(RAD)
+                    case 50:            //  円弧の開始角度(DEG)
+                    case 51:            //  円弧の終了角度(DEG)
                         dxfEntity.mDoubleList.Add((mDxfList[i].mGroupCode, ylib.string2double(mDxfList[i].mData)));
                         break;
                     case 70:
