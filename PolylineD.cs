@@ -242,7 +242,8 @@ namespace CoreLib
         /// <summary>
         /// 座標点リストに変換
         /// </summary>
-        /// <returns></returns>
+        /// <param name="divAng">分割角度</param>
+        /// <returns>座標点リスト</returns>
         public List<PointD> toPointList(double divAng = 0)
         {
             List<PointD> plist = new List<PointD>();
@@ -250,6 +251,7 @@ namespace CoreLib
                 int i1 = (i + 1) % mPolyline.Count;
                 int i2 = (i + 2) % mPolyline.Count;
                 if (0 < divAng && mPolyline[i1].type == 1) {
+                    //  補間が円弧の場合
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i1], mPolyline[i2]);
                     List<PointD> pplist = arc.toPointList(divAng);
                     if (!arc.mCcw)

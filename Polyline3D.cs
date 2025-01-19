@@ -319,6 +319,7 @@ namespace CoreLib
         /// <summary>
         /// 3D座標点リストに変換
         /// </summary>
+        /// <param name="divAng">分割角度</param>
         /// <returns>3D座標点リスト</returns>
         public List<Point3D> toPoint3D(double divAng = 0)
         {
