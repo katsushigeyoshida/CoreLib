@@ -110,12 +110,28 @@ namespace CoreLib
             ellipse.mRy = ellipse.mRx * mDoubleList.Find(p => p.code == 40).val;
             ellipse.mSa = mDoubleList.Find(p => p.code == 41).val;
             ellipse.mEa = mDoubleList.Find(p => p.code == 42).val;
+            ellipse.mSa = ellipseAngle(ellipse.mSa, ellipse.mRx, ellipse.mRy);
+            ellipse.mEa = ellipseAngle(ellipse.mEa, ellipse.mRx, ellipse.mRy);
             ellipse.mRotate = mPoints[1].angle();
             if (ellipse.mEa < ellipse.mSa)
                 ellipse.mEa += Math.PI * 2;
             else if (ellipse.mOpenAngle < mEps)
                 ellipse.mEa = ellipse.mSa + Math.PI * 2;
             return ellipse;
+        }
+
+        /// <summary>
+        /// 楕円の始終角を円の仮想点から楕円上の位置に角度を変換
+        /// </summary>
+        /// <param name="ang">円上の座標角度</param>
+        /// <param name="rx">X軸径</param>
+        /// <param name="ry">Y軸径</param>
+        /// <returns>楕円上の座標角度</returns>
+        private double ellipseAngle(double ang, double rx, double ry)
+        {
+            if (Math.Abs(ry) < mEps || Math.Abs(ang % (Math.PI / 2)) < mEps)
+                return ang;
+            return Math.Atan(Math.Tan(ang) * ry / rx);
         }
 
         /// <summary>
