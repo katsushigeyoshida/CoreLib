@@ -479,6 +479,10 @@ namespace CoreLib
             ArcD arc = new ArcD(sp, mp, ep);
             if (arc.mCp != null && 0 < arc.mR)
                 drawWArc(arc, close);
+            else {
+                drawWLine(sp, mp);
+                drawWLine(mp, ep);
+            }
         }
 
         /// <summary>
