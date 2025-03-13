@@ -1070,14 +1070,14 @@ namespace CoreLib
                         for (int j = 0; j < ll.Count; j++)
                             plist.AddRange(ll[j].intersection(arc));
                     } else {
-                        LineD l = new LineD(polyline[i], p1);
+                        LineD l1 = new LineD(polyline[i], p1);
                         LineD l2 = new LineD(p1, p2);
                         for (int j = 0; j < ll.Count; j++) {
-                            PointD pl1 = ll[j].intersection(l);
-                            if (pl1 != null && ll[j].onPoint(pl1) && l.onPoint(pl1))
+                            PointD pl1 = ll[j].intersection(l1);
+                            if (pl1 != null && ll[j].onPoint(pl1) && l1.onPoint(pl1))
                                 plist.Add(pl1);
                             PointD pl2 = ll[j].intersection(l2);
-                            if (pl2 != null && ll[j].onPoint(pl2) && l.onPoint(pl2))
+                            if (pl2 != null && ll[j].onPoint(pl2) && l2.onPoint(pl2))
                                 plist.Add(pl2);
                         }
                     }

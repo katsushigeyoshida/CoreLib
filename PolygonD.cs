@@ -996,15 +996,28 @@ namespace CoreLib
         /// <returns>四角座標データリスト</returns>
         public List<PointD> holePlate2Quads(List<PolygonD> polygons)
         {
+            List<List<PointD>> ps = scanMultiPolygon(arc2LinePolygon(polygons));
+            return scanData2Quads(ps);
+        }
+
+        /// <summary>
+        /// 円弧を含むポリゴンを線分だけのポリゴンに変換
+        /// </summary>
+        /// <param name="polygons">ポリゴンリスト</param>
+        /// <returns>ポリゴンリスト</returns>
+        private List<PolygonD> arc2LinePolygon(List<PolygonD> polygons)
+        {
             List<PolygonD> polyList = new List<PolygonD>();
             PolygonD pg = new PolygonD(mPolygon);
             polyList.Add(new PolygonD(pg.toPointList(mArcDivideAng)));
-            foreach (var polygon in polygons) {
-                polyList.Add(new PolygonD(polygon.toPointList(mArcDivideAng)));
+            if (polygons != null && 0 < polygons.Count) {
+                foreach (var polygon in polygons) {
+                    polyList.Add(new PolygonD(polygon.toPointList(mArcDivideAng)));
+                }
             }
-            List<List<PointD>> ps = scanMultiPolygon(polyList);
-            return scanData2Quads(ps);
+            return polyList;
         }
+
 
         /// <summary>
         /// ポリゴンで中抜きのポリゴンがある時四角形で分割した平面の作成

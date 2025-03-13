@@ -91,6 +91,7 @@ namespace CoreLib
         public Point3D mV = new Point3D(0, 1, 0);           //  平面のY軸の向き(単位ベクトル)
         public List<PointD> mPolyline;
         public double mDivAngle = 0;
+        public double mArcDivideAng = Math.PI / 12;         //  円弧の分割角度
 
         private double mEps = 1E-8;
         private YLib ylib = new YLib();
@@ -155,6 +156,18 @@ namespace CoreLib
         /// コンストラクタ
         /// </summary>
         /// <param name="polyline">座標点リスト</param>
+        /// <param name="divAng">円弧の分割角度</param>
+        /// <param name="squeezeFlg">重複チェック</param>
+        public Polyline3D(List<Point3D> polyline, double divAng, bool squeezeFlg = true)
+        {
+            setData(polyline, squeezeFlg);
+            mArcDivideAng = divAng;
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="polyline">座標点リスト</param>
         /// <param name="face">2D平面</param>
         public Polyline3D(List<Point3D> polyline, FACE3D face)
         {
@@ -179,10 +192,11 @@ namespace CoreLib
         /// コンストラクタ
         /// </summary>
         /// <param name="polygon">ポリゴン</param>
-        public Polyline3D(Polygon3D polygon)
+        public Polyline3D(Polygon3D polygon, bool close = true)
         {
             mPolyline = polygon.toPointD();
-            mPolyline.Add(mPolyline[0].toCopy());
+            if (close)
+                mPolyline.Add(mPolyline[0].toCopy());
             mCp = polygon.mCp.toCopy();
             mU = polygon.mU.toCopy();
             mV = polygon.mV.toCopy();
@@ -672,6 +686,7 @@ namespace CoreLib
         /// <param name="ep">終点</param>
         public void offset(Point3D sp, Point3D ep)
         {
+            if (sp.length(ep) < mEps) return;
             PointD spp = Point3D.cnvPlaneLocation(sp, mCp, mU, mV);
             PointD epp = Point3D.cnvPlaneLocation(ep, mCp, mU, mV);
             PolylineD polyline = new PolylineD(mPolyline);
@@ -1257,6 +1272,28 @@ namespace CoreLib
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// ポリラインの側面データの作成
+        /// </summary>
+        /// <param name="vec">押出ベクトル</param>
+        /// <returns>座標リスト(QUADS)</returns>
+        public List<Point3D> sideFace2Quads(Point3D vec)
+        {
+            List<Point3D> plist = new List<Point3D>();
+            List<Point3D> polylineList = toPoint3D(mArcDivideAng);
+            for (int i = 0; i < polylineList.Count -　1; i++) {
+                plist.Add(polylineList[i]);
+                Point3D p = polylineList[i].toCopy();
+                p.translate(vec);
+                plist.Add(p);
+                p = polylineList[i + 1].toCopy();
+                p.translate(vec);
+                plist.Add(p);
+                plist.Add(polylineList[i + 1]);
+            }
+            return plist;
         }
 
         /// <summary>

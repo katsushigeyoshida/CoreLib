@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CoreLib
 {
@@ -21,6 +22,7 @@ namespace CoreLib
     /// void reverse()                                                  始終点を反転する
     /// Point3D intersection(Point3D p)                                 点との交点(垂点)
     /// Point3D intersection(PointD pos, FACE3D face)                   表示面で点と交わる位置の線分状の座標
+    /// Point3D nearPoint(PointD pos, int divideNo, FACE3D face)        分割した座標点リストで最も近い座標
     /// bool onPoint(Point3D p)                                         線上の点かを判断
     /// void translate(Point3D v)                                       移動する
     /// void rotate(Point3D cp, double ang, FACE3D face)                回転
@@ -126,6 +128,18 @@ namespace CoreLib
                 plist.Add(mSp + v);
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 線分の分割リスト
+        /// </summary>
+        /// <param name="divNo">分割数</param>
+        /// <param name="face">分割面</param>
+        /// <returns>2D座標点リスト</returns>
+        public List<PointD> toPointD(int divNo, FACE3D face)
+        {
+            LineD line = toLineD(face);
+            return line.dividePoints(divNo);
         }
 
         /// <summary>
@@ -307,6 +321,20 @@ namespace CoreLib
             return null;
         }
 
+        /// <summary>
+        /// 分割した座標点リストで最も近い座標
+        /// </summary>
+        /// <param name="pos">2D座標</param>
+        /// <param name="divideNo">分割数</param>
+        /// <param name="face">分割面</param>
+        /// <returns>3D座標</returns>
+        public Point3D nearPoint(PointD pos, int divideNo, FACE3D face)
+        {
+            List<PointD> plist = toPointD(divideNo, face);
+            PointD p = plist.MinBy(p => p.length(pos));
+            return intersection(p, face);
+        }
+
 
         /// <summary>
         /// 線上の点かを判断
@@ -345,6 +373,18 @@ namespace CoreLib
             mSp.rotate(cp, ang, face);
             mV.rotate(ang, face);
         }
+
+        /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="ep"></param>
+        public void offset(Point3D sp, Point3D ep)
+        {
+            Point3D v = ep - sp;
+            offset(v);
+        }
+
 
         /// <summary>
         /// オフセット

@@ -687,10 +687,19 @@ namespace CoreLib
         /// <returns>座標点リスト</returns>
         public List<PointD> to3PointList()
         {
-            List<PointD> plist = new List<PointD>() {
-                startPoint(), middlePoint(), endPoint(),
-            };
-            plist[1].type = 1;
+            List<PointD> plist = new List<PointD>();
+            plist.Add(startPoint());
+            if (mOpenAngle < Math.PI) {
+                plist.Add(middlePoint());
+                plist[1].type = 1;
+            } else {
+                plist.Add(getPoint(mSa + mOpenAngle / 4));
+                plist[1].type = 1;
+                plist.Add(getPoint(mSa + mOpenAngle / 2));
+                plist.Add(getPoint(mSa + mOpenAngle * 3 / 4));
+                plist[3].type = 1;
+            }
+            plist.Add(endPoint());
             return plist;
         }
 

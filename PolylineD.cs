@@ -253,12 +253,17 @@ namespace CoreLib
                 if (0 < divAng && mPolyline[i1].type == 1) {
                     //  補間が円弧の場合
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i1], mPolyline[i2]);
-                    List<PointD> pplist = arc.toPointList(divAng);
-                    if (!arc.mCcw)
-                        pplist.Reverse();
-                    pplist.RemoveAt(pplist.Count - 1);
-                    plist.AddRange(pplist);
-                    i++;
+                    if (arc.mCp == null) {
+                        plist.Add(mPolyline[i].toCopy());
+                    } else {
+                        List<PointD> pplist = arc.toPointList(divAng);
+                        if (!arc.mCcw)
+                            pplist.Reverse();
+                        pplist.RemoveAt(pplist.Count - 1);
+                        plist.AddRange(pplist);
+                        i++;
+
+                    }
                 } else {
                     plist.Add(mPolyline[i].toCopy());
                 }
@@ -542,6 +547,7 @@ namespace CoreLib
                 //  線分か円弧化の区別
                 if (i < mPolyline.Count - 1 && mPolyline[i].type == 0 && mPolyline[i + 1].type == 0) {
                     line1 = new LineD(mPolyline[i], mPolyline[i + 1]);
+                    if (line1.length() < mEps) continue;
                     line1.offset(dis);
                 } else if (i < mPolyline.Count - 2 && mPolyline[i].type == 0 && mPolyline[i + 1].type == 1) {
                     arc1 = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
@@ -1106,12 +1112,15 @@ namespace CoreLib
             for (int i = 0; i < mPolyline.Count - 1; i++) {
                 if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
                     ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
-                    plist.AddRange(polygon.intersection(arc));
-                    i++;
-                } else {    //  線分
-                    LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
-                    plist.AddRange(polygon.intersection(line));
+                    if (arc.mCp != null) {
+                        plist.AddRange(polygon.intersection(arc));
+                        i++;
+                        continue;
+                    }
                 }
+                //  線分
+                LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
+                    plist.AddRange(polygon.intersection(line));
             }
             return plist;
         }
@@ -1127,11 +1136,11 @@ namespace CoreLib
             (int np, PointD pos) = nearCrossPos(p, false);
             if (mPolyline[np + 1].type == 1) {
                 ArcD arc = new ArcD(mPolyline[np], mPolyline[np + 1], mPolyline[np + 2]);
-                return arc.nearPoints(p, divideNo);
-            } else {
-                LineD line = new LineD(mPolyline[np], mPolyline[np + 1]);
-                return line.nearPoint(p, divideNo);
+                if (arc.mCp != null)
+                    return arc.nearPoints(p, divideNo);
             }
+            LineD line = new LineD(mPolyline[np], mPolyline[np + 1]);
+            return line.nearPoint(p, divideNo);
         }
 
         /// <summary>
@@ -1244,20 +1253,24 @@ namespace CoreLib
             PointD ip;
             if (0 < i && mPolyline[i].type == 1 && i < mPolyline.Count - 1) {    //  円弧
                 ArcD arc = new ArcD(mPolyline[i - 1], mPolyline[i], mPolyline[i + 1]);
-                ip = arc.intersection(p);
-                if (on && !arc.onPoint(ip))
-                    ip = null;
+                if (arc.mCp != null) {
+                    ip = arc.intersection(p);
+                    if (!on || arc.onPoint(ip))
+                        return ip;
+                }
             } else if (mPolyline[i + 1].type == 1 && i < mPolyline.Count - 2) {    //  円弧
                 ArcD arc = new ArcD(mPolyline[i], mPolyline[i + 1], mPolyline[i + 2]);
-                ip = arc.intersection(p);
-                if (on && !arc.onPoint(ip))
-                    ip = null;
-            } else {    //  線分
-                LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
-                ip = line.intersection(p);
-                if (on && !line.onPoint(ip))
-                    ip = null;
+                if (arc.mCp != null) {
+                    ip = arc.intersection(p);
+                    if (!on || arc.onPoint(ip))
+                        return ip;
+                }
             }
+            //  線分
+            LineD line = new LineD(mPolyline[i], mPolyline[i + 1]);
+            ip = line.intersection(p);
+            if (on && !line.onPoint(ip))
+                ip = null;
             return ip;
         }
 

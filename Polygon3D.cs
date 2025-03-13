@@ -9,10 +9,10 @@ namespace CoreLib
     /// ポリゴンクラス
     /// 
     /// Polygon3D()                                         コンストラクタ
-    /// Polygon3D(List<Point3D> polyline)
-    /// Polygon3D(List<Point3D> polyline, FACE3D face)
-    /// Polygon3D(List<PointD> polyline, FACE3D face)
-    /// Polygon3D(Polyline3D polyline)
+    /// Polygon3D(List<Point3D> plist)
+    /// Polygon3D(List<Point3D> plist, FACE3D face)
+    /// Polygon3D(List<PointD> plist, FACE3D face)
+    /// Polygon3D(Polyline3D plist)
     /// Polygon3D(Polygon3D polygon3)
     /// 
     /// bool IsMultiType()                                  線分以外の要素を含む
@@ -61,7 +61,7 @@ namespace CoreLib
     /// Point3D intersection(Point3D p, PointD pos, FACE3D face)    2D平面から投影した位置で線分と交点を求める
     /// Point3D intersection(Line3D l, PointD pos, FACE3D face) 2D平面から投影した位置で線分と交点を求める
     /// Point3D intersection(Arc3D arc, PointD pos, FACE3D face)    2D平面から投影した位置で円弧と交点を求める
-    /// Point3D intersection(Polyline3D polyline, PointD pos, FACE3D face)  2D平面から投影した位置でポリラインと交点を求める
+    /// Point3D intersection(Polyline3D plist, PointD pos, FACE3D face)  2D平面から投影した位置でポリラインと交点を求める
     /// Point3D intersection(Polygon3D polygon3, PointD pos, FACE3D face)    2D平面から投影した位置でポリゴンとの交点を求める
     /// List<Point3D> holePlate2Quads(List<Polygon3D> polygons3)    リゴン穴の存在するポリゴン枠を四角形で分割する
     /// List<Point3D> sideFace2QuadStrip(double t)          ポリゴンの側面データの作成
@@ -93,37 +93,37 @@ namespace CoreLib
         /// コンストラクタ
         /// </summary>
         /// <param name="plist">3D座標点リスト</param>
-        public Polygon3D(List<Point3D> polyline)
+        public Polygon3D(List<Point3D> plist)
         {
-            if (2 < polyline.Count) {
-                mCp = polyline[0];
-                mU = polyline[1] - polyline[0];
+            if (2 < plist.Count) {
+                mCp = plist[0];
+                mU = plist[1] - plist[0];
                 mU.unit();
-                Line3D l = new Line3D(polyline[0], polyline[1]);
-                Point3D ip = l.intersection(polyline[2]);
-                mV = polyline[2] - ip;
+                Line3D l = new Line3D(plist[0], plist[1]);
+                Point3D ip = l.intersection(plist[2]);
+                mV = plist[2] - ip;
                 mV.unit();
-            } else if (2 == polyline.Count) {
-                mCp = polyline[0];
-                mU = polyline[1] - polyline[0];
+            } else if (2 == plist.Count) {
+                mCp = plist[0];
+                mU = plist[1] - plist[0];
                 mU.unit();
                 mV = mU.toCopy();
                 mV.rotate(new Point3D(), Math.PI / 2, FACE3D.XY);
             }
             mPolygon = new List<PointD>();
-            for (int i = 0; i < polyline.Count; i++) {
-                mPolygon.Add(Point3D.cnvPlaneLocation(polyline[i], mCp, mU, mV));
+            for (int i = 0; i < plist.Count; i++) {
+                mPolygon.Add(Point3D.cnvPlaneLocation(plist[i], mCp, mU, mV));
             }
         }
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="polyline"></param>
+        /// <param name="plist"></param>
         /// <param name="face"></param>
-        public Polygon3D(List<Point3D> polyline, FACE3D face)
+        public Polygon3D(List<Point3D> plist, FACE3D face)
         {
-            mPolygon = polyline.ConvertAll(p => p.toPoint(face));
+            mPolygon = plist.ConvertAll(p => p.toPoint(face));
             mU = Point3D.getUVector(face);
             mV = Point3D.getVVector(face);
         }
@@ -133,11 +133,23 @@ namespace CoreLib
         /// </summary>
         /// <param name="plist">2D座標点リスト</param>
         /// <param name="face">2D平面</param>
-        public Polygon3D(List<PointD> polyline, FACE3D face)
+        public Polygon3D(List<PointD> plist, FACE3D face)
         {
-            mPolygon = polyline.ConvertAll(p => p.toCopy());
+            mPolygon = plist.ConvertAll(p => p.toCopy());
             if (mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
                 mPolygon.RemoveAt(mPolygon.Count - 1);
+            mU = Point3D.getUVector(face);
+            mV = Point3D.getVVector(face);
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="polygon">2Dポリゴン</param>
+        /// <param name="face">2D平面</param>
+        public Polygon3D(PolygonD polygon, FACE3D face)
+        {
+            mPolygon = polygon.mPolygon.ConvertAll(p => p.toCopy());
             mU = Point3D.getUVector(face);
             mV = Point3D.getVVector(face);
         }
@@ -291,10 +303,14 @@ namespace CoreLib
         /// 指定位置で分割してポリラインに変換
         /// </summary>
         /// <param name="n">分割位置</param>
+        /// <param name="loop">閉領域</param>
+        /// <param name="divang">円弧の分割角度</param>
         /// <returns>ポリライン</returns>
-        public Polyline3D toPolyline3D(int n = 0, bool loop = true)
+        public Polyline3D toPolyline3D(int n = 0, bool loop = true, double divang = -1)
         {
             Polyline3D polyline = new Polyline3D();
+            if (0 <= divang)
+                mArcDivideAng = divang;
             polyline.mCp = mCp.toCopy();
             polyline.mU = mU.toCopy();
             polyline.mV = mV.toCopy();
@@ -1053,9 +1069,11 @@ namespace CoreLib
         {
             Plane3D plane = new Plane3D(mCp, mU, mV);
             List<PolygonD> polygons = new List<PolygonD>();
-            foreach (var polygon3 in polygons3) {
-                List<Point3D> plist = polygon3.toPoint3D(mArcDivideAng);
-                polygons.Add(new PolygonD(plane.cnvPlaneLocation(plist)));
+            if (polygons3 != null && 0 < polygons3.Count) {
+                foreach (var polygon3 in polygons3) {
+                    List<Point3D> plist = polygon3.toPoint3D(mArcDivideAng);
+                    polygons.Add(new PolygonD(plane.cnvPlaneLocation(plist)));
+                }
             }
             PolygonD polygon = new PolygonD(mPolygon);
             List<PointD> quads = polygon.holePlate2Quads(polygons);

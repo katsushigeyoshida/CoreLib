@@ -234,7 +234,7 @@ namespace CoreLib
             } else if (C < B && A < B) {
                 t.x = (p.z * v.y - p.y * v.z) / b;
                 t.y = (p.y * u.z - p.z * u.y) / b;
-            } else if (A < C && B < C) {
+            } else {
                 t.x = (p.x * v.z - p.z * v.x) / c;
                 t.y = (p.z * u.x - p.x * u.z) / c;
             }
