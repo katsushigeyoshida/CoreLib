@@ -935,18 +935,29 @@ namespace CoreLib
         /// <param name="pos">参照位置</param>
         /// <param name="face">2D平面</param>
         /// <returns>交点</returns>
-        public Point3D intersection(Point3D p, PointD pos, FACE3D face)
+        public Point3D intersection(Point3D point, PointD pos, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            Line3D line = getLine3D(n);
-            if (line != null) {
-                return line.intersection(p.toPoint(face), face);
-            } else {
-                Arc3D arc2 = getArc3D(n);
-                if (arc2 != null)
-                    return arc2.intersection(p.toPoint(face), face);
+            List<Point3D[]> lineArcList = toLineArcList();
+            double dis = double.MaxValue;
+            Point3D p = null;
+            Point3D ip = null;
+            foreach (Point3D[] lineArc in lineArcList) {
+                if (lineArc.Length == 2) {
+                    Line3D line = new Line3D(lineArc[0], lineArc[1]);
+                    ip = line.intersection(point, face);
+                } else if (lineArc.Length == 3) {
+                    Arc3D arc = new Arc3D(lineArc[0], lineArc[1], lineArc[2]);
+                    ip = arc.intersection(point, face);
+                } else
+                    continue;
+                if (ip == null) continue;
+                double d = ip.toPoint(face).length(pos);
+                if (d < dis) {
+                    p = ip.toCopy();
+                    dis = d;
+                }
             }
-            return null;
+            return p;
         }
 
         /// <summary>
@@ -958,16 +969,27 @@ namespace CoreLib
         /// <returns>交点</returns>
         public Point3D intersection(Line3D l, PointD pos, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            Line3D line = getLine3D(n);
-            if (line != null) {
-                return line.intersection(l, face);
-            } else {
-                Arc3D arc2 = getArc3D(n);
-                if (arc2 != null)
-                    return arc2.intersection(l, pos, face);
+            List<Point3D[]> lineArcList = toLineArcList();
+            double dis = double.MaxValue;
+            Point3D p = null;
+            Point3D ip = null;
+            foreach (Point3D[] lineArc in lineArcList) {
+                if (lineArc.Length == 2) {
+                    Line3D line = new Line3D(lineArc[0], lineArc[1]);
+                    ip = line.intersection(l, face);
+                } else if (lineArc.Length == 3) {
+                    Arc3D arc = new Arc3D(lineArc[0], lineArc[1], lineArc[2]);
+                    ip = arc.intersection(l, pos, face);
+                } else
+                    continue;
+                if (ip == null) continue;
+                double d = ip.toPoint(face).length(pos);
+                if (d < dis) {
+                    p = ip.toCopy();
+                    dis = d;
+                }
             }
-            return null;
+            return p;
         }
 
         /// <summary>
@@ -979,16 +1001,27 @@ namespace CoreLib
         /// <returns>交点</returns>
         public Point3D intersection(Arc3D arc, PointD pos, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            Line3D line = getLine3D(n);
-            if (line != null) {
-                return arc.intersection(line, pos, face);
-            } else {
-                Arc3D arc2 = getArc3D(n);
-                if (arc2 != null)
-                    return arc2.intersection(arc, pos, face);
+            List<Point3D[]> lineArcList = toLineArcList();
+            double dis = double.MaxValue;
+            Point3D p = null;
+            Point3D ip = null;
+            foreach (Point3D[] lineArc in lineArcList) {
+                if (lineArc.Length == 2) {
+                    Line3D line = new Line3D(lineArc[0], lineArc[1]);
+                    ip = arc.intersection(line, pos, face);
+                } else if (lineArc.Length == 3) {
+                    Arc3D a = new Arc3D(lineArc[0], lineArc[1], lineArc[2]);
+                    ip = arc.intersection(a, pos, face);
+                } else
+                    continue;
+                if (ip == null) continue;
+                double d = ip.toPoint(face).length(pos);
+                if (d < dis) {
+                    p = ip.toCopy();
+                    dis = d;
+                }
             }
-            return null;
+            return p;
         }
 
         /// <summary>
@@ -1000,29 +1033,27 @@ namespace CoreLib
         /// <returns>交点</returns>
         public Point3D intersection(Polyline3D polyline, PointD pos, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            int n2 = polyline.nearLine(pos, face);
-            Line3D line = getLine3D(n);
-            Line3D line2 = polyline.getLine3D(n2);
-            if (line != null) {
-                if (line2 != null) {
-                    return line.intersection(line2, face);
-                } else {
-                    Arc3D arc = polyline.getArc3D(n2);
-                    if (arc != null)
-                        return arc.intersection(line, pos, face);
-                }
-            } else {
-                Arc3D arc = getArc3D(n);
-                if (line2 != null) {
-                    return arc.intersection(line2, pos, face);
-                } else {
-                    Arc3D arc2 = polyline.getArc3D(n2);
-                    if (arc2 != null)
-                        return arc.intersection(arc2, pos, face);
+            List<Point3D[]> lineArcList = toLineArcList();
+            double dis = double.MaxValue;
+            Point3D p = null;
+            Point3D ip = null;
+            foreach (Point3D[] lineArc in lineArcList) {
+                if (lineArc.Length == 2) {
+                    Line3D line = new Line3D(lineArc[0], lineArc[1]);
+                    ip = polyline.intersection(line, pos, face);
+                } else if (lineArc.Length == 3) {
+                    Arc3D a = new Arc3D(lineArc[0], lineArc[1], lineArc[2]);
+                    ip = polyline.intersection(a, pos, face);
+                } else
+                    continue;
+                if (ip == null) continue;
+                double d = ip.toPoint(face).length(pos);
+                if (d < dis) {
+                    p = ip.toCopy();
+                    dis = d;
                 }
             }
-            return null;
+            return p;
         }
 
         /// <summary>
@@ -1034,29 +1065,27 @@ namespace CoreLib
         /// <returns>交点</returns>
         public Point3D intersection(Polygon3D polygon, PointD pos, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            int n2 = polygon.nearLine(pos, face);
-            Line3D line = getLine3D(n);
-            Line3D line2 = polygon.getLine3D(n2);
-            if (line != null) {
-                if (line2 != null) {
-                    return line.intersection(line2, face);
-                } else {
-                    Arc3D arc = polygon.getArc3D(n2);
-                    if (arc != null)
-                        return arc.intersection(line, pos, face);
-                }
-            } else {
-                Arc3D arc = getArc3D(n);
-                if (line2 != null) {
-                    return arc.intersection(line2, pos, face);
-                } else {
-                    Arc3D arc2 = polygon.getArc3D(n2);
-                    if (arc2 != null)
-                        return arc.intersection(arc2, pos, face);
+            List<Point3D[]> lineArcList = toLineArcList();
+            double dis = double.MaxValue;
+            Point3D p = null;
+            Point3D ip = null;
+            foreach (Point3D[] lineArc in lineArcList) {
+                if (lineArc.Length == 2) {
+                    Line3D line = new Line3D(lineArc[0], lineArc[1]);
+                    ip = polygon.intersection(line, pos, face);
+                } else if (lineArc.Length == 3) {
+                    Arc3D a = new Arc3D(lineArc[0], lineArc[1], lineArc[2]);
+                    ip = polygon.intersection(a, pos, face);
+                } else
+                    continue;
+                if (ip == null) continue;
+                double d = ip.toPoint(face).length(pos);
+                if (d < dis) {
+                    p = ip.toCopy();
+                    dis = d;
                 }
             }
-            return null;
+            return p;
         }
 
         /// <summary>
@@ -1145,6 +1174,36 @@ namespace CoreLib
                 plist.Add(polygonList[i1]);
             }
             return plist;
+        }
+
+        /// <summary>
+        /// 線分と円弧の座標配列リストに変換
+        /// 座標配列数 = 2 線分、 = 3 円弧
+        /// </summary>
+        /// <returns>座標配列リスト</returns>
+        public List<Point3D[]> toLineArcList()
+        {
+            List<Point3D[]> lineArcList = new List<Point3D[]>();
+            Point3D[] buf;
+            int st = 0;
+            if (mPolygon[0].type == 1) st = 1;
+            for (int i = st; i < mPolygon.Count; i++) {
+                int i1 = (i + 1) % mPolygon.Count;
+                if (mPolygon[i1].type == 1) {
+                    buf = new Point3D[3];
+                    buf[0] = toPoint3D(i);
+                    buf[1] = toPoint3D(i1);
+                    buf[2] = toPoint3D((i + 2) % mPolygon.Count);
+                    i++;
+                } else if (mPolygon[i1].type == 0) {
+                    buf = new Point3D[2];
+                    buf[0] = toPoint3D(i);
+                    buf[1] = toPoint3D(i1);
+                } else
+                    continue;
+                lineArcList.Add(buf);
+            }
+            return lineArcList;
         }
     }
 }
