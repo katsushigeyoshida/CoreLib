@@ -547,7 +547,7 @@ namespace CoreLib
         {
             EllipseD elli = toEllipseD(face);
             LineD l = line.toLineD(face);
-            List<PointD> iplist = elli.intersection(l);
+            List<PointD> iplist = elli.intersection(l, false);
             PointD ip = iplist.MinBy(p => p.length(pos));
             if (ip != null)
                 return intersection(ip, face);
