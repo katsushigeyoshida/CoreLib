@@ -26,6 +26,8 @@ namespace CoreLib
         public double z = 0.0;
         public int type = 0;         //  座標の種別 0: 点座標 1:円弧の中点座標
 
+        private double eps = 1e-8;
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
@@ -71,10 +73,12 @@ namespace CoreLib
 
         /// <summary>
         /// コンストラクタ(PointD → Poin3D)
+        /// 2D座標を指定面の3D座標に変換
         /// </summary>
         /// <param name="p">2D座標</param>
         /// <param face="p">面の向き(0:XY 1:YZ 2:ZX 3:YX 4:ZY 5:XZ)</param>
-        public Point3D(PointD p, FACE3D face = FACE3D.XY, double len = 0)
+        /// <param name="offset">面からの距離</param>
+        public Point3D(PointD p, FACE3D face = FACE3D.XY, double offset = 0)
         {
             if (p == null) {
                 x = double.NaN; y = double.NaN; z = double.NaN;
@@ -83,43 +87,43 @@ namespace CoreLib
             if (face == FACE3D.XY) {
                 x = p.x;
                 y = p.y;
-                z = len;
+                z = offset;
             } else if (face == FACE3D.YZ) {
                 y = p.x;
                 z = p.y;
-                x = len;
+                x = offset;
             } else if(face == FACE3D.ZX) {
                 z = p.x;
                 x = p.y;
-                y = len;
+                y = offset;
             } else if (face == FACE3D.YX) {
                 y = p.x;
                 x = p.y;
-                z = len;
+                z = offset;
             } else if (face == FACE3D.ZY) {
                 z = p.x;
                 y = p.y;
-                x = len;
+                x = offset;
             } else if (face == FACE3D.XZ) {
                 x = p.x;
                 z = p.y;
-                y = len;
+                y = offset;
             } else if (face == FACE3D.FRONT) {
                 x = p.x;
                 y = p.y;
-                z = len;
+                z = offset;
             } else if (face == FACE3D.TOP) {
                 x = p.x;
                 z = -p.y;
-                y = len;
+                y = offset;
             } else if (face == FACE3D.RIGHT) {
                 z = -p.x;
                 y = p.y;
-                x = len;
+                x = offset;
             } else {
                 x = p.x;
                 y = p.y;
-                z = len;
+                z = offset;
             }
         }
 
@@ -194,6 +198,34 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 2つのベクトルで指定される平面
+        /// </summary>
+        /// <param name="v">ベクトル</param>
+        /// <returns>平面</returns>
+        public FACE3D getFace(Point3D v)
+        {
+            if (Math.Abs(z) < eps && Math.Abs(v.z) < eps) return FACE3D.XY;
+            if (Math.Abs(y) < eps && Math.Abs(v.y) < eps) return FACE3D.ZX;
+            if (Math.Abs(x) < eps && Math.Abs(v.x) < eps) return FACE3D.YZ;
+            return FACE3D.NON;
+        }
+
+        /// <summary>
+        /// 2つのベクトルで指定される平面が指定の平面と同じか
+        /// </summary>
+        /// <param name="v">ベクトル</param>
+        /// <param name="face">平面</param>
+        /// <returns>同平面</returns>
+        public bool isFace(Point3D v, FACE3D face)
+        {
+            FACE3D vf = getFace(v);
+            if (vf == FACE3D.XY && (face == FACE3D.XY || face == FACE3D.YX || face == FACE3D.FRONT)) return true;
+            if (vf == FACE3D.ZX && (face == FACE3D.ZX || face == FACE3D.XZ || face == FACE3D.TOP)) return true;
+            if (vf == FACE3D.YZ && (face == FACE3D.YZ || face == FACE3D.ZY || face == FACE3D.RIGHT)) return true;
+            return false;
+        }
+
+        /// <summary>
         /// 2D平面の座標を3D座標に変換
         ///  P(u,v) = c + u * x + v * y
         /// </summary>
@@ -228,10 +260,10 @@ namespace CoreLib
             double A = Math.Abs(a);
             double B = Math.Abs(b);
             double C = Math.Abs(c);
-            if (B < A && C < A) {
+            if (C <= A && B <= A) {
                 t.x = (p.y * v.x - p.x * v.y) / a;
                 t.y = (p.x * u.y - p.y * u.x) / a;
-            } else if (C < B && A < B) {
+            } else if (C <= B && A <= B) {
                 t.x = (p.z * v.y - p.y * v.z) / b;
                 t.y = (p.y * u.z - p.z * u.y) / b;
             } else {
