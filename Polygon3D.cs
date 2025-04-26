@@ -143,6 +143,21 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンストラクタ(円弧のポリゴン化)
+        /// </summary>
+        /// <param name="arc"></param>
+        public Polygon3D(Arc3D arc)
+        {
+            Polyline3D polyline = arc.toPolyline3D();
+            mPolygon = polyline.mPolyline.ConvertAll(p => p.toCopy());
+            if (mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
+                mPolygon.RemoveAt(mPolygon.Count - 1);
+            mCp = polyline.mCp.toCopy();
+            mU = polyline.mU.toCopy();
+            mV = polyline.mV.toCopy();
+        }
+
+        /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="polygon">2Dポリゴン</param>
@@ -155,7 +170,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// コンストラクタ
+        /// コンストラクタ(ポリラインのポリゴン化)
         /// </summary>
         /// <param name="polyline">3Dポリライン</param>
         public Polygon3D(Polyline3D polyline)
@@ -565,8 +580,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="line">基準線</param>
         /// <param name="face">2D平面</param>
-        public void mirror(Line3D line, FACE3D face)
+        public void mirror(Line3D l, FACE3D face)
         {
+            Line3D line = l.toCopy();
             mCp = line.mirror(mCp, face);
             line.mSp = new Point3D();
             mU = line.mirror(mU,face);
@@ -1093,8 +1109,9 @@ namespace CoreLib
         /// 穴付き面を四角形(QUADS)で分割
         /// </summary>
         /// <param name="polygons3">ポリゴンリスト</param>
-        /// <returns>四角形の座標リスト(QUADS)</returns>
-        public List<Point3D> holePlate2Quads(List<Polygon3D> polygons3)
+        /// <param name="triangle">三角形出力</param>
+        /// <returns>四/三角形の座標リスト(QUADS/TRIANGLRS)</returns>
+        public List<Point3D> holePlate2Quads(List<Polygon3D> polygons3, bool triangle = false)
         {
             Plane3D plane = new Plane3D(mCp, mU, mV);
             List<PolygonD> polygons = new List<PolygonD>();
@@ -1105,7 +1122,7 @@ namespace CoreLib
                 }
             }
             PolygonD polygon = new PolygonD(mPolygon);
-            List<PointD> quads = polygon.holePlate2Quads(polygons);
+            List<PointD> quads = polygon.holePlate2Quads(polygons, triangle);
             return plane.cnvPlaneLocation(quads);
         }
 

@@ -993,11 +993,15 @@ namespace CoreLib
         /// 穴付き面を四角形(QUADS)で分割
         /// </summary>
         /// <param name="polygons">内部ポリゴンリスト</param>
-        /// <returns>四角座標データリスト</returns>
-        public List<PointD> holePlate2Quads(List<PolygonD> polygons)
+        /// <param name="triangle">三角形出力</param>
+        /// <returns>四/三角形の座標リスト(QUADS/TRIANGLRS)</returns>
+        public List<PointD> holePlate2Quads(List<PolygonD> polygons, bool triangle = false)
         {
             List<List<PointD>> ps = scanMultiPolygon(arc2LinePolygon(polygons));
-            return scanData2Quads(ps);
+            if (triangle)
+                return scanData2Triangles(ps);
+            else
+                return scanData2Quads(ps);
         }
 
         /// <summary>
@@ -1020,9 +1024,10 @@ namespace CoreLib
 
 
         /// <summary>
-        /// ポリゴンで中抜きのポリゴンがある時四角形で分割した平面の作成
+        /// ポリゴンで中抜きのポリゴンがある四角形で分割した平面の作成
+        /// 水平スキャンした座標リストから四角形座標リスト(QUADS)を作成
         /// </summary>
-        /// <param name="scanPoints"></param>
+        /// <param name="scanPoints">水平スキャン座標リスト</param>
         /// <returns>四角形の座標リスト</returns>
         private List<PointD> scanData2Quads(List<List<PointD>> scanPoints)
         {
@@ -1035,6 +1040,34 @@ namespace CoreLib
                     quads.Add(scanPoints[i][j + 1]);
                     quads.Add(scanPoints[i][j + 1 + step]);
                     quads.Add(scanPoints[i][j + 0 + step]);
+                }
+            }
+            return quads;
+        }
+
+        /// <summary>
+        /// ポリゴンで中抜きのポリゴンがある三角形で分割した平面の作成
+        /// 水平スキャンした座標リストから三角形座標リスト(TRIANGLES)を作成
+        /// </summary>
+        /// <param name="scanPoints">水平スキャン座標リスト</param>
+        /// <returns>三角形の座標リスト</returns>
+        private List<PointD> scanData2Triangles(List<List<PointD>> scanPoints)
+        {
+            List<PointD> quads = new List<PointD>();
+            for (int i = 0; i < scanPoints.Count; i++) {
+                scanPoints[i].Sort((a, b) => scanCompare(a, b));
+                int step = scanPoints[i].Count / 2;
+                for (int j = 0; j < step; j += 2) {
+                    if (mEps < scanPoints[i][j + 1 + step].length(scanPoints[i][j + 0 + step])) {
+                        quads.Add(scanPoints[i][j + 0]);
+                        quads.Add(scanPoints[i][j + 1 + step]);
+                        quads.Add(scanPoints[i][j + 0 + step]);
+                    }
+                    if (mEps < scanPoints[i][j + 0].length(scanPoints[i][j + 1])) {
+                        quads.Add(scanPoints[i][j + 0]);
+                        quads.Add(scanPoints[i][j + 1]);
+                        quads.Add(scanPoints[i][j + 1 + step]);
+                    }
                 }
             }
             return quads;

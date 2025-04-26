@@ -144,6 +144,25 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 円弧の平面
+        /// </summary>
+        /// <returns>2D平面</returns>
+        public FACE3D getFace()
+        {
+            return mU.getFace(mV);
+        }
+
+        /// <summary>
+        /// 平面が指定の平面と同じか
+        /// </summary>
+        /// <param name="face">平面</param>
+        /// <returns>同平面</returns>
+        public bool isFace(FACE3D face)
+        {
+            return mU.isFace(mV, face);
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         /// <returns>Arc3D</returns>
@@ -184,7 +203,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="divAng">分割角度</param>
         /// <returns>座標点リスト</returns>
-        public List<Point3D> toPoint3D(double divAng = Math.PI / 20)
+        public List<Point3D> toPoint3D(double divAng = 0)
         {
             List<Point3D> plist = new List<Point3D>();
             plist.Add(getPosition(mSa));
@@ -272,6 +291,19 @@ namespace CoreLib
         public List<PointD> toPointD(int divNo, FACE3D face)
         {
             return toPointD((mEa - mSa) / divNo, face);
+        }
+
+        /// <summary>
+        /// 2D円弧に変換
+        /// </summary>
+        /// <param name="face"></param>
+        /// <returns></returns>
+        public ArcD toArcD(FACE3D face)
+        {
+            PointD sp = startPosition().toPoint(face);
+            PointD mp = midPosition().toPoint(face);
+            PointD ep = endPosition().toPoint(face);
+            return new ArcD(sp, mp, ep);
         }
 
         /// <summary>
@@ -563,12 +595,24 @@ namespace CoreLib
         /// <returns>交点</returns>
         public Point3D intersection(Arc3D arc, PointD pos, FACE3D face)
         {
-            EllipseD elli = toEllipseD(face);
-            EllipseD elli2 = arc.toEllipseD(face);
-            List<PointD> iplist = elli.intersection(elli2);
-            PointD ip = iplist.MinBy(p => p.length(pos));
-            if (ip != null)
-                return intersection(ip, face);
+            FACE3D face0 = getFace();
+            FACE3D face1 = arc.getFace();
+            if (face0 != FACE3D.NON && isFace(face1)) {
+                ArcD arc0 = toArcD(face);
+                ArcD arc1 = arc.toArcD(face);
+                List<PointD> iplist = arc0.intersection(arc1);
+                PointD ip = iplist.MinBy(p => p.length(pos));
+                if (ip != null)
+                    return intersection(ip, face);
+            } else {
+                EllipseD elli = toEllipseD(face);
+                EllipseD elli2 = arc.toEllipseD(face);
+                List<PointD> iplist = elli.intersection(elli2);
+                PointD ip = iplist.MinBy(p => p.length(pos));
+                if (ip != null)
+                    return intersection(ip, face);
+            }
+
             return null;
         }
 

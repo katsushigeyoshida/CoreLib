@@ -68,7 +68,7 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ(カンマセパレートで６個の数値文字列を変換))
         /// </summary>
-        /// <param name="buf">文字列</param>
+        /// <param name="buf">文字列(min.x,min.y,min.z,max.xmax.y,max.z)</param>
         public Box3D(string buf)
         {
             string[] data = buf.Split(new char[] { ',' });

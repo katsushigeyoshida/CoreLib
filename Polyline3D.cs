@@ -340,7 +340,7 @@ namespace CoreLib
         public List<Point3D> toPoint3D(double divAng = 0, FACE3D face = FACE3D.NON)
         {
             List<Point3D> plist = new List<Point3D>();
-            if (divAng == 0 && !mU.isFace(mV, face)) divAng = mArcDivideAng;
+            if (face != FACE3D.NON && !mU.isFace(mV, face)) divAng = mArcDivideAng;
             List<PointD> polyline = new PolylineD(mPolyline).toPointList(divAng);
             for (int i = 0; i < polyline.Count; i++)
                 plist.Add(Point3D.cnvPlaneLocation(polyline[i], mCp, mU, mV));
@@ -755,10 +755,11 @@ namespace CoreLib
         /// <param name="face">2D平面</param>
         public void mirror(Line3D l, FACE3D face)
         {
-            mCp = l.mirror(mCp, face);
-            l.mSp = new Point3D();
-            mU = l.mirror(mU, face);
-            mV = l.mirror(mV, face);
+            Line3D line = l.toCopy();
+            mCp = line.mirror(mCp, face);
+            line.mSp = new Point3D();
+            mU = line.mirror(mU, face);
+            mV = line.mirror(mV, face);
         }
 
         /// <summary>
@@ -992,7 +993,8 @@ namespace CoreLib
                     polyline.RemoveAt(i);
             }
             for (int i = polyline.Count - 2; i > 0; i--) {
-                if ((Math.PI - polyline[i].angle(polyline[i - 1], polyline[i + 1])) < mEps)
+                if (polyline[i - 1].type == 0 && polyline[i].type == 0 && polyline[i + 1].type == 0 &&
+                    (Math.PI - polyline[i].angle(polyline[i - 1], polyline[i + 1])) < mEps)
                     polyline.RemoveAt(i);
             }
             return polyline;
@@ -1030,6 +1032,67 @@ namespace CoreLib
             PointD loc2d = Point3D.cnvPlaneLocation(pos, mCp, mU, mV);
             PolylineD polyline = new PolylineD(mPolyline);
             return polyline.onPoint(loc2d);
+        }
+
+        /// <summary>
+        /// 円弧か?
+        /// </summary>
+        /// <returns>円弧</returns>
+        public bool isArc()
+        {
+            if (mPolyline.Count == 3 && mPolyline[1].type == 1)
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 円弧に変換
+        /// </summary>
+        /// <returns>円弧</returns>
+        public Arc3D toArc()
+        {
+            return new Arc3D(toPoint3D(0), toPoint3D(1), toPoint3D(2));
+        }
+
+        /// <summary>
+        /// 線分か?
+        /// </summary>
+        /// <returns>線分</returns>
+        public bool isLine()
+        {
+            if (mPolyline.Count == 2 && mPolyline[0].type == 0 && mPolyline[1].type == 0)
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 線分に変換
+        /// </summary>
+        /// <returns>線分</returns>
+        public Line3D toLine()
+        {
+            return new Line3D(toPoint3D(0), toPoint3D(1));
+        }
+
+        /// <summary>
+        /// 平面の取得
+        /// </summary>
+        /// <returns>2D平面</returns>
+        public FACE3D getFace()
+        {
+            return mU.getFace(mV);
+        }
+
+        /// <summary>
+        /// 平面が指定の平面と同じか
+        /// </summary>
+        /// <param name="face">指定平面</param>
+        /// <returns>同じ</returns>
+        public bool isFace(FACE3D face)
+        {
+            return mU.isFace(mV, face);
         }
 
         /// <summary>

@@ -463,6 +463,24 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 指定位置のポリラインの線分または円弧を取り出す
+        /// </summary>
+        /// <param name="n">位置</param>
+        /// <returns>座標リスト(数 2:line/3:arc)</returns>
+        public List<PointD> getLineArc(int n)
+        {
+            List<PointD> points = null;
+            if (n < mPolyline.Count - 2 && mPolyline[n + 1].type == 1) {
+                points = new List<PointD>() { mPolyline[n], mPolyline[n + 1], mPolyline[n + 2] };
+            } else if (0 < n && n < mPolyline.Count - 1 && mPolyline[n].type == 1) {
+                points = new List<PointD>() { mPolyline[n - 1], mPolyline[n], mPolyline[n + 1] };
+            } else if (n < mPolyline.Count - 1) {
+                points = new List<PointD>() { mPolyline[n], mPolyline[n + 1] };
+            }
+            return points;
+        }
+
+        /// <summary>
         /// 指定位置に最も近い線分を取り出す
         /// </summary>
         /// <param name="p">指定座標</param>
@@ -1195,12 +1213,10 @@ namespace CoreLib
                 ip = interSection(i, p);
                 if (ip != null) {
                     double len = ip.length(p);
-                    if (len < length) {
-                        if (len < length - mEps) {
-                            length = len;
-                            nearNo = i;
-                            pos = ip;
-                        }
+                    if (len < length - mEps) {
+                        length = len;
+                        nearNo = i;
+                        pos = ip;
                     }
                     if (mPolyline[i + 1].type == 1)
                         i++;
