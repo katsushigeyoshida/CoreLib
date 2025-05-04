@@ -55,6 +55,7 @@ namespace CoreLib
     {
         public List<PointD> mPolygon;
         public double mArcDivideAng = Math.PI / 12;         //  円弧の分割角度
+        public double mMinDivCount = 4;                     //  最小分割数
         private double mEps = 1E-8;
 
         private YLib ylib = new YLib();
@@ -137,8 +138,9 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 座標点リストに変換
+        /// 座標点リストに変換(分割角度を指定して分割数は４(mMinDivCount)以上とする)
         /// </summary>
+        /// <param name="divAng">分割角度</param>
         /// <returns>座標点リスト</returns>
         public List<PointD> toPointList(double divAng = 0)
         {
@@ -148,6 +150,8 @@ namespace CoreLib
                     //  円弧を座標点リストに変換
                     ArcD arc = new ArcD(mPolygon[i], mPolygon[(i + 1) % mPolygon.Count], mPolygon[(i + 2) % mPolygon.Count]);
                     if (arc.mCp != null) {
+                        int divCount = (int)(arc.mOpenAngle / divAng);
+                        if (divCount < mMinDivCount) divAng = arc.mOpenAngle / mMinDivCount;
                         List<PointD> pplist = arc.toPointList(divAng);
                         if (!arc.mCcw)
                             pplist.Reverse();

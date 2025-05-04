@@ -145,10 +145,10 @@ namespace CoreLib
         /// <summary>
         /// コンストラクタ(円弧のポリゴン化)
         /// </summary>
-        /// <param name="arc"></param>
+        /// <param name="arc">円弧</param>
         public Polygon3D(Arc3D arc)
         {
-            Polyline3D polyline = arc.toPolyline3D();
+            Polyline3D polyline = arc.toPolyline3D(0);
             mPolygon = polyline.mPolyline.ConvertAll(p => p.toCopy());
             if (mPolygon[0].length(mPolygon[mPolygon.Count - 1]) < mEps)
                 mPolygon.RemoveAt(mPolygon.Count - 1);
