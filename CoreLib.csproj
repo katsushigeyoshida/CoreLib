@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <Folder Include="Dialog\" />
+    <Folder Include="Script\" />
   </ItemGroup>
 
 </Project>
