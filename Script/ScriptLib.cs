@@ -1,5 +1,4 @@
-﻿using CoreLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Windows;
@@ -35,22 +34,6 @@ namespace CoreLib
     ///     table                                           表編集(Win版)
     ///     imageView                                       イメージ表示(Win版)
     ///     
-    /// 
-    /// スクリプト関数の引数や戻り値を処理する関数(KParse)
-    ///     bool isStringArray(Token args)                      配列に文字列名があるかの確認
-    ///     string[]? cnvArrayString(Token args)                配列をstring[]に変換
-    /// 　　double[]? cnvArrayDouble(Token args)                配列をdouble[]に変換
-    /// 　　double[,]? cnvArrayDouble2(Token args)              配列変数を実数配列double[,]に変換
-    /// 　　List<double> cnvListDouble(Token arg)               配列データを実数のリストに変換
-    /// 　　int getMaxArray(string arrayName)                   配列の最大インデックスを求める
-    /// 　　(string name, int index) getArrayNo(string arrayName)   配列から配列名と配列のインデックスを取得
-    /// 　　(string name, int? row, int? col) getArrayNo2(string arrayName) 2次元配列から配列名と行と列を取り出す
-    /// 　　(string name, int no) getArrayName(Token args)      変数名または配列名と配列の次元の取得
-    ///                                                     
-    /// 　　void setReturnArray(Token[] src, Token dest)        配列戻り値に設定
-    /// 　　void setReturnArray(double[,] src, Token dest)      2D配列の戻り値に設定
-    /// 　　void setReturnArray(double[] src, Token dest)        配列の戻り値に設定
-    /// 　　void setReturnArray(string[] src, Token dest)       文字列配列を戻り値に設定
     /// 
     /// </summary>
     public class ScriptLib
@@ -148,7 +131,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 現在の時刻の取得
+        /// 現在の時刻の取得(dateTimeNow() / dateTimeNow(No) / dateTimeNow(Form))
         /// 0:"HH:mm:ss 1:yyyy/MM/dd HH:mm:ss 2:yyyy/MM/dd
         /// 3:HH時mm分ss秒 4:yyyy年MM月dd日 HH時mm分ss秒 5:yyyy年MM月dd日
         /// </summary>
@@ -156,30 +139,30 @@ namespace CoreLib
         /// <returns></returns>
         public Token dateTimeNow(List<Token> args)
         {
-            if (args == null || args.Count == 0) 
-                return new Token("", TokenType.ERROR);
-            int format = ylib.intParse(mScript.getValueToken(args[0].mValue).mValue);
-            if (format == 1) {
-                string datetime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
-                return new Token(datetime, TokenType.STRING);
-            } else if (format == 2) {
-                string datetime = DateTime.Now.ToString("yyyy/MM/dd");
-                return new Token(datetime, TokenType.STRING);
-            } else if (format == 3) {
-                string datetime = DateTime.Now.ToString("HH時mm分ss秒");
-                return new Token(datetime, TokenType.STRING);
-            } else if (format == 4) {
-                string datetime = DateTime.Now.ToString("yyyy年MM月dd日 HH時mm分ss秒");
-                return new Token(datetime, TokenType.STRING);
-            } else if (format == 5) {
-                string datetime = DateTime.Now.ToString("yyyy年MM月dd日");
-                return new Token(datetime, TokenType.STRING);
-            } else {
-                string datetime = DateTime.Now.ToString("HH:mm:ss");
+            string datetime = "";
+            if (args == null || args.Count == 0) {
+                datetime = DateTime.Now.ToString("HH:mm:ss");
                 return new Token(datetime, TokenType.STRING);
             }
+            string form = args[0].getValue();
+            int formNo = ylib.intParse(form);
+            if (formNo == 1) {
+                datetime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+            } else if (formNo == 2) {
+                datetime = DateTime.Now.ToString("yyyy/MM/dd");
+            } else if (formNo == 3) {
+                datetime = DateTime.Now.ToString("HH時mm分ss秒");
+            } else if (formNo == 4) {
+                datetime = DateTime.Now.ToString("yyyy年MM月dd日 HH時mm分ss秒");
+            } else if (formNo == 5) {
+                datetime = DateTime.Now.ToString("yyyy年MM月dd日");
+            } else if (formNo == 0) {
+                datetime = DateTime.Now.ToString(form);
+            } else {
+                datetime = DateTime.Now.ToString("HH:mm:ss");
+            }
+            return new Token(datetime, TokenType.STRING);
         }
-
 
         /// <summary>
         /// メニューを出して項目を選択(inner function)

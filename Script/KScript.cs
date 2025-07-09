@@ -1,5 +1,4 @@
-﻿using CoreLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -82,7 +81,7 @@ namespace CoreLib
     /// setArrayData(List<Token> tokens)                        配列の一括値設定(a[] = { 1,2,1,3} )
     /// setArrayData(Token name, Token data)                    1次元配列の一括値設定(a[] = { 1,2,1,3} )
     /// setArrayData2(Token name, Token data)                   2次元配列の一括値設定(a[,] = { { 1,2,1,3}, {2,3,4,5} } )
-    /// getFuncArray(Token src, Token dest, KScript script)      プログラム関数の戻り値受け渡し
+    /// getFuncArray(Token src, Token dest, KScript script)     プログラム関数の戻り値受け渡し
     /// setFuncArray(Token src, Token dest, KScript script)     プログラム関数の引数受け渡し
     /// 
     /// outputString(string str = "\n")                         表示出力(callbackを呼び出す)
@@ -111,20 +110,24 @@ namespace CoreLib
         public List<Token> mTokenList = new List<Token>();              //  字句解析リスト
         public List<List<Token>> mStatements = new List<List<Token>>(); //  構文リスト
 
-        //public GraphView mGraph;                                //  グラフィックWindow
-        //public Plot3DView mPlot3D;                              //  3DグラフィックWindow
         public KParse mParse = new KParse();                    //  構文解析
         public KLexer mLexer = new KLexer();                    //  字句解析
         public Variable mVar = new Variable();                  //  変数管理
         public ScriptLib mScriptLib;                            //  内部関数ライブラリ
-        //public FuncPlot mFuncPlot;                              //  グラフィック関数
-        //public FuncPlot3D mFuncPlot3D;                          //  3Dグラフィック関数
         public FuncArray mFuncArray;                            //  配列関数
+        public FuncString mFuncString;                          //  文字列関数
+        public FuncFile mFuncFile;                              //  ファイル関連関数
         public string mScriptFolder = "";                       //  プログラムファイルフォルダ
+
+        public List<string> mOutFuncList;                       //  外部関数名リスト(xxx. まで)
+        public Token mOutFuncName;                              //  外部関数名(受渡用)
+        public Token mOutFuncArg;                               //  外部関数引数(受渡用)
+        public Token mOutFuncRet;                               //  外部関数返値(受渡用)
 
         public bool mDebug = false;
         public bool mDebugConsole = false;
 
+        public Action funcCallback;                             //  functionのコールバック関数
         public Action printCallback;                            //  print文のコールバック関数
         public ControlData mControlData;                        //  データを参照渡しするため
 
@@ -138,10 +141,10 @@ namespace CoreLib
         /// </summary>
         public KScript()
         {
-            mScriptLib  = new ScriptLib(this);
-            mFuncArray  = new FuncArray(this);
-            //mFuncPlot   = new FuncPlot(this);
-            //mFuncPlot3D = new FuncPlot3D(this);
+            mScriptLib   = new ScriptLib(this);
+            mFuncArray   = new FuncArray(this);
+            mFuncString  = new FuncString(this);
+            mFuncFile    = new FuncFile(this);
             mControlData = new ControlData();
         }
 
@@ -154,12 +157,10 @@ namespace CoreLib
         {
             //  初期化
             clear();
-            //mGraph  = graph;
-            //mPlot3D = plot3D;
-            mScriptLib  = new ScriptLib(this);
-            mFuncArray  = new FuncArray(this);
-            //mFuncPlot   = new FuncPlot(this);
-            //mFuncPlot3D = new FuncPlot3D(this);
+            mScriptLib   = new ScriptLib(this);
+            mFuncArray   = new FuncArray(this);
+            mFuncString  = new FuncString(this);
+            mFuncFile    = new FuncFile(this);
             mControlData = new ControlData();
 
             //  字句解析・ スクリプト登録(mFunctionsに登録)
@@ -180,8 +181,6 @@ namespace CoreLib
             mVar.mGlobalVar.Clear();
             mVar.mVariables.Clear();
             mParse.mFunctions.Clear();
-            //if (mGraph != null) mGraph.Close();
-            //if (mPlot3D != null) mPlot3D.Close();
         }
 
         /// <summary>
@@ -606,15 +605,22 @@ namespace CoreLib
         {
             try {
                 Token result;
-                //if (0 == funcName.mValue.IndexOf("plot.") || 0 == funcName.mValue.IndexOf("graph."))
-                //    result = mFuncPlot.plotFunc(funcName, arg, ret);    //  グラフィック関数
-                //else if (0 == funcName.mValue.IndexOf("plot3D."))
-                //    result = mFuncPlot3D.plotFunc(funcName, arg, ret);  //  3Dグラフィック関数
-                //else 
-                if (0 == funcName.mValue.IndexOf("array."))
+                if (mOutFuncList != null &&
+                    0 <= mOutFuncList.FindIndex(p => funcName.mValue.IndexOf(p) == 0)) {
+                    //  外部関数
+                    mOutFuncName = funcName;                            //  関数名
+                    mOutFuncArg = arg;                                  //  引数
+                    funcCallback();                                     //  関数実行
+                    return mOutFuncRet;                                 //  返値
+                } else if (0 == funcName.mValue.IndexOf("array."))
                     result = mFuncArray.function(funcName, arg, ret);   //  配列関数
+                else if (0 == funcName.mValue.IndexOf("string."))
+                    result = mFuncString.function(funcName, arg, ret);  //  文字列関数
+                else if (0 == funcName.mValue.IndexOf("file."))
+                    result = mFuncFile.function(funcName, arg, ret);    //  ファイル関連関数
                 else
                     result = mScriptLib.innerFunc(funcName, arg, ret);  //  内部関数処理
+
                 if (result != null && result.mType != TokenType.ERROR)
                     return result;
 
@@ -797,8 +803,10 @@ namespace CoreLib
                 if (token == null || token.mType == TokenType.ERROR)
                     return new Token("", TokenType.ERROR);
                 if (buf == null && token.mType != TokenType.ASSIGNMENT) {
+                    //  初期値
                     buf = token.copy();
                 } else if (token.mType == TokenType.ASSIGNMENT) {
+                    //  代入演算(=,+=,-=,*=,/=,^=,++,--)
                     Token tmpValue, tmpKey;
                     if (0 < i && tokens[i - 1].mType == TokenType.VARIABLE)
                         tmpKey = tokens[i - 1];
@@ -815,11 +823,15 @@ namespace CoreLib
                         i++;
                     mVar.setVariable(tmpKey, tmpValue);
                 } else if (buf.mType == TokenType.STRING || token.mType == TokenType.STRING) {
-                    if (0 < i && tokens[i - 1].mType == TokenType.OPERATOR)
+                    //  文字列同士の演算
+                    if (0 < i && tokens[i - 1].mType == TokenType.OPERATOR) {
                         buf.mValue = buf.mValue.Remove(buf.mValue.Length - 1);
-                    buf.mValue += token.mValue;
+                        buf.mValue = buf.getValue() + token.getValue(); 
+                    } else
+                        buf.mValue += token.mValue;
                     buf.mType = TokenType.STRING;
                 } else if (token.mType == TokenType.OPERATOR) {
+                    //  演算式の追加
                     buf.mValue += token.mValue;
                     buf.mType = TokenType.EXPRESS;
                 } else {

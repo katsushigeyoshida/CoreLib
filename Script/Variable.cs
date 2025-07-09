@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CoreLib
 {
@@ -18,15 +19,16 @@ namespace CoreLib
     /// bool containsVariable(string key)                   変数の存在確認
     /// void removeVariable(string key)                     指定した変数を削除
     /// ===  配列  ====
+    /// int getArrayOder(Token var)                          配列変数の次数を求める
     /// int countVariable(string key, string last = "")     指定の文字で始まる変数の数を求める(配列の大きさ)
     /// void clearArray(string key)                         指定の文字で始まる配列を削除
-    /// bool isStringArray(Token args)                      配列に文字列名があるかの確認
+    /// bool isStringArray(Token arg)                       配列に文字列名があるかの確認
     /// int getMaxArray(string arrayName)                   列の最大インデックスを求める
     /// List<double> cnvListDouble(Token arg)               配列データを実数のリストに変換
     /// List<string> cnvListString(Token arg)               配列データを文字列のリストに変換
-    /// double[,]? cnvArrayDouble2(Token args)              配列変数を実数配列double[,]に変換
-    /// string[,]? cnvArrayString2(Token args)              配列変数を実数配列double[,]に変換
-    /// Token[,] cnvArrayToken2(Token args)                 配列変数を配列 Token[,] に変換
+    /// double[,]? cnvArrayDouble2(Token arg)               配列変数を実数配列double[,]に変換
+    /// string[,]? cnvArrayString2(Token arg)               配列変数を実数配列double[,]に変換
+    /// Token[,] cnvArrayToken2(Token arg)                  配列変数を配列 Token[,] に変換
     /// ===  配列の戻り値  ===
     /// void setReturnArray(Token[] src, Token dest)        配列戻り値に設定
     /// void setReturnArray(Token[,] src, Token dest)       配列戻り値に設定(2D Token)
@@ -250,6 +252,26 @@ namespace CoreLib
         //  ===  配列  ====
 
         /// <summary>
+        /// 配列変数の次数を求める(次数=0 通常の変数,1:1次元配列,2=2次元配列 0> :エラー)
+        /// </summary>
+        /// <param name="var">変数</param>
+        /// <returns>次数</returns>
+        public int getArrayOder(Token var)
+        {
+            string varStr = var.mValue;
+            int sp = varStr.IndexOf('[');
+            int ep = varStr.IndexOf("]");
+            if (sp < 0 &&  ep < 0)
+                return 0;
+            if (0 < sp && sp < ep) {
+                string arg = varStr.Substring(sp, ep - sp);
+                return arg.Count(c => c == ',') + 1;
+            }
+            return -1;
+        }
+
+
+        /// <summary>
         /// 指定の文字で始まる変数の数を求める(配列の大きさ)
         /// </summary>
         /// <param name="key">変数名</param>
@@ -382,11 +404,11 @@ namespace CoreLib
         /// <summary>
         /// 配列変数を実数配列double[,]に変換
         /// </summary>
-        /// <param name="args">配列変数</param>
+        /// <param name="arg">配列変数</param>
         /// <returns>実数配列</returns>
-        public double[,]? cnvArrayDouble2(Token args)
+        public double[,]? cnvArrayDouble2(Token arg)
         {
-            (string arrayName, int no) = mUtil.getArrayName(args);
+            (string arrayName, int no) = mUtil.getArrayName(arg);
             if (no != 2)
                 return null;
             if (0 < arrayName.IndexOf("["))
@@ -412,11 +434,11 @@ namespace CoreLib
         /// <summary>
         /// 配列変数を実数配列double[,]に変換
         /// </summary>
-        /// <param name="args">配列変数</param>
+        /// <param name="arg">配列変数</param>
         /// <returns>実数配列</returns>
-        public string[,]? cnvArrayString2(Token args)
+        public string[,]? cnvArrayString2(Token arg)
         {
-            (string arrayName, int no) = mUtil.getArrayName(args);
+            (string arrayName, int no) = mUtil.getArrayName(arg);
             if (no != 2)
                 return null;
             int maxRow = 0, maxCol = 0;
@@ -441,11 +463,11 @@ namespace CoreLib
         /// 配列変数を配列 Token[,] に変換
         /// 配列のインデックスが0以上の数値のみに対応
         /// </summary>
-        /// <param name="args">配列変数</param>
+        /// <param name="arg">配列変数</param>
         /// <returns>Token配列</returns>
-        public Token[,] cnvArrayToken2(Token args)
+        public Token[,] cnvArrayToken2(Token arg)
         {
-            (string arrayName, int no) = mUtil.getArrayName(args);
+            (string arrayName, int no) = mUtil.getArrayName(arg);
             if (no != 2)
                 return null;
             int maxRow = 0, maxCol = 0;
@@ -527,7 +549,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="src">文字列配列</param>
         /// <param name="dest">戻り値の配列名</param>
-        public void setReturnArray(string[] src, Token dest)
+        public void setReturnArray(string[] src, Token dest, TokenType tokenType = TokenType.LITERAL)
         {
             if (src == null || dest == null) return;
             int dp = dest.mValue.IndexOf("[]");
@@ -535,7 +557,7 @@ namespace CoreLib
             string destName = dest.mValue.Substring(0, dp);
             for (int i = 0; i < src.Length; i++) {
                 Token key = new Token($"{destName}[{i}]", TokenType.VARIABLE);
-                setVariable(key, new Token(src[i].ToString(), TokenType.LITERAL));
+                setVariable(key, new Token(src[i].ToString(), tokenType));
             }
         }
 
