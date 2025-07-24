@@ -7,10 +7,77 @@ namespace CoreLib
     /// 
     /// Point3D()                                                       コンストラクタ
     /// Point3D(double x,double y, double z)                            コンストラクタ
+    /// Point3D(double x)                                               コンストラクタ
     /// Point3D(Point3D p)                                              コンストラクタ
-    /// Point3D(PointD p, FACE3D face = FACE3D.XY)                      コンストラクタ
+    /// Point3D(PointD p, FACE3D face = FACE3D.XY, double offset = 0)   コンストラクタ
+    /// Point3D(PointD p, Plane3D plane)                                コンストラクタ
+    /// Point3D(PointD p, Point3D cp, Point3D u, Point3D v)             コンストラクタ
+    /// PointD toPointD(Plane3D plane)                                  3D座標から平面座標に変換
+    /// PointD toPointD(Point3D cp, Point3D u, Point3D v)               3D座標から平面座標に変換
+    /// static Point3D getUVector(FACE3D face)                          Uベクター X軸の向き(平面での方向単位ベクト
+    /// static Point3D getVVector(FACE3D face)                          Vベクター Y軸の向き(平面でuに垂直な方向の単位ベクトル).
+    /// FACE3D getFace(Point3D v)                                       2つのベクトルで指定される平面
+    /// bool isFace(Point3D v, FACE3D face)                             2つのベクトルで指定される平面が指定の平面と同じか
+    /// static Point3D cnvPlaneLocation(PointD p, Plane3D plane)        2D平面の座標を3D座標に変換
+    /// static Point3D cnvPlaneLocation(PointD p, Point3D cp, Point3D u, Point3D v) 2D平面の座標を3D座標に変換
+    /// static PointD cnvPlaneLocation(Point3D pos, Plane3D plane)      3D座標から平面座標に変換
+    /// static PointD cnvPlaneLocation(Point3D pos, Point3D cp, Point3D u, Point3D v)   3D座標から平面座標に変換
     /// string ToString()                                               文字列に変換
     /// string ToString(string form)                                    書式を指定して文字列に変換
+    /// void setPoint3D(double x, double y, double z)                   値の設定
+    /// void setPoint3D(Point3D p)                                      値の設定
+    /// Point3D toCopy()                                                コピーデータを返す
+    /// PointD toPointXY()                                              XY座標を2次元変換
+    /// PointD toPointYX()                                              YX座標を2次元変換
+    /// PointD toPointYZ()                                              YZ座標を2次元変換
+    /// PointD toPointZY()                                              ZY座標を2次元変換
+    /// PointD toPointZX()                                              ZX座標を2次元変換
+    /// PointD toPointXZ()                                              XZ座標を2次元変換
+    /// PointD toPoint(FACE3D face)                                     2次元変換
+    /// void setNormal(Point3D p,FACE3D face)                           2D平面の法線方向の値を設定
+    /// void clear()                                                    座標値を0クリア
+    /// bool isEqual(Point3D p)                                         座標が同じか
+    /// bool isEmpty()                                                  座標値が0かの確認
+    /// bool isNaN()                                                    座標値がNaNかの確認
+    /// void unit()                                                     単位ベクトル化
+    /// void inverse()                                                  座標データの値の符号を反転
+    /// void offset(Point3D offset)                                     座標をオフセット分移動させる
+    /// Point3D vector(Point3D p)                                       自点座標から指定座標へのベクトル
+    /// double length()                                                 原点からの距離またはベクタとしての長さ
+    /// double length(Point3D p)                                        2点間の距離
+    /// void length(double size)                                        方向を変えずにベクタの長さを設定
+    /// double angle(Point3D v)                                         ベクトル同士の角度(内積から角度を求める)
+    /// double angle(Point3D ps, Point3D pe)                            自点を中心とした2点の角度
+    /// double innerProduct(Point3D p)                                  自ベクトルと指定ベクトルの内積(合成ベクトルの長さ)
+    /// Point3D crossProduct(Point3D p)                                 自ベクトルと指定ベクトルの外積(２つのベクトルが作る平行四辺形に垂直のベクトル)
+    /// Point3D getNormal(Point3D p1, Point3D p2)                       法線ベクトルを求める
+    /// Point3D add(double x, double y, double z)                       座標移動
+    /// Point3D add(Point3D p)                                          指定分を加えた値を返す
+    /// Point3D sub(Point3D p)                                          指定分を引いた値を返す
+    /// static Point3D operator +(Point3D v1, Point3D v2)               2つのベクトルの加算
+    /// static Point3D operator -(Point3D v1, Point3D v2)               ベクトルv1からベクトルv2を減算
+    /// static Point3D operator *(Point3D v1, double m)                 ベクトルv1をスカラー値mで乗算
+    /// static double operator *(Point3D v1, Point3D v2)                2つのベクトルの要素の各ペアを乗算した値を値とするスカラー値を返す
+    /// static Point3D operator /(Point3D v1, double m)                 ベクトルをスカラー値で除算
+    /// static Point3D operator /(Point3D v1, Point3D v2)               最初のベクトルを 2 番目のベクトルで除算
+    /// double distance(Point3D p1, Point3D p2)                         2点間の距離
+    /// void translate(Point3D vec)                                     座標データの移動
+    /// void rotate(Point3D cp, double ang, FACE3D face)                座標データの回転
+    /// void rotate(double th, FACE3D face)                             座標データを表示面で回転
+    /// void translate(double dx, double dy, double dz)                 座標データの移動(matrix)
+    /// void rotateX(double th)                                         座標データをX軸で回転
+    /// void rotateY(double th)                                         座標データをY軸で回転
+    /// void rotateZ(double th)                                         座標データをZ軸で回転
+    /// void rotate(Point3D v, double th)                               任意の軸を中心に回転
+    /// void scale(Point3D cp, double scale)                            指定点を中心に拡大縮小
+    /// void scale(Point3D vec)                                         座標データを原点を中心に拡大・縮小
+    /// void scale(double sx, double sy, double sz)                     標データを原点を中心に拡大・縮小
+    /// Point3D toMatrix(double[,] mp)                                  アフィン変換のマトリックス計算
+    /// void matrix(double[,] mp)                                       アフィン変換のマトリックス計算
+    /// static double[,] toMatrix2DXY(double[,] mp)                     アフィン変換のマトリックスを3Dから2DXYに変換
+    /// static double[,] toMatrix2DYZ(double[,] mp)                     アフィン変換のマトリックスを3Dから2DYZに変換
+    /// static double[,] toMatrix2DZX(double[,] mp)                     アフィン変換のマトリックスを3Dから2DZXに変換
+    /// 
     /// 
     /// </summary>
 
@@ -132,6 +199,20 @@ namespace CoreLib
         ///  P(u,v) = c + u * x + v * y
         /// </summary>
         /// <param name="p">2D座標</param>
+        /// <param name="plane">3D平面</param>
+        public Point3D(PointD p, Plane3D plane)
+        {
+            Point3D p3d = cnvPlaneLocation(p, plane);
+            x = p3d.x;
+            y = p3d.y;
+            z = p3d.z;
+        }
+
+        /// <summary>
+        /// 2D平面の座標を3D座標に変換
+        ///  P(u,v) = c + u * x + v * y
+        /// </summary>
+        /// <param name="p">2D座標</param>
         /// <param name="cp">2D平面の中心座標</param>
         /// <param name="u">2D平面のX軸向き</param>
         /// <param name="v">2D座標のY軸の向き</param>
@@ -141,6 +222,16 @@ namespace CoreLib
             x = p3d.x;
             y = p3d.y;
             z = p3d.z;
+        }
+
+        /// <summary>
+        /// 3D座標から平面座標に変換
+        /// </summary>
+        /// <param name="plane">3D平面</param>
+        /// <returns>2D座標</returns>
+        public PointD toPointD(Plane3D plane)
+        {
+            return toPointD(plane.mCp, plane.mU, plane.mV);
         }
 
         /// <summary>
@@ -227,6 +318,17 @@ namespace CoreLib
 
         /// <summary>
         /// 2D平面の座標を3D座標に変換
+        /// </summary>
+        /// <param name="p">2D座標</param>
+        /// <param name="plane">3D平面</param>
+        /// <returns></returns>
+        public static Point3D cnvPlaneLocation(PointD p, Plane3D plane)
+        {
+            return cnvPlaneLocation(p, plane.mCp, plane.mU, plane.mV);
+        }
+
+        /// <summary>
+        /// 2D平面の座標を3D座標に変換
         ///  P(u,v) = c + u * x + v * y
         /// </summary>
         /// <param name="p">2D座標</param>
@@ -240,6 +342,17 @@ namespace CoreLib
             uv = cp + uv;
             uv.type = p.type;
             return uv;
+        }
+
+        /// <summary>
+        /// 3D座標から平面座標に変換
+        /// </summary>
+        /// <param name="pos">3D座標</param>
+        /// <param name="plane">3D平面</param>
+        /// <returns>2D座標</returns>
+        public static PointD cnvPlaneLocation(Point3D pos, Plane3D plane)
+        {
+            return cnvPlaneLocation(pos, plane.mCp, plane.mU, plane.mV);
         }
 
         /// <summary>
@@ -673,7 +786,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// つのベクトルの加算
+        /// 2つのベクトルの加算
         /// </summary>
         /// <param name="v1">ベクトル</param>
         /// <param name="v2">ベクトル</param>
@@ -684,7 +797,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// クトルv1からベクトルv2を減算
+        /// ベクトルv1からベクトルv2を減算
         /// </summary>
         /// <param name="v1">ベクトル</param>
         /// <param name="v2">ベクトル</param>

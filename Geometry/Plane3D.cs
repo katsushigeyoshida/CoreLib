@@ -1,6 +1,7 @@
 ﻿
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CoreLib
 {
@@ -48,6 +49,34 @@ namespace CoreLib
         {
             mCp = plist[0];
             (mU, mV) = getFace(plist);
+        }
+
+        /// <summary>
+        /// コピー
+        /// </summary>
+        /// <returns></returns>
+        public Plane3D toCopy()
+        {
+            return new Plane3D(mCp, mU, mV);
+        }
+
+        /// <summary>
+        /// 平面が指定の平面と同じか
+        /// </summary>
+        /// <param name="face">指定平面</param>
+        /// <returns>同じ</returns>
+        public bool isFace(FACE3D face)
+        {
+            return mU.isFace(mV, face);
+        }
+
+        /// <summary>
+        /// 平面の取得
+        /// </summary>
+        /// <returns>2D平面</returns>
+        public FACE3D getFace()
+        {
+            return mU.getFace(mV);
         }
 
         /// <summary>
@@ -122,16 +151,16 @@ namespace CoreLib
             double a = (mU.y * mV.x - mU.x * mV.y);
             double b = (mU.z * mV.y - mU.y * mV.z);
             double c = (mU.x * mV.z - mU.z * mV.x);
-            double A = Math.Abs(a);
-            double B = Math.Abs(b);
-            double C = Math.Abs(c);
-            if (B < A && C < A) {
+            List<double> paraList = new List<double> { a, b, c };
+            double maxPara = paraList.Max(p => Math.Abs(p));
+            int n = paraList.FindIndex(p => Math.Abs(p) == maxPara);
+            if (n == 0) {
                 t.x = (p.y * mV.x - p.x * mV.y) / a;
                 t.y = (p.x * mU.y - p.y * mU.x) / a;
-            } else if (C < B && A < B) {
+            } else if (n == 1) {
                 t.x = (p.z * mV.y - p.y * mV.z) / b;
                 t.y = (p.y * mU.z - p.z * mU.y) / b;
-            } else if (A < C && B < C) {
+            } else {
                 t.x = (p.x * mV.z - p.z * mV.x) / c;
                 t.y = (p.z * mU.x - p.x * mU.z) / c;
             }
@@ -228,6 +257,58 @@ namespace CoreLib
         {
             Point3D ip = intersection(plane.mCp);
             return ip.length(plane.mCp);
+        }
+
+        /// <summary>
+        /// 移動
+        /// </summary>
+        /// <param name="v">移動ベクトル</param>
+        public void translate(Point3D v)
+        {
+            mCp.translate(v);
+        }
+
+        /// <summary>
+        /// 回転
+        /// </summary>
+        /// <param name="cp">回転中心</param>
+        /// <param name="ang">回転角度</param>
+        /// <param name="face">回転面ン</param>
+        public void rotate(Point3D cp, double ang, FACE3D face)
+        {
+            mCp.rotate(cp, ang, face);
+            mU.rotate(ang, face);
+            mV.rotate(ang, face);
+        }
+
+        /// <summary>
+        /// 反転
+        /// </summary>
+        /// <param name="line">反転基準線</param>
+        /// <param name="face">2D平面</param>
+        public void mirror(Line3D line, FACE3D face)
+        {
+            Point3D cp = line.mirror(mCp, face);
+            Point3D u = line.mirror(mCp + mU, face);
+            Point3D v = line.mirror(mCp + mV, face);
+            mCp = cp.toCopy();
+            mU = u - cp;
+            mV = v - cp;
+        }
+
+
+        /// <summary>
+        /// ミラー
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void mirror(Point3D sp, Point3D ep)
+        {
+            Line3D l = new Line3D(sp, ep);
+            mCp = l.mirror(mCp);
+            l.mSp = new Point3D();
+            mU = l.mirror(mU);
+            mV = l.mirror(mV);
         }
     }
 }

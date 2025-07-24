@@ -9,13 +9,11 @@ namespace CoreLib
     /// </summary>
     public class Arc3D
     {
-        public Point3D mCp =new Point3D();                 //  中心座標
-        public Point3D mU = new Point3D(1, 0, 0);          //  X軸の向き(中心から始点(0°)への方向単位ベクトル)
-        public Point3D mV = new Point3D(0, 1, 0);          //  Y軸の向き(円の面でuに垂直な方向の単位ベクトル)
-        public double mR = 1;                              //  半径
-        public double mSa = 0;                             //  開始角
-        public double mEa = Math.PI * 2;                   //  修了角
-        public bool mCcw = true;                            //  3点円弧の座標順
+        public Plane3D mPlane = new Plane3D();          //  円の平面
+        public double mR = 1;                           //  半径
+        public double mSa = 0;                          //  開始角
+        public double mEa = Math.PI * 2;                //  修了角
+        public bool mCcw = true;                        //  3点円弧の座標順
 
         public double mOpenAngle { get { return mEa - mSa; } }
         private double mEps = 1E-8;
@@ -35,7 +33,7 @@ namespace CoreLib
         /// <param name="r">半径</param>
         public Arc3D(Point3D cp, double r)
         {
-            mCp = cp.toCopy();
+            mPlane.mCp = cp.toCopy();
             mR = r;
         }
 
@@ -48,11 +46,7 @@ namespace CoreLib
         /// <param name="v">Y軸の向き</param>
         public Arc3D(Point3D cp, double r, Point3D u, Point3D v)
         {
-            mCp = cp.toCopy();
-            mU = u.toCopy();
-            mU.unit();
-            mV = v.toCopy();
-            mV.unit();
+            mPlane = new Plane3D(cp, u, v);
             mR = r;
         }
 
@@ -64,9 +58,7 @@ namespace CoreLib
         /// <param name="face">作成面</param>
         public Arc3D(Point3D cp, double r, FACE3D face)
         {
-            mCp = cp.toCopy();
-            mU = Point3D.getUVector(face);
-            mV = Point3D.getVVector(face);
+            mPlane = new Plane3D(cp, Point3D.getUVector(face), Point3D.getVVector(face));
             mR = r;
         }
 
@@ -80,9 +72,7 @@ namespace CoreLib
         /// <param name="face">作成面</param>
         public Arc3D(Point3D cp, double r, double sa, double ea, FACE3D face)
         {
-            mCp = cp.toCopy();
-            mU = Point3D.getUVector(face);
-            mV = Point3D.getVVector(face);
+            mPlane = new Plane3D(cp, Point3D.getUVector(face), Point3D.getVVector(face));
             mR = r;
             mSa = sa;
             mEa = ea;
@@ -96,9 +86,7 @@ namespace CoreLib
         /// <param name="face">作成面</param>
         public Arc3D(ArcD arc, FACE3D face)
         {
-            mCp = new Point3D(arc.mCp, face);
-            mU = Point3D.getUVector(face);
-            mV = Point3D.getVVector(face);
+            mPlane = new Plane3D(new Point3D(arc.mCp, face), Point3D.getUVector(face), Point3D.getVVector(face));
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
@@ -116,14 +104,12 @@ namespace CoreLib
             List<Point3D> plist = new List<Point3D>() {
                 sp, mp, ep
             };
-            Plane3D plane = new Plane3D(plist);
-            mU = plane.mU;
-            mV = plane.mV;
-            PointD sp2 = plane.cnvPlaneLocation(plist[0]);
-            PointD mp2 = plane.cnvPlaneLocation(plist[1]);
-            PointD ep2 = plane.cnvPlaneLocation(plist[2]);
+            mPlane = new Plane3D(plist);
+            PointD sp2 = mPlane.cnvPlaneLocation(plist[0]);
+            PointD mp2 = mPlane.cnvPlaneLocation(plist[1]);
+            PointD ep2 = mPlane.cnvPlaneLocation(plist[2]);
             ArcD arc = new ArcD(sp2, mp2, ep2);
-            mCp = plane.cnvPlaneLocation(arc.mCp);
+            mPlane.mCp = mPlane.cnvPlaneLocation(arc.mCp);
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
@@ -149,7 +135,7 @@ namespace CoreLib
         /// <returns>2D平面</returns>
         public FACE3D getFace()
         {
-            return mU.getFace(mV);
+            return mPlane.mU.getFace(mPlane.mV);
         }
 
         /// <summary>
@@ -159,7 +145,7 @@ namespace CoreLib
         /// <returns>同平面</returns>
         public bool isFace(FACE3D face)
         {
-            return mU.isFace(mV, face);
+            return mPlane.mU.isFace(mPlane.mV, face);
         }
 
         /// <summary>
@@ -168,7 +154,7 @@ namespace CoreLib
         /// <returns>Arc3D</returns>
         public Arc3D toCopy()
         {
-            Arc3D arc = new Arc3D(mCp, mR, mU, mV);
+            Arc3D arc = new Arc3D(mPlane.mCp, mR, mPlane.mU, mPlane.mV);
             arc.mSa = mSa;
             arc.mEa = mEa;
             return arc;
@@ -180,9 +166,7 @@ namespace CoreLib
         /// <param name="arc">円弧</param>
         public void setArc(Arc3D arc)
         {
-            mCp = arc.mCp.toCopy();
-            mU = arc.mU.toCopy();
-            mV = arc.mV.toCopy();
+            mPlane = new Plane3D(arc.mPlane.mCp, arc.mPlane.mU, arc.mPlane.mV);
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
@@ -229,8 +213,8 @@ namespace CoreLib
         /// <returns>座標点リスト</returns>
         public List<Point3D> toArcPoint3D(double divAng = Math.PI / 20)
         {
-            if ((Math.Abs(mV.x) < mEps || Math.Abs(mV.y) < mEps || Math.Abs(mV.z) < mEps) &&
-                (Math.Abs(mU.x) < mEps || Math.Abs(mU.y) < mEps || Math.Abs(mU.z) < mEps)) {
+            if ((Math.Abs(mPlane.mV.x) < mEps || Math.Abs(mPlane.mV.y) < mEps || Math.Abs(mPlane.mV.z) < mEps) &&
+                (Math.Abs(mPlane.mU.x) < mEps || Math.Abs(mPlane.mU.y) < mEps || Math.Abs(mPlane.mU.z) < mEps)) {
                 //  XY,YZ,ZX平面上の場合、3点円弧の座標点に変換
                 List<Point3D> plist = new List<Point3D>();
                 plist.Add(getPosition(mSa));
@@ -262,9 +246,7 @@ namespace CoreLib
         {
             Polyline3D polyline = new Polyline3D();
             polyline.mPolyline = toPointD(divAng);
-            polyline.mCp = mCp.toCopy();
-            polyline.mU = mU.toCopy();
-            polyline.mV = mV.toCopy();
+            polyline.mPlane = mPlane.toCopy();
             return polyline;
         }
 
@@ -314,7 +296,7 @@ namespace CoreLib
         public EllipseD toEllipseD(FACE3D face)
         {
             EllipseD ellipse = new EllipseD();
-            ellipse.mCp = mCp.toPoint(face);
+            ellipse.mCp = mPlane.mCp.toPoint(face);
             PointD sp = getPosition(0).toPoint(face);
             PointD ep = getPosition(Math.PI/ 2).toPoint(face);
             ellipse.mRx = ellipse.mCp.length(sp);
@@ -398,7 +380,7 @@ namespace CoreLib
         /// <param name="v">移動ベクトル</param>
         public void translate(Point3D v)
         {
-            mCp.translate(v);
+            mPlane.translate(v);
         }
 
         /// <summary>
@@ -409,9 +391,7 @@ namespace CoreLib
         /// <param name="face">回転面ン</param>
         public void rotate(Point3D cp, double ang, FACE3D face)
         {
-            mCp.rotate(cp, ang, face);
-            mU.rotate(ang, face);
-            mV.rotate(ang, face);
+            mPlane.rotate(cp, ang, face);
         }
 
         /// <summary>
@@ -421,12 +401,7 @@ namespace CoreLib
         /// <param name="face">2D平面</param>
         public void mirror(Line3D line, FACE3D face)
         {
-            Point3D cp = line.mirror(mCp, face);
-            Point3D u = line.mirror(mCp + mU, face);
-            Point3D v = line.mirror(mCp + mV, face);
-            mCp = cp.toCopy();
-            mU = u - cp;
-            mV = v - cp;
+            mPlane.mirror(line, face);
         }
 
         /// <summary>
@@ -436,7 +411,7 @@ namespace CoreLib
         /// <param name="ep">終点</param>
         public void offset(Point3D sp, Point3D ep)
         {
-            mR += ep.length(mCp) - sp.length(mCp);
+            mR += ep.length(mPlane.mCp) - sp.length(mPlane.mCp);
         }
 
         /// <summary>
@@ -506,7 +481,6 @@ namespace CoreLib
         {
             mSa = intersectionAngle(sp);
             mEa = intersectionAngle(ep);
-            System.Diagnostics.Debug.WriteLine($"{sp.ToString("F2")} {ep.ToString("F2")} {mSa.ToString("F2")} {mEa.ToString("F2")}");
             normalize();
         }
 
@@ -517,11 +491,12 @@ namespace CoreLib
         /// <param name="pickPos">ピック位置</param>
         public void stretch(Point3D vec, Point3D pickPos)
         {
-            PointD svec = vec.toPointD(new Point3D(0, 0, 0), mU, mV);
-            PointD ppos = pickPos.toPointD(mCp, mU, mV);
+            PointD svec = vec.toPointD(new Point3D(0, 0, 0), mPlane.mU, mPlane.mV);
+            PointD ppos = pickPos.toPointD(mPlane.mCp, mPlane.mU, mPlane.mV);
             ArcD arc = new ArcD(new PointD(0, 0), mR, mSa, mEa);
             arc.stretch(svec, ppos);
-            mCp = Point3D.cnvPlaneLocation(arc.mCp, mCp, mU, mV);
+            //mPlane.mCp = Point3D.cnvPlaneLocation(arc.mCp, mPlane.mCp, mPlane.mU, mPlane.mV);
+            mPlane.mCp = mPlane.cnvPlaneLocation(arc.mCp);
             mR = arc.mR;
             mSa = arc.mSa;
             mEa = arc.mEa;
@@ -535,8 +510,8 @@ namespace CoreLib
         /// <returns>3D座標</returns>
         public Point3D intersection(PointD pos, FACE3D face)
         {
-            Plane3D plane = new Plane3D(mCp, mU, mV);
-            Point3D p = plane.intersection(pos, face);
+            //Plane3D plane = new Plane3D(mPlane.mCp, mPlane.mU, mPlane.mV);
+            Point3D p = mPlane.intersection(pos, face);
             if (p != null)
                 return intersection(p);
             return null;
@@ -676,8 +651,8 @@ namespace CoreLib
         /// <returns>座標</returns>
         public Point3D getPosition(double ang)
         {
-            Point3D uv = (mU * Math.Cos(ang)) + (mV * Math.Sin(ang));
-            return mCp + uv * mR;
+            Point3D uv = (mPlane.mU * Math.Cos(ang)) + (mPlane.mV * Math.Sin(ang));
+            return mPlane.mCp + uv * mR;
         }
 
         /// <summary>
@@ -689,8 +664,7 @@ namespace CoreLib
         /// <returns>3D座標</returns>
         public Point3D cnvPosition(PointD p)
         {
-            Point3D uv = mU * p.x + mV * p.y;
-            return mCp + uv;
+            return mPlane.cnvPlaneLocation(p);
         }
 
         /// <summary>
@@ -701,25 +675,7 @@ namespace CoreLib
         /// <returns>2D座標</returns>
         public PointD cnvPosition(Point3D pos)
         {
-            PointD t = new PointD();
-            Point3D p = pos - mCp;
-            double a = (mU.y * mV.x - mU.x * mV.y);
-            double b = (mU.z * mV.y - mU.y * mV.z);
-            double c = (mU.x * mV.z - mU.z * mV.x);
-            double A = Math.Abs(a);
-            double B = Math.Abs(b);
-            double C = Math.Abs(c);
-            if (B < A && C < A) {
-                t.x = (p.y * mV.x - p.x * mV.y) / a;
-                t.y = (p.x * mU.y - p.y * mU.x) / a;
-            } else if (C < B && A < B) {
-                t.x = (p.z * mV.y - p.y * mV.z) / b;
-                t.y = (p.y * mU.z - p.z * mU.y) / b;
-            } else if (A < C && B < C) {
-                t.x = (p.x * mV.z - p.z * mV.x) / c;
-                t.y = (p.z * mU.x - p.x * mU.z) / c;
-            }
-            return t;
+            return mPlane.cnvPlaneLocation(pos);
         }
     }
 }
