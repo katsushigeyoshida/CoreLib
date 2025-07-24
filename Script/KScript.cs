@@ -838,11 +838,13 @@ namespace CoreLib
                     buf.mValue += token.mValue;
                 }
             }
-            if (buf != null && buf.mType != TokenType.STRING) {
+            if (buf != null && buf.mType == TokenType.STRING) {
+                return buf;
+            } else if (buf != null && buf.mType == TokenType.ARRAY) {
+                return buf;
+            } else if (buf != null) {
                 buf.mValue = mCalc.expression(buf.mValue).ToString();
                 buf.mType = TokenType.LITERAL;
-                return buf;
-            } else if (buf != null && buf.mType == TokenType.STRING) {
                 return buf;
             } else
                 return new Token("Error: express", TokenType.ERROR);
@@ -914,7 +916,7 @@ namespace CoreLib
             List<Token> funcList = mParse.getStatement(mLexer.tokenList(func));
             List<string> funcargs = mLexer.commaSplit(mLexer.stripBracketString(funcList[sp].mValue, '('));
             for (int i = 0; i < funcargs.Count; i++)
-                args.Add(getVariableValue(new Token(funcargs[i].Trim())));
+                args.Add(getVariableValue(express(new Token(funcargs[i].Trim()))));
             return args;
         }
 

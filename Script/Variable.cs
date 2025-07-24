@@ -191,7 +191,12 @@ namespace CoreLib
                 if (mVariables.ContainsKey(key))
                     return mVariables[key];
             }
-            return new Token(key, (0 < key.Length && key[0] == '"') ? TokenType.STRING : TokenType.LITERAL);
+            if (0 < key.Length && key[0] == '"')
+                return new Token(key, TokenType.STRING);
+            else if (0 < key.IndexOf('['))
+                return new Token(key, TokenType.ARRAY);
+            else
+                return new Token(key, TokenType.LITERAL);
         }
 
         /// <summary>
@@ -273,8 +278,10 @@ namespace CoreLib
 
         /// <summary>
         /// 指定の文字で始まる変数の数を求める(配列の大きさ)
+        /// (2次元配列の行数を求めるとき last に列名を指定)
         /// </summary>
         /// <param name="key">変数名</param>
+        /// <param name="last">2次元配列の列名[,n]</param>
         /// <returns>変数の数</returns>
         public int countVariable(string key, string last = "")
         {
