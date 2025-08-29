@@ -47,7 +47,7 @@
         copyMatrix(double[,] A)                  行列のコピー
     座標変換
 
-■ 2次元座標
+■ 2次元座標(Geometry)
     PointD
     LineD
     ArcD
@@ -58,7 +58,7 @@
     PartsD
     TextD
 
-■ 3次元座標
+■ 3次元座標(Geometry)
     Point3D
     Line3D
     Arc3D
@@ -67,7 +67,7 @@
     Box3D
     Plane3D
 
-■ ダイヤログ
+■ ダイヤログ(Dialog)
     ChkListDialog
     ColorDialog
     DiffFolder
@@ -81,3 +81,35 @@
     SelectMenu
     SelectMenu2
 
+■ スクリプト()Script)
+    KLexer
+    KParse
+    KSpript
+    Variable
+    Util
+    ScriptLib
+    FuncString
+    FuncArray
+    FuncFile
+    Snippet
+
+■ グラフィッククラス
+    YDraw
+    YWorldDraw : YDraw      ワールド座標系でのグラフィック表示
+    Y3DDraw : YWorldDraw
+    Y3DGraphics
+        SurfacePrimitive    プリミティブデータの種別
+        PartsPrimitive      部品データクラス
+        Y3DGraphics         3Dグラフィックライブラリ
+    Y3DParts(試作)
+■ 汎用クラス
+    ArrayExtension.cs       配列に対する拡張機能
+    DirectoryDiff.cs        フォルダ比較
+    DxfReader.cs            DXFデータ読込変換
+    HashCode.cs             ハッシュ関数(CRC,MD5,SHA1,SHA256,SHA384,SHA512)
+    HtmlLib.cs              HTML関係のライブラリ
+    RingBuffer.cs           リングバッファ
+    Shigensu.cs             四元数(クオタニオン)
+    StringExtensions.cs     文字列の拡張メソッド
+    WikiData.cs             Web個別データの取得
+    WikiDataList.cs         Wikipediaの一覧ページから一覧参照データを抽出

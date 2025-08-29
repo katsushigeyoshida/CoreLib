@@ -495,7 +495,6 @@ namespace CoreLib
             PointD ppos = pickPos.toPointD(mPlane.mCp, mPlane.mU, mPlane.mV);
             ArcD arc = new ArcD(new PointD(0, 0), mR, mSa, mEa);
             arc.stretch(svec, ppos);
-            //mPlane.mCp = Point3D.cnvPlaneLocation(arc.mCp, mPlane.mCp, mPlane.mU, mPlane.mV);
             mPlane.mCp = mPlane.cnvPlaneLocation(arc.mCp);
             mR = arc.mR;
             mSa = arc.mSa;
@@ -510,7 +509,6 @@ namespace CoreLib
         /// <returns>3D座標</returns>
         public Point3D intersection(PointD pos, FACE3D face)
         {
-            //Plane3D plane = new Plane3D(mPlane.mCp, mPlane.mU, mPlane.mV);
             Point3D p = mPlane.intersection(pos, face);
             if (p != null)
                 return intersection(p);

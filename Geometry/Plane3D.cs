@@ -123,7 +123,9 @@ namespace CoreLib
         public Point3D cnvPlaneLocation(PointD p)
         {
             Point3D uv = mU * p.x + mV * p.y;
-            return mCp + uv;
+            uv = mCp + uv;
+            uv.type = p.type;
+            return uv;
         }
 
         /// <summary>
@@ -164,6 +166,7 @@ namespace CoreLib
                 t.x = (p.x * mV.z - p.z * mV.x) / c;
                 t.y = (p.z * mU.x - p.x * mU.z) / c;
             }
+            t.type = pos.type;
             return t;
         }
 

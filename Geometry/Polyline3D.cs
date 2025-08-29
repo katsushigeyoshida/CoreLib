@@ -146,9 +146,7 @@ namespace CoreLib
         public Polyline3D(PolylineD polyline, Point3D cp, Point3D u, Point3D v)
         {
             mPolyline = polyline.mPolyline.ConvertAll(p => p.toCopy());
-            mPlane.mCp = cp.toCopy();
-            mPlane.mU = u.toCopy();
-            mPlane.mV = v.toCopy(); ;
+            mPlane = new Plane3D(cp, u, v);
         }
 
         /// <summary>
@@ -286,10 +284,7 @@ namespace CoreLib
                 polyline = squeeze(polyline);
             mPlane.mCp = polyline[0].toCopy();
             (mPlane.mU, mPlane.mV) = getFace(polyline);
-            mPolyline = new List<PointD>();
-            for (int i = 0; i < polyline.Count; i++) {
-                mPolyline.Add(Point3D.cnvPlaneLocation(polyline[i], mPlane.mCp, mPlane.mU, mPlane.mV));
-            }
+            mPolyline = polyline.ConvertAll(p => mPlane.cnvPlaneLocation(p));
         }
 
         /// <summary>
@@ -313,11 +308,10 @@ namespace CoreLib
         /// <returns>3D座標点リスト</returns>
         public List<Point3D> toPoint3D(double divAng = 0, FACE3D face = FACE3D.NON)
         {
-            List<Point3D> plist = new List<Point3D>();
+            //List<Point3D> plist = new List<Point3D>();
             if (face != FACE3D.NON && !mPlane.mU.isFace(mPlane.mV, face)) divAng = mArcDivideAng;
             List<PointD> polyline = new PolylineD(mPolyline).toPointList(divAng);
-            for (int i = 0; i < polyline.Count; i++)
-                plist.Add(Point3D.cnvPlaneLocation(polyline[i], mPlane));
+            List<Point3D> plist = polyline.ConvertAll(p => mPlane.cnvPlaneLocation(p));
             return plist;
         }
 
