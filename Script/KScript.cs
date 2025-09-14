@@ -115,6 +115,7 @@ namespace CoreLib
         public Variable mVar = new Variable();                  //  変数管理
         public ScriptLib mScriptLib;                            //  内部関数ライブラリ
         public FuncArray mFuncArray;                            //  配列関数
+        public FuncMatrix mFuncMatrix;                          //  マトリックス関数
         public FuncString mFuncString;                          //  文字列関数
         public FuncFile mFuncFile;                              //  ファイル関連関数
         public string mScriptFolder = "";                       //  プログラムファイルフォルダ
@@ -143,7 +144,8 @@ namespace CoreLib
         {
             mScriptLib   = new ScriptLib(this);
             mFuncArray   = new FuncArray(this);
-            mFuncString  = new FuncString(this);
+            mFuncMatrix  = new FuncMatrix(this);
+            mFuncString = new FuncString(this);
             mFuncFile    = new FuncFile(this);
             mControlData = new ControlData();
         }
@@ -159,7 +161,8 @@ namespace CoreLib
             clear();
             mScriptLib   = new ScriptLib(this);
             mFuncArray   = new FuncArray(this);
-            mFuncString  = new FuncString(this);
+            mFuncMatrix = new FuncMatrix(this);
+            mFuncString = new FuncString(this);
             mFuncFile    = new FuncFile(this);
             mControlData = new ControlData();
 
@@ -614,6 +617,8 @@ namespace CoreLib
                     return mOutFuncRet;                                 //  返値
                 } else if (0 == funcName.mValue.IndexOf("array."))
                     result = mFuncArray.function(funcName, arg, ret);   //  配列関数
+                else if (0 == funcName.mValue.IndexOf("matrix."))
+                    result = mFuncMatrix.function(funcName, arg, ret);  //  マトリックス関数
                 else if (0 == funcName.mValue.IndexOf("string."))
                     result = mFuncString.function(funcName, arg, ret);  //  文字列関数
                 else if (0 == funcName.mValue.IndexOf("file."))

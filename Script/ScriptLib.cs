@@ -9,14 +9,6 @@ namespace CoreLib
     /// 追加内部関数
     ///     input    : a = input();                         キー入力(文字列)
     ///     cmd      : cmd(command);                        Windowsコマンドの実行
-    ///     array.xxxx                                      配列関数 (FuncArray.cs)
-    ///     matrix.xxxx                                     マトリックス関数
-    ///         a[,] = matrix.unit(size);                   単位行列の作成
-    ///         b[,] = matrix.transpose(a[,]);              転置行列  行列Aの転置A^T
-    ///         c[,] = matrix.multi(a[,], b[,]);            行列の積 AxB
-    ///         c[,] = matrix.add(a[,], b[,]);              行列の和 A+B
-    ///         b[,] = matrix.inverse(a[,]);                逆行列 A^-1
-    ///         b[,] = matrix.copy(a[,]);                   行列のコピー
     ///     
     /// Windows用関数
     ///     inputBox    : a = inputBox();                   文字入力ダイヤログ
@@ -45,12 +37,6 @@ namespace CoreLib
             "inKey(); キー入力",
             "sleep(n); スリープ(n msec)",
             "cmd(command); Windowsコマンドの実行",
-            "matrix.unit(size); 単位行列(2次元)の作成(a[,]=...)",
-            "matrix.transpose(a[,]); 転置行列(2次元行列Aの転置(A^T) b[,]=...)",
-            "matrix.multi(a[,],b[,]); 行列の積 AxB (c[,]=...)",
-            "matrix.add(a[,],b[,]); 行列の和 A+B c[,]=...)",
-            "matrix.inverse(a[,]); 逆行列 A^-1 (b[,]=...)",
-            "matrix.copy(a[,]); 行列のコピー(b[,]=...)",
             "dateTimeNow(type); 現在の時刻を文字列で取得(0:\"HH:mm:ss 1:yyyy/MM/dd HH:mm:ss 2:yyyy/MM/dd 3:HH時mm分ss秒 4:yyyy年MM月dd日 HH時mm分ss秒 5:yyyy年MM月dd日",
             "startTime(); 時間計測の開始",
             "lapTime(); 経過時間の取得(秒)",
@@ -94,13 +80,6 @@ namespace CoreLib
                 case "messageBox"       : messageBox(args); break;
                 case "sleep"            : sleep(args); break;
                 case "cmd"              : cmd(args); break;
-                case "matrix.unit"      : return unitMatrix(args, ret);
-                case "matrix.transpose" : return matrixTranspose(args, ret);
-                case "matrix.multi"     : return matrixMulti(args, ret);
-                case "matrix.add"       : return matrixAdd(args, ret);
-                case "matrix.inverse"   : return matrixInverse(args, ret);
-                case "matrix.copy"      : return matrixCopy(args, ret);
-                case "menuSelect"       : return menuSelect(args);
                 case "dateTimeNow"      : return dateTimeNow(args);
                 case "startTime"        : starTime(); break;
                 case "lapTime"          : return lapTime();
@@ -315,124 +294,6 @@ namespace CoreLib
             double[] result = ylib.solveQuarticEquation(a, b, c, d, e).ToArray();
             //  戻り値の設定
             mVar.setReturnArray(result, ret);
-            mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
-            return mVar.getVariable("return");
-        }
-
-        /// <summary>
-        /// 単位行列の作成(n x n)
-        /// </summary>
-        /// <param name="size">行列の大きさ</param>
-        /// <param name="ret">戻り変数</param>
-        /// <returns>戻り変数</returns>
-        private Token unitMatrix(List<Token> args, Token ret)
-        {
-            double[,] matrix = ylib.unitMatrix(ylib.intParse(args[0].mValue));
-
-            //  戻り値の設定
-            mVar.setReturnArray(matrix, ret);
-            mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
-            return mVar.getVariable("return");
-        }
-
-        /// <summary>
-        /// 転置行列  行列Aの転置A^T
-        /// </summary>
-        /// <param name="args">引数(行列 A</param>
-        /// <param name="ret">戻り変数</param>
-        /// <returns>戻り変数</returns>
-        private Token matrixTranspose(List<Token> args, Token ret)
-        {
-            //  2D配列を実数配列に変換
-            double[,]? a = mVar.cnvArrayDouble2(args[0]);
-            if (a == null) return new Token("", TokenType.ERROR);
-            //  行列演算
-            double[,] c = ylib.matrixTranspose(a);
-            //  戻り値の設定
-            mVar.setReturnArray(c, ret);
-            mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
-            return mVar.getVariable("return");
-        }
-
-        /// <summary>
-        /// 行列の積  AxB
-        /// 行列の積では 結合の法則  (AxB)xC = Ax(BxC) , 分配の法則 (A+B)xC = AxC+BxC , Cx(A+B) = CxA + CxB　が可
-        /// 交換の法則は成立しない  AxB ≠ BxA
-        /// </summary>
-        /// <param name="args">引数(行列A,行列B)</param>
-        /// <param name="ret">戻り変数</param>
-        /// <returns>戻り変数</returns>
-        private Token matrixMulti(List<Token> args, Token ret)
-        {
-            //  2D配列を実数配列に変換
-            double[,]? a = mVar.cnvArrayDouble2(args[0]);
-            if (a == null) return new Token("", TokenType.ERROR);
-            double[,]? b = mVar.cnvArrayDouble2(args[1]);
-            if (b == null) return new Token("", TokenType.ERROR);
-            //  行列演算
-            double[,] c = ylib.matrixMulti(a, b);
-            //  戻り値の設定
-            mVar.setReturnArray(c, ret);
-            mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
-            return mVar.getVariable("return");
-        }
-
-        /// <summary>
-        /// 行列の和 A+B
-        /// 異なるサイズの行列はゼロ行列にする
-        /// </summary>
-        /// <param name="args">引数(行列A,行列B)</param>
-        /// <param name="ret">戻り変数</param>
-        /// <returns>戻り変数</returns>
-        private Token matrixAdd(List<Token> args, Token ret)
-        {
-            //  2D配列を実数配列に変換
-            double[,]? a = mVar.cnvArrayDouble2(args[0]);
-            if (a == null) return new Token("", TokenType.ERROR);
-            double[,]? b = mVar.cnvArrayDouble2(args[1]);
-            if (b == null) return new Token("", TokenType.ERROR);
-            //  行列演算
-            double[,] c = ylib.matrixAdd(a, b);
-            //  戻り値の設定
-            mVar.setReturnArray(c, ret);
-            mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
-            return mVar.getVariable("return");
-        }
-
-        /// <summary>
-        /// 逆行列 A^-1 (ある行列で線形変換した空間を元に戻す行列)
-        /// </summary>
-        /// <param name="args">引数(行列A)</param>
-        /// <param name="ret">戻り変数</param>
-        /// <returns>戻り変数</returns>
-        private Token matrixInverse(List<Token> args, Token ret)
-        {
-            //  2D配列を実数配列に変換
-            double[,]? a = mVar.cnvArrayDouble2(args[0]);
-            if (a == null) return new Token("", TokenType.ERROR);
-            //  行列演算
-            double[,] c = ylib.matrixInverse(a);
-            //  戻り値の設定
-            mVar.setReturnArray(c, ret);
-            mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
-            return mVar.getVariable("return");
-        }
-
-        /// <summary>
-        /// 行列のコピー(inner function)
-        /// </summary>
-        /// <param name="args">引数(行列A)</param>
-        /// <param name="ret">戻り変数</param>
-        /// <returns>戻り変数</returns>
-        private Token matrixCopy(List<Token> args, Token ret)
-        {
-            //  2D配列を実数配列に変換
-            double[,]? a = mVar.cnvArrayDouble2(args[0]);
-            if (a == null) return new Token("", TokenType.ERROR);
-            //  行列演算
-            double[,] c = ylib.copyMatrix(a);
-            //  戻り値の設定
-            mVar.setReturnArray(c, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
             return mVar.getVariable("return");
         }

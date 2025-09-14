@@ -300,11 +300,11 @@ namespace CoreLib
             str = str.Trim();
             int sp = str.IndexOf(mBrackets[offset]);
             int ep = str.LastIndexOf(mBrackets[offset + 1]);
-            if (0 <= sp && sp < ep)
-                return str.Substring(sp + 1, ep - sp - 1);
-            else if (0 <= sp)
+            if (0 == sp && ep < 0)
                 return str.Substring(sp + 1);
-            else if (0 <= ep)
+            else if (0 == sp && ep == str.Length - 1)
+                return str.Substring(sp + 1, ep - sp - 1);
+            else if (sp < 0 && 0 <= ep)
                 return str.Substring(0, ep - 1);
             return str;
         }
