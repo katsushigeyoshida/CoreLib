@@ -108,6 +108,8 @@ namespace CoreLib
         /// <returns>種別</returns>
         public TokenType getTokenType(string str)
         {
+            if (str == null || str == "")
+                return TokenType.EMPTY;
             List<Token> tokens = mLexer.tokenList(str);
             if (1 < tokens.Count)
                 return TokenType.EXPRESS;

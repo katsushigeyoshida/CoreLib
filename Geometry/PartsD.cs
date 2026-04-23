@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
+using System.Linq;
 using System.Windows;
 
 namespace CoreLib
@@ -313,28 +315,40 @@ namespace CoreLib
         public void stretch(PointD vec, PointD pos)
         {
             if (mName == "矢印") {
-                PointD ps = mLines[0].ps.toCopy();
-                PointD pe = mLines[0].pe.toCopy();
-                if (ps.length(pos) < pe.length(pos)) {
-                    ps.offset(vec);
-                } else {
-                    pe.offset(vec);
-                }
-                createArrow(ps, pe);
-            } else if (mName == "ラベル") {
-                PointD ps = mLines[0].ps.toCopy();
-                PointD pe = mLines[0].pe.toCopy();
-                List<PointD> plist = new List<PointD>() { ps, pe, mTexts[0].mPos };
-                if (textPickChk(pos)) {
-                    plist[2] = mTexts[0].mPos + vec;
-                } else {
-                    if (ps.length(pos) < pe.length(pos)) {
-                        plist[0].offset(vec);
-                    } else {
-                        plist[1].offset(vec);
+                List<PointD> plist = mLines.ConvertAll(c => c.ps);
+                plist.RemoveRange(plist.Count - 2, 2);
+                plist.Add(mLines[mLines.Count - 3].pe);
+                double dis = double.MaxValue;
+                int n = 0;
+                for (int i = 0; i < plist.Count; i++) {
+                    if (dis > plist[i].length(pos)) {
+                        dis = plist[i].length(pos);
+                        n = i;
                     }
                 }
-                createLabel(plist, mTexts[0].mText);
+                plist[n].offset(vec);
+                createArrow(plist);
+            } else if (mName == "ラベル") {
+                List<PointD> plist = mLines.ConvertAll(c => c.ps);
+                plist.RemoveRange(plist.Count - 2, 2);
+                if (textPickChk(pos)) {
+                    //  文字位置の移動
+                    plist[plist.Count - 1].x += vec.x;
+                } else {
+                    //  矢印の折れ点移動
+                    double dis = double.MaxValue;
+                    int n = 0;
+                    for (int i = 0; i < plist.Count - 1; i++) {
+                        if (dis > plist[i].length(pos)) {
+                            dis = plist[i].length(pos);
+                            n = i;
+                        }
+                    }
+                    plist[n].offset(vec);
+                    if (n == plist.Count - 2)
+                        plist[plist.Count - 1].offset(vec);
+                }
+                createLabel(plist, mTexts[0].mText, false);
             } else if (mName == "寸法線") {
                 List<PointD> plist;
                 if (0 < mRefPoints.Count)
@@ -382,15 +396,16 @@ namespace CoreLib
         /// <summary>
         /// 矢印データを作成
         /// </summary>
-        /// <param name="ps">始点</param>
-        /// <param name="pe">終点</param>
-        public void createArrow(PointD ps, PointD pe)
+        /// <param name="plist">座標リスト</param>
+        public void createArrow(List<PointD> plist)
         {
             mName = "矢印";
             mLines = new List<LineD>();
-            LineD l = new LineD(ps, pe);
-            mLines.Add(l);
-            mLines.AddRange(arrow(ps, pe));
+            for (int i = 0; i < plist.Count - 1; i++) {
+                LineD l = new LineD(plist[i], plist[i+1]);
+                mLines.Add(l);
+            }
+            mLines.AddRange(arrow(plist[0], plist[1]));
         }
 
         /// <summary>
@@ -399,34 +414,38 @@ namespace CoreLib
         /// </summary>
         /// <param name="plist">座標リスト</param>
         /// <param name="str">ラベル文字</param>
-        public void createLabel(List<PointD> plist, string str)
+        /// <param name="create">作成/再作成</param>
+        public void createLabel(List<PointD> plist, string str, bool create = true)
         {
             mName = "ラベル";
             mLines = new List<LineD>();
             mTexts = new List<TextD>();
             PointD textPos = new PointD();
             HorizontalAlignment ha = HorizontalAlignment.Left;
-            if (2 < plist.Count) {
+            if (create) {
+                //  文字位置がない時は寸法値位置で決める
+                if (plist[plist.Count - 2].x <= plist.Last().x) {
+                    //  右側配置
+                    textPos = new PointD(plist.Last().x + mTextSize, plist.Last().y);
+                    ha = HorizontalAlignment.Left;
+                } else {
+                    //  左側配置
+                    textPos = new PointD(plist.Last().x - mTextSize, plist.Last().y);
+                    ha = HorizontalAlignment.Right;
+                }
+            } else {
                 //  文字位置がある時
-                textPos = new PointD(plist[2].x, plist[1].y);
-                if (plist[1].x <= plist[2].x)
+                textPos = new PointD(plist.Last().x, plist[plist.Count - 1].y);
+                if (plist[plist.Count - 2].x <= plist.Last().x)
                     ha = HorizontalAlignment.Left;
                 else
                     ha = HorizontalAlignment.Right;
-            } else {
-                //  文字位置がない時は寸法値位置で決める
-                if (plist[0].x <= plist[1].x) {
-                    textPos = new PointD(plist[1].x + mTextSize, plist[1].y);
-                    ha = HorizontalAlignment.Left;
-                } else {
-                    textPos = new PointD(plist[1].x - mTextSize, plist[1].y);
-                    ha = HorizontalAlignment.Right;
-                }
             }
-            LineD l = new LineD(plist[0], plist[1]);
-            LineD l2 = new LineD(plist[1], textPos);
-            mLines.Add(l);
-            mLines.Add(l2);
+            for (int i = 0; i < plist.Count - 1; i++) {
+                LineD l = new LineD(plist[i], plist[i + 1]);
+                mLines.Add(l);
+            }
+            mLines.Add(new LineD(plist[plist.Count - 1], textPos));
             mLines.AddRange(arrow(plist[0], plist[1]));
             TextD text = new TextD(str, textPos, mTextSize, mTextRotate, ha, VerticalAlignment.Center);
             text.mLinePitchRate = mLinePitchRate;
@@ -677,10 +696,15 @@ namespace CoreLib
                 mRefPoints = getDimensionPos();
             }
             if (mName == "矢印") {
-                createArrow(mLines[0].ps, mLines[0].pe);
+                List<PointD> plist = mLines.ConvertAll(c => c.ps);
+                plist.RemoveRange(plist.Count - 2, 2);
+                plist.Add(mLines[mLines.Count - 3].pe);
+                createArrow(plist);
             } else if (mName == "ラベル" && 0 < mTexts.Count) {
-                List<PointD> plist = new List<PointD>() { mLines[0].ps, mLines[0].pe, mTexts[0].mPos };
-                createLabel(plist, mTexts[0].mText);
+                List<PointD> plist = mLines.ConvertAll(c => c.ps);
+                plist.RemoveRange(plist.Count - 2, 2);
+                //List<PointD> plist = new List<PointD>() { mLines[0].ps, mLines[0].pe, mTexts[0].mPos };
+                createLabel(plist, mTexts[0].mText, false);
             } else if (mName == "寸法線" && 2 < mRefPoints.Count) {
                 createDimension(mRefPoints);
             } else if (mName == "角度寸法線" && 3 < mRefPoints.Count) {

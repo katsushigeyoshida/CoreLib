@@ -800,6 +800,8 @@ namespace CoreLib
                     } else {
                         token.mValue = tokens[i].mValue[0].ToString() + "1";
                     }
+                } else if (tokens[i].mType == TokenType.EMPTY) {
+                    return new Token("", TokenType.EMPTY);
                 } else {
                     //  ERROR
                     outputString($"ERROR: not express word [{tokens[i]}]\n");
