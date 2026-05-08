@@ -145,7 +145,7 @@ namespace CoreLib
             mScriptLib   = new ScriptLib(this);
             mFuncArray   = new FuncArray(this);
             mFuncMatrix  = new FuncMatrix(this);
-            mFuncString = new FuncString(this);
+            mFuncString  = new FuncString(this);
             mFuncFile    = new FuncFile(this);
             mControlData = new ControlData();
         }
@@ -155,7 +155,6 @@ namespace CoreLib
         /// </summary>
         /// <param name="script">スクリプト文</param>
         public KScript(string script)
-        //public KScript(string script, GraphView graph, Plot3DView plot3D)
         {
             //  初期化
             clear();
@@ -623,22 +622,21 @@ namespace CoreLib
                     result = mFuncString.function(funcName, arg, ret);  //  文字列関数
                 else if (0 == funcName.mValue.IndexOf("file."))
                     result = mFuncFile.function(funcName, arg, ret);    //  ファイル関連関数
-                else
+                else {
                     result = mScriptLib.innerFunc(funcName, arg, ret);  //  内部関数処理
-
-                if (result != null && result.mType != TokenType.ERROR)
+                    if (result.mType == TokenType.ERROR && result.mValue == "not found func") {
+                        if (mParse.mFunctions.ContainsKey(funcName.mValue))
+                            return programFunc(funcName.mValue, arg, ret);      //  プログラムの関数
+                        else
+                            result = funcExpress(funcName.mValue, arg);         //  数式処理の関数
+                    }
+                }
+                if (result != null && result.mType != TokenType.ERROR) {
                     return result;
-
-                if (mParse.mFunctions.ContainsKey(funcName.mValue))
-                    return programFunc(funcName.mValue, arg, ret);      //  プログラムの関数
-                else
-                    result = funcExpress(funcName.mValue, arg);         //  数式処理の関数
-
-                if (result == null || result.mType == TokenType.ERROR) {
-                    outputString($"Error: not found function [{funcName.mValue}]\n");
+                } else {
+                    outputString($"Error: not found function [{funcName.mValue}]\n {result.mValue}\n");
                     return new Token(funcName.mValue, TokenType.ERROR);
-                } else
-                    return result;
+                }
             } catch (Exception e) {
                 if (0 <= e.Message.IndexOf("exit"))
                     throw new Exception(e.Message);
