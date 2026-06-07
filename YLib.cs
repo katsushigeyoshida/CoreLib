@@ -184,6 +184,7 @@ namespace CoreLib
     ///  float roundFloor(float val, int n)                                 指定の有効桁で切り捨てる
     ///  float roundCeil(float val, int n)                                  指定の有効桁で切り上げる
     ///  float roundRound(float val, int n)                                 指定の有効桁数で四捨五入する
+    ///  decimal roundRound(decimal val, int digits = 13)                   指定の有効桁数で四捨五入
     ///  double floorStepSize(double val)                                   最上位桁が1,2,5になるように下側に丸める
     ///  double graphStepSize(double range, double targetSteps, int fromBase = 10)  グラフ作成時の補助線間隔を求める
     ///  double graphHeightSize(double height, double stepSize)             グラフの最大値を求める
@@ -3456,6 +3457,23 @@ namespace CoreLib
             float mag = (float)Math.Floor(Math.Log10(val));
             float magPow = (float)Math.Pow(10, mag - n + 1);
             return (float)Math.Round(val * sign / magPow) * magPow;
+        }
+
+        /// <summary>
+        /// 指定の有効桁数で四捨五入する
+        /// </summary>
+        /// <param name="val">数値</param>
+        /// <param name="digits">丸める有効桁数</param>
+        /// <returns>丸めた数値</returns>
+        public decimal roundRound(decimal val, int digits = 13)
+        {
+            if (val == 0M)
+                return val;
+            int mag = (int)Math.Log10(Math.Abs((double)val)) + 1;
+            var scale = (decimal)Math.Pow(10, mag);
+            var result = scale * Math.Round(val / scale, digits, MidpointRounding.AwayFromZero);
+            int decimals = digits - mag;
+            return Math.Round(result, (decimals < 0) ? 0 : decimals);
         }
 
         /// <summary>
