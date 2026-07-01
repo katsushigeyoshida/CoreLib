@@ -135,6 +135,7 @@ namespace CoreLib
             "fib(x) フィボナッチ数列",
             "gcd(x,y) 最大公約数",
             "lcm(x,y) 最小公倍数",
+            "random(x) 0～xの間の乱数(x<=1の時は1までの実数、それ以上は整数値)",
             "JD(y,m,d) 西暦年月日からユリウス日を求める",
             "MJD(y,m,d) 西暦年月日から準ユリウス日を求める",
             "JD2Date(x) ユリウス日を年月日に変換して yyyymmdd の実数にする",
@@ -152,7 +153,7 @@ namespace CoreLib
             "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "exp", "ln", "log", "log", "sqrt",
             "abs", "ceil", "floor", "round", "trunc", "sign", "round",
             "equals", "lt", "gt", "compare", "deg2dms", "dms2dig", "hour2hms", "hms2hour",
-            "fact", "fib", "gcd", "lcm", "JD", "MJD", "JD2Date",
+            "fact", "fib", "gcd", "lcm", "random", "JD", "MJD", "JD2Date",
             "sum", "sum", "product", "product", "repeat"
         };
         //  内部で使う引数
@@ -161,6 +162,7 @@ namespace CoreLib
         };
         private string mExpression;
         private Dictionary<string, string> mArgDic;
+        private Random mRandom = new Random();
         public bool mError = false;
         public string mErrorMsg;
         public bool mDebugWrite = false;
@@ -698,6 +700,11 @@ namespace CoreLib
                     result = Math.Sign(x);
                 } else if (ope.CompareTo("JD2Date") == 0) {    //  符号を示す値を返す
                     result = JD2Date(x);
+                } else if (ope.CompareTo("random") == 0) {  //  乱数
+                    if (x <= 1)
+                        result = mRandom.NextDouble();
+                    else
+                        result = mRandom.Next((int)x);
                 } else {
                     mError = true;
                     mErrorMsg = "未サポート関数 " + ope;

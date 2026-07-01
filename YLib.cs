@@ -188,13 +188,43 @@ namespace CoreLib
     ///  double floorStepSize(double val)                                   最上位桁が1,2,5になるように下側に丸める
     ///  double graphStepSize(double range, double targetSteps, int fromBase = 10)  グラフ作成時の補助線間隔を求める
     ///  double graphHeightSize(double height, double stepSize)             グラフの最大値を求める
-    ///  List<double> solveQuadraticEquation(double a, double b, double c)  2次方程式の解
-    ///  List<double> solveCubicEquation(double a, double b, double c, double d)    3次方程式の解(カルダノの公式)
+    ///  List<double> solveQuadraticEquation(double a, double b, double c)                      2次方程式の解
+    ///  List<double> solveCubicEquation(double a, double b, double c, double d)                3次方程式の解(カルダノの公式)
     ///  List<double> solveQuarticEquation(double a, double b, double c, double d, double e)    4次方程式の解(フェラリ(Ferrari)の公式)
     ///  double Cuberoot(double x)                                          3乗根(x^1/3)
     ///  Complex Squreroot(Complex x)                                       複素数の平方根
     /// 
+    /// ---  統計処理
+    /// 
+    /// double getSumList(List<double> list)        ∑x リストの合計
+    /// double getSqrSumList(List<double> list)     ∑x^2 リストの自乗和(二乗の合計)
+    /// double getAverageList(List<double> list)    ∑x / n 平均値
+    /// double getDevSumList(List<double> list)     ∑(x-xm) 偏差の和(常に0)
+    /// double getVerSumList(List<double> list)     ∑(x-xm)^2　偏差の平方和
+    /// double getVariance(List<double> list)       s^2 = ∑(x-xm)^2 / n 分散(variance)
+    /// double getStdDev(List<double> list)         標準偏差(standard deviation) s = sqrt(∑(x-xm)^2 / n)
+    /// double getDevProductSumList(List<double> Xlist, List<double> Ylist) ∑(x-xm)(y-ym) 偏差積和
+    /// double getCovarince(List<double> Xlist, List<double> Ylist) 共分散(Covariance) Cov(x,y) = 1/n * Σ(x-xm)(y-ym)
+    /// double getCorelation(List<double> Xlist, List<double> Ylist)    相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
+    /// double getRegA(List<double> Xlist, List<double> Ylist)  回帰分析(regression analysis)の係数(a)の取得  y = ax + b
+    /// double getRegB(List<double> Xlist, List<double> Ylist)  回帰分析(regression analysis)の係数(b)の取得  y = ax + b
+    /// double getCoefficentDeterminatio(List<double> Xlist, List<double> Ylist, double a, double b)  決定係数(coefficient of determination)
+    /// double getXYSumList(List<PointD> list)          ∑xy X*Yの合計
+    /// double getDevProductSumList(List<PointD> list)  ∑(x-xm)(y-ym) 偏差積和
+    /// double getCovarince(List<PointD> list)      共分散(Covariance)
+    /// double getCorelation(List<PointD> list)     相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
+    /// double getRegA(List<PointD> list)           回帰分析(regression analysis)の係数(a)の取得  y = ax + b
+    /// double getRegB(List<PointD> list)           回帰分析(regression analysis)の係数(b)の取得  y = ax + b
+    /// double getCoefficentDeterminatio(List<PoinD> list, double a, double b)  決定係数(coefficient of determination)
+    /// double getRegVariance(List<PointD> list, double a, double b)            理論値に対する分散(回帰曲線の残差の二乗和)
+    /// 
+    ///  ---  配列処理  ---
+    ///  
+    /// double[,] doubleArray2Sort(double[,] data, int col = 0)     2次元配列のソート(数値)
+    /// string[,] stringArray2Sort(string[,] data, int col = 0)     2次元配列のソート(文字列)
+    /// 
     ///  ---  行列計算  ---
+    ///  
     ///  double[,] unitMatrix(int unit)                     単位行列
     ///  double[,] matrixTranspose(double[,] A)             転置行列  行列Aの転置A^T
     ///  double[,] matrixMulti(double[,] A, double[,] B)    行列の積  AxB
@@ -3542,6 +3572,28 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 有効桁数を指定して値を丸めて文字列に変換
+        /// 表示桁数が有効桁より大きくなる時指数表示にする
+        /// </summary>
+        /// <param name="val">値</param>
+        /// <param name="digits">有効桁数</param>
+        /// <returns>数値文字列</returns>
+        public string axisScaleForm(double val, int digits = 4)
+        {
+            if (val == 0)
+                return "0";
+            int mag = (int)Math.Log10(Math.Abs(val)) - (Math.Abs(val) < 1 ? 1 : 0);
+            var scale = Math.Pow(10, mag);
+            val = (double)roundRound((decimal)val, digits);
+            if (digits > Math.Abs(mag)) {
+                return val.ToString();
+            } else {
+                return $"{val / scale}e{mag}";
+            }
+
+        }
+
+        /// <summary>
         /// 2次方程式の解を求める
         /// </summary>
         /// <param name="a"></param>
@@ -3695,10 +3747,266 @@ namespace CoreLib
             return y;
         }
 
+        //  ---  統計処理  ---
+
+        /// <summary>
+        ///  ∑x リストの合計を求める
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>合計値</returns>
+        public double getSumList(List<double> list)
+        {
+            return list.Sum();
+        }
+
+        /// <summary>
+        ///  ∑x^2 リストの自乗和(二乗の合計)を求める
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>二乗和</returns>
+        public double getSqrSumList(List<double> list)
+        {
+            return list.Select(x => x * x).Sum();
+        }
+
+        /// <summary>
+        ///  ∑x / n 平均値
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>平均値</returns>
+        public double getAverageList(List<double> list)
+        {
+            return getSumList(list) / list.Count();
+        }
+
+        /// <summary>
+        ///  ∑(x-xm) 偏差の和(常に0)
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>偏差の和</returns>
+        public double getDevSumList(List<double> list)
+        {
+            double ave = getAverageList(list);
+            return list.Select(x => x - ave).Sum();
+        }
+
+        /// <summary>
+        ///  ∑(x-xm)^2　偏差の平方和
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>偏差の平方和</returns>
+        public double getVerSumList(List<double> list)
+        {
+            double ave = getAverageList(list);
+            return list.Select(x => (x - ave) * (x - ave)).Sum();
+        }
+
+        /// <summary>
+        ///  s^2 = ∑(x-xm)^2 / n 分散(variance)
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>分散値</returns>
+        public double getVariance(List<double> list)
+        {
+            return getVerSumList(list) / list.Count();
+        }
+
+        /// <summary>
+        ///  標準偏差(standard deviation)
+        ///  s = sqrt(∑(x-xm)^2 / n)
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>標準偏差</returns>
+        public double getStdDev(List<double> list)
+        {
+            return Math.Sqrt(getVerSumList(list) / list.Count());
+        }
+
+        /// <summary>
+        ///  ∑(x-xm)(y-ym) 偏差積和
+        /// </summary>
+        /// <param name="Xlist">Xデータリスト</param>
+        /// <param name="Ylist">Yデータリスト</param>
+        /// <returns>偏差積和</returns>
+        public double getDevProductSumList(List<double> Xlist, List<double> Ylist)
+        {
+            double xave = getAverageList(Xlist);
+            double yave = getAverageList(Ylist);
+            double sum = 0;
+            for (int i = 0; i < Math.Min(Xlist.Count, Ylist.Count); i++) {
+                sum += (Xlist[i] - xave) * (Ylist[i] - yave);
+            }
+            return sum;
+        }
+
+        /// <summary>
+        ///  共分散(Covariance)
+        ///  Cov(x,y) = 1/n * Σ(x-xm)(y-ym)
+        /// </summary>
+        /// <param name="Xlist">Xデータリスト</param>
+        /// <param name="Ylist">Yデータリスト</param>
+        /// <returns>共分散</returns>
+        public double getCovarince(List<double> Xlist, List<double> Ylist)
+        {
+            return getDevProductSumList(Xlist, Ylist) / Math.Min(Xlist.Count, Ylist.Count);
+        }
+
+        /// <summary>
+        ///  相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
+        /// </summary>
+        /// <param name="Xlist">Xデータリスト</param>
+        /// <param name="Ylist">Yデータリスト</param>
+        /// <returns>相関係数</returns>
+        public double getCorelation(List<double> Xlist, List<double> Ylist)
+        {
+            return getCovarince(Xlist, Ylist) / (getStdDev(Xlist) * getStdDev(Ylist));
+        }
+
+        /// <summary>
+        ///  回帰分析(regression analysis)の係数(a)の取得  y = ax + b
+        /// </summary>
+        /// <param name="Xlist">Xデータリスト</param>
+        /// <param name="Ylist">Yデータリスト</param>
+        /// <returns>係数(傾き a)</returns>
+        public double getRegA(List<double> Xlist, List<double> Ylist)
+        {
+            return getDevProductSumList(Xlist, Ylist) / getVerSumList(Xlist);
+        }
+
+        /// <summary>
+        ///  回帰分析(regression analysis)の係数(b)の取得  y = ax + b
+        /// </summary>
+        /// <param name="Xlist">Xデータリスト</param>
+        /// <param name="Ylist">Yデータリスト</param>
+        /// <returns>係数(切片 b)</returns>
+        public double getRegB(List<double> Xlist, List<double> Ylist)
+        {
+            return getAverageList(Ylist) - getRegA(Xlist, Ylist) * getAverageList(Xlist);
+        }
+
+        /// <summary>
+        ///  決定係数(coefficient of determination)
+        //  R^2 = 1 - (Σ(y - f(x))^2 / Σ(y - ym)^2) (分散) 
+        /// </summary>
+        /// <param name="Xlist">Xデータリスト</param>
+        /// <param name="Ylist">Yデータリスト</param>
+        /// <param name="a">係数a(傾き)</param>
+        /// <param name="b">係数b(切片</param>
+        /// <returns>決定係数</returns>
+        public double getCoefficentDeterminatio(List<double> Xlist, List<double> Ylist, double a, double b)
+        {
+            double sum = 0;
+            for (int i = 0; i < Xlist.Count; i++) {
+                double t = Ylist[i] - (a * Xlist[i] + b);
+                sum += t * t;
+            }
+            return 1 - sum / getVerSumList(Ylist);
+        }
+
+        /// <summary>
+        ///  ∑xy X*Yの合計
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>X*Yの合計値</returns>
+        public double getXYSumList(List<PointD> list)
+        {
+            return list.Select(p => p.x * p.y).Sum();
+        }
+
+        /// <summary>
+        ///  ∑(x-xm)(y-ym) 偏差積和
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>偏差積和</returns>
+        public double getDevProductSumList(List<PointD> list)
+        {
+            double xave = getAverageList(list.Select(p => p.x).ToList());
+            double yave = getAverageList(list.Select(p => p.y).ToList());
+            return list.Select(p => (p.x - xave) * (p.y - yave)).Sum();
+        }
+
+        /// <summary>
+        ///  共分散(Covariance)
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>共分散値</returns>
+        //  Cov(x,y) = 1/n * Σ(x-xm)(y-ym)
+        public double getCovarince(List<PointD> list)
+        {
+            return getDevProductSumList(list) / list.Count;
+        }
+
+        /// <summary>
+        ///  相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>相関係数</returns>
+        public double getCorelation(List<PointD> list)
+        {
+            return getCovarince(list) / (getStdDev(list.Select(p => p.x).ToList()) * getStdDev(list.Select(p => p.y).ToList()));
+        }
+
+        /// <summary>
+        ///  回帰分析(regression analysis)の係数(a)の取得  y = ax + b
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>係数a(傾き)</returns>
+        public double getRegA(List<PointD> list)
+        {
+            return getDevProductSumList(list) / getVerSumList(list.Select(p => p.x).ToList());
+        }
+
+        /// <summary>
+        ///  回帰分析(regression analysis)の係数(b)の取得  y = ax + b
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <returns>係数b(切片)</returns>
+        public double getRegB(List<PointD> list)
+        {
+            return getAverageList(list.Select(p => p.y).ToList()) - getRegA(list) * getAverageList(list.Select(p => p.x).ToList());
+        }
+
+        /// <summary>
+        ///  決定係数(coefficient of determination)
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <param name="a">係数a(傾き)</param>
+        /// <param name="b">係数b(切片</param>
+        /// <returns>決定係数</returns>
+        //  R^2 = 1 - (Σ(y - f(x))^2 / Σ(y - ym)^2) (分散) 
+        public double getCoefficentDeterminatio(List<PointD> list, double a, double b)
+        {
+            double sum = 0;
+            for (int i = 0; i < list.Count; i++) {
+                double t = list[i].y - (a * list[i].x + b);
+                sum += t * t;
+            }
+            return 1 - sum / getVerSumList(list.Select(p => p.y).ToList());
+        }
+
+        /// <summary>
+        /// 理論値に対する分散(回帰曲線の残差の二乗和)
+        ///  R^2 = Σ(y - f(x))^2 / n
+        /// </summary>
+        /// <param name="list">データリスト</param>
+        /// <param name="a">係数a(傾き)</param>
+        /// <param name="b">係数b(切片</param>
+        /// <returns>残差の二乗和</returns>
+        public double getRegVariance(List<PointD> list, double a, double b)
+        {
+            double sum = 0;
+            for (int i = 0; i < list.Count; i++) {
+                double t = list[i].y - (a * list[i].x + b);
+                sum += t * t;
+            }
+            return sum / list.Count;
+        }
+
+
         //  ---  配列処理  ---
 
         /// <summary>
-        /// 2次元配列のソート
+        /// 2次元配列のソート(数値)
         /// </summary>
         /// <param name="data">2D配列データ</param>
         /// <param name="col">ソートカラム</param>
@@ -3722,7 +4030,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 2次元配列のソート
+        /// 2次元配列のソート(文字列))
         /// </summary>
         /// <param name="data">2D配列データ</param>
         /// <param name="col">ソートカラム</param>
