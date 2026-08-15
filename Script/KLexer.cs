@@ -1,5 +1,4 @@
-﻿using CoreLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -52,6 +51,7 @@ namespace CoreLib
         public TokenType mType;
 
         private KLexer mLexer = new KLexer();
+        private YLib ylib = new YLib();
 
         /// <summary>
         /// コンストラクタ(データの種別は自動判定)
@@ -70,19 +70,38 @@ namespace CoreLib
         /// <param name="type">種別</param>
         public Token(string value, TokenType type)
         {
-            mValue = value;     //  データの値
-            mType = type;       //  データの種類
+            if (type == TokenType.STRING && value != null && 0 < value.Length && value[0] != '\"')
+                mValue = "\"" + value + "\"";   //  STRINGの場合
+            else
+                mValue = value;                 //  データの値
+            mType = type;                       //  データの種類
         }
 
         /// <summary>
-        /// STRING データを取得するとき'"'の囲みを外す
+        /// 値を文字列に変換
+        /// STRINGデータを取得するとき'"'の囲みを外す
+        /// LITERALは有効桁で丸める
         /// </summary>
         /// <returns>値</returns>
         public string getValue()
         {
             if (mType == TokenType.STRING) {
-                if (0 <= mValue.IndexOf('"'))
+                //  文字列は前後の'"'を除く
+                if (mValue == null)
+                    return "";
+                else if (0 <= mValue.IndexOf('"'))
                     return mLexer.stripBracketString(mValue, '"');
+            } else if (mType == TokenType.LITERAL) {
+                //  数値は有効桁数(13桁)で丸めて文字列に変換
+                double d;
+                string result = "0";
+                if (double.TryParse(mValue, out d)) {
+                    if (d != 0)
+                        result = ylib.roundRound((decimal)d,12).ToString().TrimEnd('0');
+                    if (result[result.Length - 1] == '.')
+                        result = result.TrimEnd('.');
+                    return result;
+                }
             }
             return mValue;
         }
@@ -123,6 +142,7 @@ namespace CoreLib
 
     /// <summary>
     /// 字句解析
+    /// 
     /// SKIP CHAR               :  ' ', '\t', '\r', '\n'
     /// コメント  (COMMENT)     : // ... \n, /* ...*/
     /// 計算式    (EXPRESS)     : ( 計算式 )
@@ -139,14 +159,15 @@ namespace CoreLib
     /// 条件演算子(CONDITINAL)  : ==|!=|<|>|<=|>=
     /// 区切り文字(DELIMITER)   : (|)|{|}| |,|;
     /// 
-    /// List<Token> tokenList(string str)               字句解析 文字列をトークンリストに変換
+    /// List<Token> tokenList(string str)                           字句解析 文字列をトークンリストに変換
     /// 
     /// List<List<Token>> tokensList(List<Token> tokens, char sep = ',')    トークンをセパレータで区切ってまとめる
     /// string stripBracketString(string str, char bracket = '(')   括弧付き文字列で前後の括弧を除いた文字列
-    /// getBracketString(string str, int n, char bracket = '(')     括弧で囲まれた文字列の抽出(括弧含む)
+    /// string getBracketString(string str, int n, char bracket = '(')  括弧で囲まれた文字列の抽出(括弧含む)
     /// List<string> getBracketStringList(string str, int n, char bracket = '(')    複数の括弧で囲まれた文字列の抽出(括弧含む)
-    /// List<string> commaSplit(string str)             カンマで文字列を分割する("",(),{},[]内は無視)
-    /// List<Token> splitArgList(string args)           引数文字列の分解(args[a,b] → args,[,a,,,b,])
+    /// (string, int) getString(string str, int n)                  コントロール文字(\?)を含むダブルクォーテーションで囲まれた文字列を抽出し\なし文字列に変換
+    /// List<string> commaSplit(string str)                         カンマで文字列を分割する("",(),{},[]内は無視)
+    /// List<Token> splitArgList(string args)                       引数文字列の分解(args[a,b] → args,[,a,,,b,])
     /// 
     /// </summary>
     public class KLexer
@@ -173,7 +194,7 @@ namespace CoreLib
                 if (i + 1 < str.Length)
                     twoChar = str.Substring(i, 2);
                 if (0 <= Array.IndexOf(Token.skipChar, str[i])) {
-                    //  読み飛ばし
+                    //  スペースまたはコントロールコードは読み飛ばす
                 } else if (twoChar != "" && 0 <= Array.IndexOf(Token.comment, twoChar)) {
                     //  コメント
                     if (twoChar == "//") {
@@ -239,9 +260,7 @@ namespace CoreLib
                     }
                 } else if (str[i] == '\"') {
                     //  文字列
-                    buf = getBracketString(str, i, str[i]);
-                    i += buf.Length - 1;
-                    buf = buf.Replace("\\n", "\n");
+                    (buf, i) = getString(str, i);
                     tokens.Add(new Token(buf, TokenType.STRING));
                 } else if (0 <= Array.IndexOf(Token.operators, str[i])) {
                     //  識別子(演算子/条件演算子)
@@ -300,15 +319,28 @@ namespace CoreLib
             if (offset < 0)
                 return str;
             str = str.Trim();
-            int sp = str.IndexOf(mBrackets[offset]);
-            int ep = str.LastIndexOf(mBrackets[offset + 1]);
-            if (0 == sp && ep < 0)
-                return str.Substring(sp + 1);
-            else if (0 == sp && ep == str.Length - 1)
-                return str.Substring(sp + 1, ep - sp - 1);
-            else if (sp < 0 && 0 <= ep)
-                return str.Substring(0, ep - 1);
-            return str;
+            string buf = "";
+            int count = 0;
+            int i = str[0] == mBrackets[offset] ? 1 : 0;
+            while (i < str.Length) {
+                if (str[i] == '\"' && mBrackets[offset] == '\"') {
+                    break;
+                } else if (str[i] == mBrackets[offset]) {
+                    count++;
+                } else if (str[i] == mBrackets[offset + 1]) {
+                    count--;
+                } else if (str[i] == '\"') {
+                    do {
+                        buf += str[i].ToString();
+                        i++;
+                        if (str[i] == '\"') break;
+                    } while (i < str.Length);
+                }
+                if (count < 0 || str.Length <= i) break;
+                buf += str[i].ToString();
+                i++;
+            }
+            return buf;
         }
 
         /// <summary>
@@ -374,6 +406,41 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コントロール文字(\?)を含むダブルクォーテーションで囲まれた文字列を抽出し、\なし文字列に変換
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <param name="n">開始位置</param>
+        /// <returns>(変換文字列,次の位置)</returns>
+        public (string, int) getString(string str, int n)
+        {
+            string buf = "";
+            int pos = n;
+            int count = 0;
+            while (pos < str.Length) {
+                if (str[pos] == '"') break;
+                pos++;
+            }
+            while (pos < str.Length) {
+                if (str[pos] == '\\' && pos < str.Length - 1) {
+                    pos++;
+                    if (str[pos] == 't') buf += '\t';        //  0x09
+                    else if (str[pos] == 'n') buf += '\n';   //  0x0a
+                    else if (str[pos] == '\f') buf += '\f';  //  0x0c
+                    else if (str[pos] == 'r') buf += '\r';   //  0x0d
+                    else buf += str[pos];
+                } else if (str[pos] == '"') {
+                    buf += str[pos];
+                    if (0 < count) break;
+                    count++;
+                } else {
+                    buf += str[pos];
+                }
+                pos++;
+            }
+            return (buf, pos);
+        }
+
+        /// <summary>
         /// カンマで文字列を分割する("",(),{},[]内は無視)
         /// </summary>
         /// <param name="str">文字列</param>
@@ -409,7 +476,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 引数文字列の分解(args[a,b] → args,[,a,,,b,])
+        /// 引数文字列の分解(args[a,b] → args:[:,a:,:b:] , args[a,] → args:[:a:,:])
         /// </summary>
         /// <param name="args">引数文字列</param>
         /// <returns>文字列リスト</returns>

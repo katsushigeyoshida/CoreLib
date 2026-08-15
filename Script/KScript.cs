@@ -1,4 +1,6 @@
-﻿using System;
+﻿using CoreLib.Script;
+using MS.WindowsAPICodePack.Internal;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -118,7 +120,7 @@ namespace CoreLib
         public FuncMatrix mFuncMatrix;                          //  マトリックス関数
         public FuncString mFuncString;                          //  文字列関数
         public FuncFile mFuncFile;                              //  ファイル関連関数
-        public string mScriptFolder = "";                       //  プログラムファイルフォルダ
+        public FuncMath mFuncMath;                              //  数値計算関数
 
         public List<string> mOutFuncList;                       //  外部関数名リスト(xxx. まで)
         public Token mOutFuncName;                              //  外部関数名(受渡用)
@@ -128,6 +130,8 @@ namespace CoreLib
         public bool mDebug = false;
         public bool mDebugConsole = false;
 
+        public string mScriptFolder = "";                       //  プログラムファイルフォルダ
+        public string mScriptPath = "";                         //  スクリプトパス
         public Action funcCallback;                             //  functionのコールバック関数
         public Action printCallback;                            //  print文のコールバック関数
         public ControlData mControlData;                        //  データを参照渡しするため
@@ -147,6 +151,7 @@ namespace CoreLib
             mFuncMatrix  = new FuncMatrix(this);
             mFuncString  = new FuncString(this);
             mFuncFile    = new FuncFile(this);
+            mFuncMath = new FuncMath(this);
             mControlData = new ControlData();
         }
 
@@ -163,6 +168,7 @@ namespace CoreLib
             mFuncMatrix = new FuncMatrix(this);
             mFuncString = new FuncString(this);
             mFuncFile    = new FuncFile(this);
+            mFuncMath = new FuncMath(this);
             mControlData = new ControlData();
 
             //  字句解析・ スクリプト登録(mFunctionsに登録)
@@ -314,7 +320,7 @@ namespace CoreLib
                 } else if (tokens[0].mValue == "#include") {
                     return includeStatemant(tokens);
                 } else {
-                    outputString($"Error: not found statement [{tokensString(tokens)}]\n");
+                    outputString($"Error: not found statement [{mUtil.tokensString(tokens)}]\n");
                     return RETURNTYPE.ERROR;
                 }
             } else if (tokens[0].mType == TokenType.FUNCTION) {
@@ -322,7 +328,7 @@ namespace CoreLib
             } else if (tokens[0].mType == TokenType.COMMENT) {
                 System.Diagnostics.Debug.WriteLine($"Comment: {tokens[0].mValue} ");
             } else {
-                outputString($"Error: not found statement [{tokensString(tokens)}]\n");
+                outputString($"Error: not found statement [{mUtil.tokensString(tokens)}]\n");
                 return RETURNTYPE.ERROR;
             }
             return RETURNTYPE.NORMAL;
@@ -383,7 +389,7 @@ namespace CoreLib
                         if (tokens[1].mValue[1] == '=') {
                             token = express(tokens, 2);
                             if (token == null) {
-                                outputString($"Error: {tokensString(tokens)}\n");
+                                outputString($"Error: {mUtil.tokensString(tokens)}\n");
                                 return RETURNTYPE.ERROR;
                             }
                         }
@@ -415,7 +421,7 @@ namespace CoreLib
                     return RETURNTYPE.NORMAL;
                 }
             }
-            outputString($"Error: {tokensString(tokens)}\n");
+            outputString($"Error: {mUtil.tokensString(tokens)}\n");
             return RETURNTYPE.ERROR;
         }
 
@@ -505,6 +511,7 @@ namespace CoreLib
         /// print文の処理
         /// </summary>
         /// <param name="tokens">トークンリスト</param>
+        /// <param name="lf">改行の有無</param>
         public RETURNTYPE printStatement(List<Token> tokens, bool lf = false)
         {
             if (tokens.Count <= 1) {
@@ -521,14 +528,40 @@ namespace CoreLib
                     string buf = "";
                     for (int i = 0; i < tokenList.Count; i++) {
                         if (tokenList[i].mType == TokenType.DELIMITER) {
+                            //  計算式の処理
                             Token v = express(expList);
-                            buf += v.getValue();
+                            if (v != null)
+                                buf += v.getValue();
                             expList = new List<Token>();
+                        } else if (tokenList[i].mType == TokenType.STRING) {
+                            //  文字列
+                            buf += tokenList[i].getValue();
+                        } else if (0 < mVar.getArrayOder(tokenList[i])) {
+                            //  配列の一括表示(a[1],a[],a[,],a[n,]...)
+                            //  配列変数から値を抽出
+                            List<string> arrayNameList = mVar.getArrayNameList(getVariableName(tokenList[i]));
+                            if (0 < arrayNameList.Count) {
+                                //  配列のインデックスの初期値
+                                List<int?> preIndexList = mVar.getArrayIndexList(arrayNameList[0]);
+                                foreach (string name in arrayNameList) {
+                                    //  2次元以上の配列でインデックスが変わったときに改行コードを挿入
+                                    List<int?> indexList = mVar.getArrayIndexList(name);
+                                    for (int j = 1; j < indexList.Count; j++) {
+                                        if (indexList[j] != null && indexList[j] != preIndexList[j]) {
+                                            buf += '\n';
+                                            preIndexList[j] = indexList[j];
+                                        }
+                                    }
+                                    buf += mVar.getVariable(name).getValue() + " ";
+                                }
+                            }
                         } else if (i == tokenList.Count - 1) {
+                            //  変数
                             expList.Add(tokenList[i]);
                             Token v = express(expList);
-                             buf += v.getValue();
+                            buf += v.getValue();
                         } else {
+                            //  定数
                             expList.Add(tokenList[i]);
                         }
                     }
@@ -614,15 +647,18 @@ namespace CoreLib
                     mOutFuncArg = arg;                                  //  引数
                     funcCallback();                                     //  関数実行
                     return mOutFuncRet;                                 //  返値
-                } else if (0 == funcName.mValue.IndexOf("array."))
+                } else if (0 == funcName.mValue.IndexOf("array.")) {
                     result = mFuncArray.function(funcName, arg, ret);   //  配列関数
-                else if (0 == funcName.mValue.IndexOf("matrix."))
+                } else if (0 == funcName.mValue.IndexOf("matrix.")) {
                     result = mFuncMatrix.function(funcName, arg, ret);  //  マトリックス関数
-                else if (0 == funcName.mValue.IndexOf("string."))
+                } else if (0 == funcName.mValue.IndexOf("string.")) {
                     result = mFuncString.function(funcName, arg, ret);  //  文字列関数
-                else if (0 == funcName.mValue.IndexOf("file."))
+                } else if (0 == funcName.mValue.IndexOf("file.")) {
+                    mFuncFile.mScriptPath = mScriptPath;
                     result = mFuncFile.function(funcName, arg, ret);    //  ファイル関連関数
-                else {
+                } else if (0 == funcName.mValue.IndexOf("math.")) {
+                    result = mFuncMath.function(funcName, arg, ret);    //  数値計算関数
+                } else {
                     result = mScriptLib.innerFunc(funcName, arg, ret);  //  内部関数処理
                     if (result.mType == TokenType.ERROR && result.mValue == "not found func") {
                         if (mParse.mFunctions.ContainsKey(funcName.mValue))
@@ -655,11 +691,12 @@ namespace CoreLib
         private Token programFunc(string funcName, Token arg, Token ret)
         {
             KScript script = new KScript(mParse.mFunctions[funcName].mValue);
-            //KScript script = new KScript(mParse.mFunctions[funcName].mValue, mGraph, mPlot3D);
-            script.mControlData = mControlData;
-            script.printCallback = printCallback;
+            script.mControlData = mControlData;                 //  コントロールデータ(KeyCode,Abort,Pause,Key)
+            script.printCallback = printCallback;               //  print文コールバック
             script.mVar.mGlobalVar = mVar.mGlobalVar;           //  グローバル変数
             script.mParse.mFunctions = mParse.mFunctions;       //  参照関数の設定
+            script.mScriptFolder = mScriptFolder;               //  スクリプトファイルのフォルダ
+            script.mScriptPath = mScriptPath;                   //  実行中のスクリプトのパス
             List<Token> callArgs = getFuncArgs(arg.mValue);     //  呼出し側引数の取得(配列以外は数値に変換)
             List<Token> funcArgs = getFuncArgNames(mParse.mFunctions[funcName].mValue, 1);  //  関数側引数名の取得
             setFuncArg(callArgs, funcArgs, script);             //  呼出し側から関数側に値を渡す
@@ -766,6 +803,8 @@ namespace CoreLib
         /// <returns>計算結果(文字列)</returns>
         private Token express(List<Token> tokens, int sp = 0)
         {
+            if (tokens.Count == 0)
+                return null;
             Token buf = null;
             Token token = null;
             for (int i = sp; i < tokens.Count; i++) {
@@ -856,6 +895,41 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 数式文字列を評価する(変数を数値に置き換える)
+        /// </summary>
+        /// <param name="expstring">数式文字列</param>
+        /// <param name="exceptVari">変数から除外する文字</param>
+        /// <returns></returns>
+        public string cnvExpress(string expstring, List<string> exceptVar = null)
+        {
+            string buf = "";
+            List<Token> tokens = mLexer.tokenList(expstring);
+            for (int i = 0; i < tokens.Count; i++) {
+                if (tokens[i].mType == TokenType.DELIMITER && tokens[i].mValue == "[") {
+                    //  []で囲まれた変数(変換なし)
+                    do {
+                        buf += tokens[i++].mValue;
+                    } while (i < tokens.Count - 1 && tokens[i].mType != TokenType.DELIMITER);
+                    buf += tokens[i].mValue;
+                } else if (tokens[i].mType == TokenType.VARIABLE) {
+                    if (exceptVar == null || exceptVar.IndexOf(tokens[i].getValue()) < 0)
+                        buf += getVariableValue(tokens[i]).getValue();
+                    else
+                        buf += tokens[i].getValue();
+                } else if (tokens[i].mType == TokenType.ARRAY) {
+                    buf += getVariableValue(tokens[i]).getValue();
+                } else if (tokens[i].mType == TokenType.EXPRESS) {
+                    buf += "(" + cnvExpress(ylib.stripBracketString(tokens[i].getValue()), exceptVar) + ")";
+                } else if (tokens[i].mType == TokenType.FUNCTION) {
+                    buf += tokens[i].getValue() + "(" + cnvExpress(ylib.stripBracketString(tokens[++i].getValue()), exceptVar) + ")";
+                } else {
+                    buf += tokens[i].getValue();
+                }
+            }
+            return buf;
+        }
+
+        /// <summary>
         /// 数式関数の処理
         /// </summary>
         /// <param name="funcName">数式関数</param>
@@ -909,8 +983,9 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// プログラム関数引数をリストに変換
+        /// プログラム関数引数をリストに変換しかつ変数は値に変換する
         /// funcName(args) { staetment .. } → List(args)
+        /// arg : 変数や個別の配列(a[2]など) => 値 , 配列全体(a[],b[,])はそのまま、配列内の変数や数式 => 値に変換
         /// </summary>
         /// <param name="func">引数文字列</param>
         /// <param name="sp">開始位置</param>
@@ -1058,7 +1133,7 @@ namespace CoreLib
         private bool setArrayData(Token name, Token data)
         {
             string arrayName = name.mValue.Substring(0, name.mValue.IndexOf('['));
-            mVar.clearVariables(name);
+            mVar.remove(name);
             if (0 <= data.mValue.IndexOf("{")) {
                 // a[] = { 1,2,3..};
                 List<Token> dataList= convLiteralList(data);
@@ -1101,7 +1176,7 @@ namespace CoreLib
         private bool setArrayData2(Token name, Token data)
         {
             string arrayName = name.mValue.Substring(0, name.mValue.IndexOf('['));
-            mVar.clearVariables(name);
+            mVar.remove(name);
             if (0 <= data.mValue.IndexOf("{")) {
                 //  一括設定(a[,] = {{1,2,3},{3,4,5}..};)
                 if (0 <= name.mValue.IndexOf("[,]")) {
@@ -1173,7 +1248,7 @@ namespace CoreLib
         /// <returns>変換変数</returns>
         private string convVariable(string array)
         {
-            List<string> arrayList = splitArrayVariable(array);
+            List<string> arrayList = mUtil.splitArrayVariable(array);
             string buf = "";
             foreach (var vari in arrayList) {
                 if (0 <= vari.IndexOf('[') && 0 <= vari.IndexOf(']')) {
@@ -1181,7 +1256,7 @@ namespace CoreLib
                 } else if (0 <= vari.IndexOf('[') || 0 <= vari.IndexOf(']')
                  || 0 <= vari.IndexOf(',')) {
                     buf += vari;
-                    if (isArrayVariable(buf)) {
+                    if (mUtil.isArrayVariable(buf)) {
                         buf = mVar.getVariable(buf).mValue;
                     }
                 } else if (0 <= vari.IndexOf('{') || 0 <= vari.IndexOf('}')) {
@@ -1191,89 +1266,6 @@ namespace CoreLib
                 }
             }
             return buf;
-        }
-
-        /// <summary>
-        /// 配列変数を分解する (a[b[n,0],0] →  a[ b[n,0] , 0 ]
-        /// </summary>
-        /// <param name="text">配列変数文字列</param>
-        /// <returns>分解リスト</returns>
-        private List<string> splitArrayVariable(string text)
-        {
-            List<string> extractList = new List<string>();
-            int pos = 0;
-            int count = 0;
-            string buf = "";
-            while (pos < text.Length) {
-                if (text[pos] == '[') {
-                    count++;
-                    buf += text[pos++];
-                    extractList.Add(buf);
-                    buf = "";
-                    while (pos < text.Length) {
-                        if (text[pos] == ']') {
-                            count--;
-                            if (count == 0) {
-                                if (0 < buf.Length)
-                                    extractList.Add(buf);
-                                extractList.Add(text[pos++].ToString());
-                                buf = "";
-                                break;
-                            } else {
-                                buf += text[pos++];
-                            }
-                        } else if (1 == count && text[pos] == ',') {
-                            if (0 < buf.Length)
-                                extractList.Add(buf);
-                            extractList.Add(text[pos++].ToString());
-                            buf = "";
-                        } else if (text[pos] == '[') {
-                            count++;
-                            buf += text[pos++];
-                        } else if (text[pos] == ' ' || text[pos] == '\n' || text[pos] == '\r') {
-                            pos++;
-                        } else {
-                            buf += text[pos++];
-                        }
-                    }
-                } else if (text[pos] == ',' || text[pos] == ']'
-                     || text[pos] == '{' || text[pos] == '}') {
-                    if (0 < buf.Length)
-                        extractList.Add(buf);
-                    extractList.Add(text[pos++].ToString());
-                    buf = "";
-                } else if (text[pos] == '"') {
-                    buf += text[pos++];
-                    while (pos < text.Length && text[pos] != '"') {
-                        buf += text[pos++];
-                    }
-                } else if (text[pos] == ' ' || text[pos] == '\t'
-                    || text[pos] == '\n' || text[pos] == '\r') {
-                    pos++;
-                } else {
-                    buf += text[pos++];
-                }
-            }
-            if (0 < buf.Length)
-                extractList.Add(buf);
-            return extractList;
-        }
-
-        /// <summary>
-        /// 文字列が配列変数かの確認 ([]の対応があっていないものは配列とはみなさない)
-        /// </summary>
-        /// <param name="vari">変数文字列</param>
-        /// <returns>配列変数</returns>
-        private bool isArrayVariable(string vari)
-        {
-            int sc = 0, ec = 0;
-            for (int i = 0; i < vari.Length; i++) {
-                if (vari[i] == '[') sc++;
-                if (vari[i] == ']') ec++;
-            }
-            if (0 < sc && sc == ec)
-                return true;
-            return false;
         }
 
         /// <summary>
@@ -1395,20 +1387,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// デバッグ用トークンリストの文字列化
-        /// </summary>
-        /// <param name="tokens">トークンリスト</param>
-        /// <returns>文字列</returns>
-        private string tokensString(List<Token> tokens)
-        {
-            string buf = "";
-            foreach (var token in tokens)
-                buf += token.mValue + " ";
-            buf.Trim();
-            return buf;
-        }
-
-        /// <summary>
         /// Pause機能 
         /// </summary>
         /// <returns>true(Abort)</returns>
@@ -1416,7 +1394,7 @@ namespace CoreLib
         {
             if (mControlData.mAbort) return true;
             if (0 < msg.Length && mControlData.mPause)
-                outputString($"[{DateTime.Now.ToString("HH:mm:ss")}] puse: [{msg}]\n");
+                outputString($"[{DateTime.Now.ToString("HH:mm:ss")}] pause: [{msg}]\n");
             while (mControlData.mPause) {
                 if (mControlData.mAbort) return true;
                 Thread.Sleep(100);

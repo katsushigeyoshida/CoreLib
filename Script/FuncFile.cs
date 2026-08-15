@@ -11,6 +11,9 @@ namespace CoreLib
         public static string[] mFuncNames = new string[] {
             "file.fileExists(path); ファイルの存在確認",
             "file.dirExists(path); ディレクトリの存在確認",
+            "file.getCurrentDirectory(); カレントディレクトリの取得",
+            "file.setCurrentDirectory(Directory); カレントディレクトリの設定",
+            "file.getScriptPath(); 実行中のスクリプトのパスの取得",
             "file.makeDir(dir); ディレクトリの作成",
             "file.copy(src,dest); ファイルのコピー",
             "file.move(path,dir); ファイルの移動",
@@ -21,9 +24,10 @@ namespace CoreLib
             "file.getDirectory(path); ディレクトリ名の抽出",
             "file.getExtention(path); 拡張子の抽出",
             "file.getFileNameWithoutExtension(path); 拡張子なしのファイル名",
+            "file.setEncordingType(encode);  ファイルのエンコードタイプを設定(encode = UTF8/ShiftJis/EUC)",
             "file.loadText(path); テキストファイルの読込",
             "file.saveText(path,text); テキストのファイル保存",
-            "file.loadCsv(path); CSVファイルの読込",
+            "file.loadCsv(path); CSVファイルの読込(data[,]=file.loadCsv(path);)",
             "file.saveCsv(path,text[,]); テキストのCSV保存",
             "file.size(path); ファイルサイズの取得",
             "file.lastWrite(path[,form[,\"jp\"]); ファイルの日時の取得",
@@ -34,6 +38,8 @@ namespace CoreLib
         private KParse mParse;
         private Util mUtil = new Util();
         private Variable mVar;
+
+        public string mScriptPath;
 
         private YLib ylib = new YLib();
 
@@ -62,6 +68,9 @@ namespace CoreLib
                 case "file.fileExists": return fileExists(args);
                 case "file.dirExists": return dirExists(args);
                 case "file.makeDir": return makeDir(args);
+                case "file.getCurrentDirectory": return getCurrentDirectory();
+                case "file.setCurrentDirectory": setCurrentDirectory(args); break;
+                case "file.getScriptPath": return getScriptPath();
                 case "file.copy": return copy(args);
                 case "file.move": return move(args);
                 case "file.rename": return rename(args);
@@ -71,6 +80,7 @@ namespace CoreLib
                 case "file.getDirectory": return getDirectory(args);
                 case "file.getExtention": return getExtention(args);
                 case "file.getFileNameWithoutExtension": return getFileNameWithoutExtension(args);
+                case "file.setEncordingType": return setEncordingType(args);
                 case "file.loadText": return loadText(args);
                 case "file.saveText": return saveText(args);
                 case "file.loadCsv": return loadCsvData(args, ret);
@@ -115,6 +125,36 @@ namespace CoreLib
                     return new Token("0", TokenType.LITERAL);
             }
             return new Token("", TokenType.EMPTY);
+        }
+
+        /// <summary>
+        /// カレントディレクトリの取得
+        /// </summary>
+        /// <returns></returns>
+        private Token getCurrentDirectory()
+        {
+            return new Token(Directory.GetCurrentDirectory(), TokenType.STRING);
+        }
+
+        /// <summary>
+        /// カレントディレクトリの設定
+        /// </summary>
+        /// <param name="args">ディレクトリ名</param>
+        /// <returns></returns>
+        private Token setCurrentDirectory(List<Token> args)
+        {
+            if (0 < args.Count)
+                Directory.SetCurrentDirectory(args[0].getValue());
+            return new Token("", TokenType.EMPTY);
+        }
+
+        /// <summary>
+        /// スクリプトのパス
+        /// </summary>
+        /// <returns></returns>
+        private Token getScriptPath()
+        {
+            return new Token(mScriptPath, TokenType.STRING);
         }
 
         /// <summary>
@@ -286,7 +326,26 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// テキストファイルの読込
+        /// ファイルのload/saveのエンコードを設定(file.setEncode(encode);  encode = UTF8/ShiftJis/EUC)
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        private Token setEncordingType(List<Token> args)
+        {
+            if (0 < args.Count) {
+                string encode = args[0].getValue();
+                switch (encode.ToLower()) {
+                    case "utf8"    : ylib.mEncordingType = 0; break;
+                    case "shiftjis": ylib.mEncordingType = 1; break;
+                    case "euc"     : ylib.mEncordingType = 2; break;
+                    default        : ylib.mEncordingType = 0; break;
+                }
+            }
+            return new Token("", TokenType.EMPTY);
+        }
+
+        /// <summary>
+        /// テキストファイルの読込(text = file.loadText(path);)
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
@@ -302,7 +361,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// テキストのファイル保存
+        /// テキストのファイル保存(file.saveText(path,text);)
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
