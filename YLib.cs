@@ -2709,6 +2709,16 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 色番号から色名を取得
+        /// </summary>
+        /// <param name="colorNo">色番号</param>
+        /// <returns>色名</returns>
+        public string getColorName(int colorNo)
+        {
+            return mColorList[colorNo % mColorList.Count].colorTitle;
+        }
+
+        /// <summary>
         /// 色名を Brush値に変換
         /// </summary>
         /// <param name="color">色名</param>
