@@ -554,6 +554,7 @@ namespace CoreLib
                                     }
                                     buf += mVar.getVariable(name).getValue() + " ";
                                 }
+                                buf = buf.TrimEnd();
                             }
                         } else if (i == tokenList.Count - 1) {
                             //  変数

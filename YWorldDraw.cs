@@ -418,8 +418,11 @@ namespace CoreLib
         /// </summary>
         /// <param name="p">点座標</param>
         /// <param name="size">サイズ(screensize)</param>
-        public void drawWPoint(PointD p)
+        /// <param name="close">閉領域(塗潰し)</param>
+        public void drawWPoint(PointD p, bool close = false)
         {
+            if (!close)
+                mFillColor = null;
             if (mClipping) {
                 if (!mClipBox.insideChk(p))
                     return;
@@ -461,7 +464,7 @@ namespace CoreLib
         /// <param name="radius">半径</param>
         /// <param name="startAngle">開始角度(rad)</param>
         /// <param name="endAngle">終了角度(rad)</param>
-        /// <param name="close">閉領域)</param>
+        /// <param name="close">閉領域8塗潰し)</param>
         public void drawWArc(PointD center, double radius, double startAngle, double endAngle, bool close = true)
         {
             drawWArc(new ArcD(center, radius, startAngle, endAngle), close);
@@ -489,7 +492,7 @@ namespace CoreLib
         /// 円弧の描画
         /// </summary>
         /// <param name="arc">ArcD</param>
-        /// <param name="close">閉領域)</param>
+        /// <param name="close">閉領域(塗潰し)</param>
         public void drawWArc(ArcD arc, bool close = true)
         {
             if (2 * Math.PI <= Math.Abs(arc.mOpenAngle) + mEps) {
@@ -563,7 +566,7 @@ namespace CoreLib
         /// <param name="radius">半径</param>
         /// <param name="startAngle">開始角(rad)</param>
         /// <param name="endAngle">終了角(rad)</param>
-        /// <param name="close">閉領域)</param>
+        /// <param name="close">閉領域(塗潰し)</param>
         private void drawWArcSub(PointD center, double radius, double startAngle, double endAngle, bool close = true)
         {
             Brush tmpFillColor = mFillColor;
@@ -590,7 +593,7 @@ namespace CoreLib
         /// </summary>
         /// <param name="ctr">中心座標</param>
         /// <param name="radius">半径</param>        
-        /// <param name="close">閉領域)</param>
+        /// <param name="close">閉領域(塗潰し)</param>
         public void drawWCircle(PointD ctr, double radius, bool close = true)
         {
             Brush tmpFillColor = mFillColor;
@@ -634,6 +637,7 @@ namespace CoreLib
         /// 楕円の描画
         /// </summary>
         /// <param name="ellipse">EllipseD</param>
+        /// <param name="close">閉領域(塗潰し)</param>
         public void drawWEllipse(EllipseD ellipse, bool close = false)
         {
             Brush tmpFillColor = mFillColor;
