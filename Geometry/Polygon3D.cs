@@ -561,18 +561,15 @@ namespace CoreLib
         /// <returns>ポリライン</returns>
         public Polyline3D divide(PointD pos, FACE3D face)
         {
-            int n = nearLine(pos, face);
-            Line3D line = new Line3D(toPoint3D(n), toPoint3D(n < mPolygon.Count - 1 ? n + 1 : 0));
-            Point3D p = line.intersection(pos, face);
-            Polyline3D polyline = toPolyline3D(n < mPolygon.Count - 1 ? n + 1 : 0);
-            polyline.insert(0, p);
-            polyline.mPolyline.RemoveAt(polyline.mPolyline.Count - 1);
-            polyline.add(p);
-            return polyline;
+            PolygonD polygon2D = new PolygonD(mPolygon);
+            Point3D p3 = new Point3D(pos, face) ;
+            PointD p = mPlane.cnvPlaneLocation(p3);
+            PolylineD polyline2D = polygon2D.divide(p);
+            return new Polyline3D(polyline2D, mPlane);
         }
 
         /// <summary>
-        /// ポリゴンの分割(ポリラインに変換)
+        /// ポリゴンの分割(ポリラインに変換)(Mini3DCad)
         /// </summary>
         /// <param name="pos">3D分割座標</param>
         /// <returns>ポリライン</returns>

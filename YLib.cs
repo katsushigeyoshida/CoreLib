@@ -1156,6 +1156,9 @@ namespace CoreLib
                 return 0;
 
             string nbuf = string2StringNum(num);
+            int n = nbuf.IndexOf('.');
+            if (0 <= n)
+                nbuf = nbuf.Substring(0, n);
             int val;
             val = int.TryParse(nbuf, out val) ? val : 0;
             return val;

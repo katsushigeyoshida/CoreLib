@@ -86,8 +86,8 @@ namespace CoreLib
     /// </summary>
     public class Polyline3D
     {
-        public Plane3D mPlane = new Plane3D();          //  円の平面
-        public List<PointD> mPolyline;
+        public Plane3D mPlane = new Plane3D();          //  ポリラインの平面
+        public List<PointD> mPolyline;                  //  平面上の座標点
         public double mDivAngle = 0;
         public double mArcDivideAng = Math.PI / 12;     //  円弧の分割角度
 
@@ -758,33 +758,30 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// 2D分割(2D分割位置による分割)
+        /// 分割(2D分割位置による分割)
         /// </summary>
         /// <param name="pos">2D座標</param>
         /// <param name="face">表示面</param>
         /// <returns>ポリラインリスト</returns>
         public List<Polyline3D> divide(PointD pos, FACE3D face)
         {
-            List<Polyline3D> polylines = new List<Polyline3D>();
-            PolylineD pline = toPolylineD(face);
-            (int n, PointD mp) = pline.nearCrossPos(pos, true);
-            if (n < 0 || mp == null)
-                return polylines;
-            Point3D ipp = getLine3D(n).intersection(mp, face);
-            PointD ip = mPlane.cnvPlaneLocation(ipp);
-            Polyline3D polyline = toCopy();
-            polyline.mPolyline = mPolyline.GetRange(0, n + 1);
-            polyline.mPolyline.Add(ip);
-            polylines.Add(polyline);
-            polyline = toCopy();
-            polyline.mPolyline = mPolyline.GetRange(n + 1, mPolyline.Count - n - 1);
-            polyline.mPolyline.Insert(0, ip);
-            polylines.Add(polyline);
-            return polylines;
+            PolylineD polyline2D = new PolylineD(mPolyline);
+            Point3D p3 = new Point3D(pos, face);
+            PointD p = mPlane.cnvPlaneLocation(p3);
+            List<PolylineD> polylines2D = polyline2D.divide(p);
+
+            List<Polyline3D> polylines3D = new List<Polyline3D>();
+            if (0 < polylines2D.Count) {
+                polylines3D.Add(new Polyline3D(polylines2D[0], mPlane));
+            }
+            if (1 < polylines2D.Count) {
+                polylines3D.Add(new Polyline3D(polylines2D[1], mPlane));
+            }
+            return polylines3D;
         }
 
         /// <summary>
-        /// 分割
+        /// 分割(Mini3DCad)
         /// </summary>
         /// <param name="pos">分割座標</param>
         /// <returns>ポリラインリスト</returns>
