@@ -1869,31 +1869,60 @@ namespace CoreLib
         /// 例 path = D:\folder\*.flac
         /// </summary>
         /// <param name="path">パス名</param>
+        /// <param name="recursive">再帰検索</param>
         /// <returns>ファイルリスト</returns>
-        public string[] getFiles(string path)
+        public string[] getFiles(string path, bool recursive = false)
         {
+            List<string> files = new List<string>();
             try {
                 string folder = Path.GetDirectoryName(path);
                 string ext = Path.GetFileName(path);
-                return Directory.GetFiles(folder, ext);
+                if (recursive) {
+                    string[] folders = Directory.GetDirectories(folder);
+                    foreach (string dir in folders)
+                        files.AddRange(getFiles(Path.Combine(dir, ext), recursive));
+                    files.AddRange(Directory.GetFiles(folder, ext));
+                    return files.ToArray();
+                } else
+                    return Directory.GetFiles(folder, ext);
             } catch (Exception e) {
                 return null;
             }
         }
 
+        /// <summary>
+        /// ディレクトリ情報リストの取得
+        /// </summary>
+        /// <param name="path">パス</param>
+        /// <returns>ディレクトリ情報リスト</returns>
+        public List<DirectoryInfo> getDirectoriesInfo(string path)
+        {
+            List<DirectoryInfo> dirList = new List<DirectoryInfo>();
+            try {
+                DirectoryInfo di = new DirectoryInfo(path);
+                foreach (DirectoryInfo dirInfo in di.GetDirectories()) {
+                    dirList.Add(dirInfo);
+                }
+                return dirList;
+            } catch (Exception e) {
+                return null;
+            }
+        }
 
         /// <summary>
         /// 指定されたパスからディレクトリリストを作成
         /// </summary>
         /// <param name="path">パス名</param>
+        /// <param name="all">全属性/Normal属性</param>
         /// <returns>ディレクトリリスト</returns>
-        public List<string> getDirectories(string path)
+        public List<string> getDirectories(string path, bool all = true)
         {
             List<string> dirList = new List<string>();
             try {
                 DirectoryInfo di = new DirectoryInfo(path);
                 foreach (DirectoryInfo dir in di.GetDirectories()) {
-                    dirList.Add(dir.FullName);
+                    if(all || (dir.Attributes & FileAttributes.Hidden) == 0)
+                        dirList.Add(dir.FullName);
                 }
                 return dirList;
             } catch (Exception e) {
@@ -1951,6 +1980,19 @@ namespace CoreLib
             } catch (Exception e) {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// ドライブの一覧取得
+        /// </summary>
+        /// <returns></returns>
+        public List<DirectoryInfo> getDrivesInfo()
+        {
+            string[] drives = Directory.GetLogicalDrives();
+            List<DirectoryInfo> dirs = new List<DirectoryInfo>();
+            foreach (string drive in drives)
+                dirs.Add(new DirectoryInfo(drive));
+            return dirs;
         }
 
         /// <summary>
@@ -2354,6 +2396,28 @@ namespace CoreLib
                 }
             }
             return true;
+        }
+
+        /// <summary>
+        /// ファイルの日付(最終変更日)の取得
+        /// </summary>
+        /// <param name="path">ファイルパス</param>
+        /// <returns>DateTime</returns>
+        public DateTime getFileDateTime(string path)
+        {
+            FileInfo fileInfo = new FileInfo(path);
+            return fileInfo.LastWriteTime;
+        }
+
+        /// <summary>
+        /// ファイル日付(最終変更日)の設定
+        /// </summary>
+        /// <param name="path">ファイルパス</param>
+        /// <param name="dateTime">DateTime</param>
+        public void setFileDateTime(string path, DateTime dateTime)
+        {
+            FileInfo fileInfo = new FileInfo(path);
+            fileInfo.LastWriteTime = dateTime;
         }
 
         //  --- データ処理関係  ------
@@ -3076,6 +3140,113 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 画像ファイルからBitmapを取得
+        /// ファイルから開放してBitmapを読み込む
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public System.Drawing.Bitmap getBitmap(string path)
+        {
+            if (!File.Exists(path))
+                return null;
+            MemoryStream data = new MemoryStream(File.ReadAllBytes(path));
+            return new System.Drawing.Bitmap(data);
+        }
+
+        /// <summary>
+        /// 画像ファイルからBitmapImageを取得
+        /// ファイルからデータをメモリに展開してファイルアクセスを開放しておく
+        /// </summary>
+        /// <param name="path">ファイルパス</param>
+        /// <returns></returns>
+        public BitmapImage getBitmapImage(string path)
+        {
+            if (!File.Exists(path))
+                return null;
+
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (var drawingImage = System.Drawing.Image.FromStream(fs, false, false)) {
+                    BitmapImage bmpImage = cnvBitmap2BitmapImage((System.Drawing.Bitmap)drawingImage, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    drawingImage.Dispose();
+                    return bmpImage;
+                }
+            }
+        }
+
+        /// <summary>
+        /// JPEGのサムネイル画像を取得する
+        /// </summary>
+        /// <param name="path">ファイルパス</param>
+        /// <param name="width">幅</param>
+        /// <param name="height">高さ</param>
+        /// <param name="exif">EXIFのサムネイルデータを使う</param>
+        /// <returns>ビットマップイメージ</returns>
+        public BitmapImage getThumbnailImage(string path, int width, int height, bool exif = true)
+        {
+            if (exif) {
+                BitmapImage image = getExifThumbnailImage(path);
+                if (image != null)
+                    return image;
+            }
+            using (FileStream fs = File.OpenRead(path)) {
+                System.Drawing.Image org = System.Drawing.Image.FromStream(fs, false, false);
+                System.Drawing.Image thumbnail = org.GetThumbnailImage(width, height, delegate { return false; }, IntPtr.Zero);
+                BitmapImage bmpImage = cnvBitmap2BitmapImage((System.Drawing.Bitmap)thumbnail, System.Drawing.Imaging.ImageFormat.Jpeg);
+                thumbnail.Dispose();
+                return bmpImage;
+            }
+        }
+
+        /// <summary>
+        /// BitmapをBitmapImageに変換
+        /// </summary>
+        /// <param name="bitmap">Bitmap</param>
+        /// <param name="imageFormat">ImageFormat(Png/Jpegなど)</param>
+        /// <returns>BitmapImage</returns>
+        public BitmapImage cnvBitmap2BitmapImage(System.Drawing.Bitmap bitmap,
+            System.Drawing.Imaging.ImageFormat imageFormat)
+        {
+            using (MemoryStream memory = new MemoryStream()) {
+                bitmap.Save(memory, imageFormat);
+                memory.Position = 0;
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = memory;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+                memory.Close();
+                return bitmapImage;
+            }
+        }
+
+        /// <summary>
+        /// JPEGのExifサムネイル画像(0x501B)を取出す
+        /// </summary>
+        /// <param name="path">ファイル名</param>
+        /// <returns>ビットマップイメージ</returns>
+        public BitmapImage getExifThumbnailImage(string path)
+        {
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (var drawingImage = System.Drawing.Image.FromStream(fs, false, false)) {
+                    //  サムネイル画像の有無
+                    if (!drawingImage.PropertyIdList.Any(propertyId => propertyId == 0x501B))
+                        return null;
+                    //  サムネイル画像を取出す
+                    var property = drawingImage.GetPropertyItem(0x501B);
+                    //  ImageからBitmapImageに変換
+                    using (var ms = new MemoryStream(property.Value)) {
+                        var image = new BitmapImage();
+                        image.BeginInit();
+                        image.CacheOption = BitmapCacheOption.OnLoad;
+                        image.StreamSource = ms;
+                        image.EndInit();
+                        return image;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// BitmapをBitmapImageに変換
         /// </summary>
         /// <param name="bitmap">Bitmap</param>
@@ -3394,6 +3565,62 @@ namespace CoreLib
             BitmapImage bitmapImage = cnvBitmap2BitmapImage(moveBitmap);
             setCanvasBitmapImage(canvas, bitmapImage, dx > 0 ? dx + offset : 0, dy > 0 ? dy + offset : 0,
                 width - offset, height - offset);
+        }
+
+        /// <summary>
+        /// Imageコントロールの画像をクリップボードに貼り付ける
+        /// </summary>
+        /// <param name="imageSource">Image.Source</param>
+        public void image2Clipbord(System.Windows.Media.ImageSource imageSource)
+        {
+            System.Windows.Media.Imaging.BitmapSource bitmapSource = (System.Windows.Media.Imaging.BitmapSource)imageSource;
+            System.Drawing.Bitmap bitmap = cnvBitmapSource2Bitmap(bitmapSource);
+            //  クリップボードに張り付ける
+            System.Windows.Clipboard.SetImage(bitmap2BitmapSource(bitmap));
+        }
+
+        /// <summary>
+        /// JPEGファイルからIPTC情報の取得
+        /// https://stackoverflow.com/questions/5597079/iptc-net-read-write-c-sharp-library
+        /// http://msdn.microsoft.com/en-us/library/system.windows.media.imaging.aspx
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public List<string> getIPTC(string path)
+        {
+            List<string> iptcList = new List<string>();
+            try {
+                var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                var decoder = new JpegBitmapDecoder(stream, BitmapCreateOptions.None, BitmapCacheOption.None);
+                var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
+                if (metadata != null) {
+                    iptcList.Add(metadata.CameraManufacturer == null ? "" : metadata.CameraManufacturer.Trim());
+                    iptcList.Add(metadata.CameraModel == null ? "" : metadata.CameraModel.Trim());
+                    iptcList.Add(metadata.Copyright == null ? "" : metadata.Copyright.Trim());
+                    iptcList.Add(metadata.DateTaken == null ? "" : metadata.DateTaken.Trim());
+                    iptcList.Add(metadata.Title == null ? "" : metadata.Title.Trim());
+                }
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine("Excepsion Error getIPTC : " + e.Message);
+            }
+            return iptcList;
+        }
+
+        /// <summary>
+        /// JPEGファイルの全IPTC情報を文字列化
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public string getIPTCall(string path)
+        {
+            List<string> iptcInf = getIPTC(path);
+            string buf = "IPTC情報";
+            buf += 0 < iptcInf[0].Length ? "\nメーカー : " + iptcInf[0] : "";
+            buf += 0 < iptcInf[1].Length ? "\nモデル   : " + iptcInf[1] : "";
+            buf += 0 < iptcInf[2].Length ? "\nCopyright: " + iptcInf[2] : "";
+            buf += 0 < iptcInf[3].Length ? "\n日付     : " + iptcInf[3] : "";
+            buf += 0 < iptcInf[4].Length ? "\nタイトル : " + iptcInf[4] : "";
+            return buf;
         }
 
         //  ---  数値処理関連  ------
@@ -4920,5 +5147,83 @@ namespace CoreLib
             return buf;
         }
 
+        /// <summary>
+        /// byte配列をASCii文字列に変換
+        /// </summary>
+        /// <param name="data">byte配列</param>
+        /// <param name="start">開始位置</param>
+        /// <param name="size">サイズ</param>
+        /// <returns>文字列</returns>
+        public string binary2AsciiString(byte[] data, int start = 0, int size = 0)
+        {
+            string buf = "";
+            for (int i = start; i < start + size && i < data.Length; i++) {
+                if (data[i] == 0)
+                    break;
+                buf += (char)data[i];
+            }
+            return buf;
+        }
+
+        /// <summary>
+        /// intリストをbyte配列に変換
+        /// </summary>
+        /// <param name="intlist">intリスト</param>
+        /// <returns>byte配列</returns>
+        public byte[] intList2ByteArray(List<Int32> intlist)
+        {
+            byte[] byteArray = new byte[intlist.Count * sizeof(Int32)];
+            for (int i = 0; i < intlist.Count; i++) {
+                byte[] b = BitConverter.GetBytes(intlist[i]);
+                Buffer.BlockCopy(b, 0, byteArray, sizeof(Int32) * i, sizeof(Int32));
+            }
+            return byteArray;
+        }
+
+        /// <summary>
+        /// byteデータの指定範囲をコピーする
+        /// </summary>
+        /// <param name="a">byte配列</param>
+        /// <param name="start">開始位置</param>
+        /// <param name="size">サイズ</param>
+        /// <returns>byte配列</returns>
+        public byte[] ByteCopy(byte[] a, int start, int size)
+        {
+            byte[] b = new byte[size];
+            for (int i = 0; i < size; i++)
+                b[i] = a[i + start];
+            return b;
+        }
+
+        /// <summary>
+        /// byte配列にbyteデータを上書きする
+        /// </summary>
+        /// <param name="src">元データのbyte配列</param>
+        /// <param name="start">上書き開始位置</param>
+        /// <param name="dest">上書きデータのbyte配列</param>
+        /// <returns>変換データ</returns>
+        public byte[] ByteOverWrite(byte[] src, int start, byte[] dest)
+        {
+            int j = 0;
+            for (int i = start; i < src.Length; i++) {
+                if (j < dest.Length)
+                    src[i] = dest[j++];
+            }
+            return src;
+        }
+
+        /// <summary>
+        /// byte配列同士を連結する
+        /// </summary>
+        /// <param name="src1">byte配列データ1</param>
+        /// <param name="src2">byte配列データ2</param>
+        /// <returns>連結データ</returns>
+        public byte[] ByteCat(byte[] src1, byte[] src2)
+        {
+            byte[] dest = new byte[src1.Length + src2.Length];
+            dest = ByteOverWrite(dest, 0, src1);
+            dest = ByteOverWrite(dest, src1.Length, src2);
+            return dest;
+        }
     }
 }
