@@ -46,7 +46,8 @@ namespace CoreLib
                 mImageList = ylib.getFiles(Path.Combine(folder, "*.jpg")).ToList();
             }
             ImImage.Source = ylib.getBitmapImage(mImagePath);
-            Title = "画像データ [" + Path.GetFileName(mImagePath) + "]";
+            FileInfo fi = new FileInfo(mImagePath);
+            Title =$"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N")}";
             setPhotoInfo(mImagePath);
         }
 
@@ -110,17 +111,24 @@ namespace CoreLib
             Properties.Settings.Default.Save();
         }
 
+        /// <summary>
+        /// キーコマンド処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             double cx = ImImage.ActualWidth / 2.0;
             double cy = ImImage.ActualHeight / 2.0;
             if (e.KeyboardDevice.Modifiers == ModifierKeys.Control) {
                 if (e.Key == Key.Left) {                //  左に移動
-                    //  前のデータファイルを表示
-                    nextImage(-1);
+                    moveImage(-50, 0);
                 } else if (e.Key == Key.Right) {        //  右に移動
-                    //  次のデータファイルを表示
-                    nextImage(1);
+                    moveImage(50, 0);
+                } else if (e.Key == Key.Up) {           //  上に移動
+                    moveImage(0, -50);
+                } else if (e.Key == Key.Down) {         //  下に移動
+                    moveImage(0, 50);
                 } else if (e.Key == Key.C) {            //  画面コピー
                     ylib.image2Clipbord(ImImage.Source);
                 } else if (e.Key == Key.E) {            //  コメント登録
@@ -130,13 +138,11 @@ namespace CoreLib
                 }
             } else {
                 if (e.Key == Key.Left) {                //  左に移動
-                    moveImage(-50, 0);
+                    //  前のデータファイルを表示
+                    nextImage(-1);
                 } else if (e.Key == Key.Right) {        //  右に移動
-                    moveImage(50, 0);
-                } else if (e.Key == Key.Up) {           //  上に移動
-                    moveImage(0, -50);
-                } else if (e.Key == Key.Down) {         //  下に移動
-                    moveImage(0, 50);
+                    //  次のデータファイルを表示
+                    nextImage(1);
                 } else if (e.Key == Key.PageUp) {       //  拡大
                     imageZoom(1.25, cx, cy);
                 } else if (e.Key == Key.PageDown) {     //  縮小
@@ -166,8 +172,14 @@ namespace CoreLib
             if (button.Name == "BtGInfo") {
                 //  イメージのプロパティ表示
                 infoImage();
+            } else if (button.Name == "BtGComment") {
+                //  コメント追加・７編集
+                setComment();
+            } else if (button.Name == "BtGImageCopy") {
+                //  画像をクリップボードにコピー
+                ylib.image2Clipbord(ImImage.Source);
             } else if (button.Name == "BtGZoomReset") {
-                //  イメージを初期状態にする
+                //  全体表示(イメージを初期状態にする)
                 Matrix matrix = new Matrix();
                 ImImage.RenderTransform = new MatrixTransform(matrix);
             } else if (button.Name == "BtGZoomUp") {
@@ -240,6 +252,47 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// コンテキストメニュー
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void imContextMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)e.Source;
+            double cx = ImImage.ActualWidth / 2.0;
+            double cy = ImImage.ActualHeight / 2.0;
+            if (menuItem.Name.CompareTo("imImageInfoMenu") == 0) {
+                //  イメージのプロパティ表示
+                infoImage();
+            } else if (menuItem.Name.CompareTo("imClipCopyMenu") == 0) {
+                //  画像をクリップボードにコピー
+                ylib.image2Clipbord(ImImage.Source);
+            } else if (menuItem.Name.CompareTo("imCommenMenu") == 0) {
+                //  コメント追加・７編集
+                setComment();
+            } else if (menuItem.Name.CompareTo("imZoomFitMenu") == 0) {
+                //  全体表示(イメージを初期状態にする)
+                Matrix matrix = new Matrix();
+                ImImage.RenderTransform = new MatrixTransform(matrix);
+            } else if (menuItem.Name.CompareTo("imZoomUpMenu") == 0) {
+                //  拡大
+                imageZoom(1.25, cx, cy);
+            } else if (menuItem.Name.CompareTo("imZoomDownMenu") == 0) {
+                //  縮小
+                imageZoom(1 / 1.25, cx, cy);
+            } else if (menuItem.Name.CompareTo("imRotateMenu") == 0) {
+                //  回転
+                rotateImage(90);
+            } else if (menuItem.Name.CompareTo("imPrevMenu") == 0) {
+                //  前のデータファイルを表示
+                nextImage(-1);
+            } else if (menuItem.Name.CompareTo("imNextMenu") == 0) {
+                //  次のデータファイルを表示
+                nextImage(1);
+            }
+        }
+
+        /// <summary>
         /// [コピー]コンテキストメニュー
         /// </summary>
         /// <param name="sender"></param>
@@ -258,7 +311,6 @@ namespace CoreLib
         {
             setComment();
         }
-
 
         /// <summary>
         /// コメントデータを設定する
@@ -296,7 +348,8 @@ namespace CoreLib
             if (0 <= (n + next) && n < mImageList.Count - next) {
                 mImagePath = mImageList[n + next];
                 ImImage.Source = ylib.getBitmapImage(mImagePath);
-                Title = "画像データ [" + Path.GetFileName(mImagePath) + "]";
+                FileInfo fi = new FileInfo(mImagePath);
+                Title = $"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N")}";
                 setPhotoInfo(mImagePath);
             }
         }

@@ -11,8 +11,15 @@
                MouseLeftButtonDown="ImImage_MouseLeftButtonDown" MouseMove="ImImage_MouseMove" MouseLeftButtonUp="ImImage_MouseLeftButtonUp" >
             <Image.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Name="imClipCopyMenu" Header="コピー" ToolTip="画像をクリップボードにコピー Ctrl+C" Click="imClipCopyMenu_Click" />
-                    <MenuItem Name="imCommenMenu" Header="コメント追加" ToolTip="コメントの追加・修正 Ctrl+E" Click="imCommenMenu_Click"  />
+                    <MenuItem Name="imImageInfoMenu" Header="写真情報 Ctrl+I" ToolTip="写真の属性情報を表示" Click="imContextMenu_Click" />
+                    <MenuItem Name="imCommenMenu" Header="コメント追加 Ctrl+E" ToolTip="コメントの追加・修正" Click="imContextMenu_Click"  />
+                    <MenuItem Name="imClipCopyMenu" Header="コピー Ctrl+C" ToolTip="画像をクリップボードにコピーC" Click="imContextMenu_Click" />
+                    <MenuItem Name="imZoomFitMenu" Header="全体表示 Home" ToolTip="画像全体を表示する" Click="imContextMenu_Click"  />
+                    <MenuItem Name="imZoomUpMenu" Header="拡大表示 PageUp" ToolTip="画像全体を表示する" Click="imContextMenu_Click"  />
+                    <MenuItem Name="imZoomDownMenu" Header="縮小表示 PageDown" ToolTip="画像全体を表示する" Click="imContextMenu_Click"  />
+                    <MenuItem Name="imRotateMenu" Header="画像回転 R" ToolTip="画像を90°回転する" Click="imContextMenu_Click"  />
+                    <MenuItem Name="imPrevMenu" Header="前の写真 Left Arrow" ToolTip="前の写真を表示する" Click="imContextMenu_Click"  />
+                    <MenuItem Name="imNextMenu" Header="次の写真 Right Arrow" ToolTip="次の写真を表示する" Click="imContextMenu_Click"  />
                 </ContextMenu>
             </Image.ContextMenu>
         </Image>
@@ -20,6 +27,14 @@
             <Button x:Name="BtGInfo" Margin="0,0,0,0" Width="25" Height="25" Click="Button_Click"
                 ToolTip="タグ情報を表示する(Ctrl+I Key)"  HorizontalAlignment="Right" VerticalAlignment="Top" >
                 <Path Data="M10,8 L10,15 M10,3 10,6 M10,0 A8,8 0 1 0 9,18 M9,18 A8,8 0 1 0 9,0" Margin="1" Stroke="Black" StrokeThickness="1.5" />
+            </Button>
+            <Button Name="BtGComment" Margin="0,0,0,0" Width="25" Height="25" Click="Button_Click"
+                    ToolTip="コメントを追加する(Ctrl+E)">
+                <Path Data="M0,0 L16,0 L16,12 L5,12 L4,16 L2,12 L0,12 L0,0 M2,4 L14,4 M2,8 L14,8" Stroke="Black" StrokeThickness="1.5" />
+            </Button>
+            <Button Name="BtGImageCopy" Margin="0,0,0,0" Width="25" Height="25" Click="Button_Click"
+                    ToolTip="画面のコピー(Ctrl+C)">
+                <Path Data="M4,5 L0,5 L0,16 L10,16 L10,12 M4,0 L4,12 L14,12 L14,0 L4,0" Stroke="Black" StrokeThickness="1.5" />
             </Button>
             <Button x:Name="BtGZoomReset" Margin="0,0,0,0" Width="25" Height="25" Click="Button_Click" 
                 ToolTip="全体を表示する(Home Key)" HorizontalAlignment="Right" VerticalAlignment="Top" >
@@ -38,11 +53,11 @@
                 <Path Data="M10,0 A10,10 0 1 1 1,10 M1,10 L1,18 M1,10 L8,13" Stroke="DarkGreen" StrokeThickness="2" Stretch="Fill" Margin="2" Width="15" Height="15" />
             </Button>
             <Button x:Name="BtPrevImage" Margin="0,0,0,0" VerticalAlignment="Top" Click="Button_Click" HorizontalAlignment="Right" Width="24" Height="25"
-                    ToolTip="前の画像ファイルを表示する(Ctrl+Left Key)" >
+                    ToolTip="前の画像ファイルを表示する(Left Key)" >
                 <Path Fill="DarkGreen" Margin="3" Width="15" Height="15" Data="M 4,0 L 2,2 L 4,4 Z M 2,0 L 0,2 L2,4 Z" Stretch="Fill" StrokeLineJoin="Round"/>
             </Button>
             <Button x:Name="BtNextImage" VerticalAlignment="Top" Click="Button_Click" HorizontalAlignment="Right" Width="25" Height="25" Margin="0,0,0,0"
-                    ToolTip="次の画像ファイルを表示する(Ctrl+Right Key)" >
+                    ToolTip="次の画像ファイルを表示する(Right Key)" >
                 <Path Fill="DarkGreen" Margin="3" Width="15" Height="15" Data="M 0,0 L 2,2 L 0,4 Z M 2,0 L 4,2 L2,4 Z" Stretch="Fill" StrokeLineJoin="Round"/>
             </Button>
             <TextBlock x:Name="TbPhotoInfo" Margin="0,0,0,0" Width="800" HorizontalAlignment="Left" />

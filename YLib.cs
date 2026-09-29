@@ -1879,13 +1879,19 @@ namespace CoreLib
                 string ext = Path.GetFileName(path);
                 if (recursive) {
                     string[] folders = Directory.GetDirectories(folder);
-                    foreach (string dir in folders)
-                        files.AddRange(getFiles(Path.Combine(dir, ext), recursive));
-                    files.AddRange(Directory.GetFiles(folder, ext));
+                    foreach (string dir in folders) {
+                        string[] filesList = getFiles(Path.Combine(dir, ext), recursive);
+                        if (filesList != null)
+                            files.AddRange(filesList);
+                    }
+                    string[] fileList = Directory.GetFiles(folder, ext);
+                    if (fileList != null)
+                        files.AddRange(fileList);
                     return files.ToArray();
                 } else
                     return Directory.GetFiles(folder, ext);
             } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine("getFiles: " + e.Message);
                 return null;
             }
         }
@@ -4242,6 +4248,113 @@ namespace CoreLib
             return sum / list.Count;
         }
 
+
+        //	地球上の２地点の緯度・経度を指定して最短距離とその方位角を計算
+        //	地球を赤道半径r=6378.137kmを半径とする球体として計算しています。
+        //	方位角は北:0度、東:90度、南:180度、西:270度。
+        //	地点A(経度x1, 緯度y1)、地点B(経度x2, 緯度y2)
+        //	ABの距離(km) d = r*acos(sin(y1)*sin(y2)+cos(y1)*cos(y2)*cos(x2-x1))
+        //	方位角　φ = 90 - atan2(sin(x2-x1), cos(y1)*tan(y2) - sin(y1)*cos(x2-x1))
+        //	http://keisan.casio.jp/has10/SpecExec.cgi
+
+        /// <summary>
+        /// 球面上の2点間座標の距離
+        /// </summary>
+        /// <param name="longi1">座標1経度</param>
+        /// <param name="lati1">座標1緯度</param>
+        /// <param name="longi2">座標2経度</param>
+        /// <param name="lati2">座標2緯度</param>
+        /// <returns>距離(km)</returns>
+        public double coordinateDistance(double longi1, double lati1, double longi2, double lati2)
+        {
+            double r = 6378.137;
+            double x1 = longi1 / 180 * Math.PI;
+            double y1 = lati1 / 180 * Math.PI;
+            double x2 = longi2 / 180 * Math.PI;
+            double y2 = lati2 / 180 * Math.PI;
+            double dis = r * Math.Acos(Math.Sin(y1) * Math.Sin(y2) + Math.Cos(y1) * Math.Cos(y2) * Math.Cos(x2 - x1));
+            return double.IsNaN(dis) ? 0 : dis;
+        }
+
+        /// <summary>
+        /// 球面上の2点間座標の距離(static関数)
+        /// </summary>
+        /// <param name="longi1">座標1経度</param>
+        /// <param name="lati1">座標1緯度</param>
+        /// <param name="longi2">座標2経度</param>
+        /// <param name="lati2">座標2緯度</param>
+        /// <returns>距離(km)</returns>
+        public static double CoordinateDistance(double longi1, double lati1, double longi2, double lati2)
+        {
+            double r = 6378.137;
+            double x1 = longi1 / 180 * Math.PI;
+            double y1 = lati1 / 180 * Math.PI;
+            double x2 = longi2 / 180 * Math.PI;
+            double y2 = lati2 / 180 * Math.PI;
+            double dis = r * Math.Acos(Math.Sin(y1) * Math.Sin(y2) + Math.Cos(y1) * Math.Cos(y2) * Math.Cos(x2 - x1));
+            return double.IsNaN(dis) ? 0 : dis;
+        }
+
+        /// <summary>
+        /// 球面上の2点間座標の距離
+        /// </summary>
+        /// <param name="ps">緯度経度座標</param>
+        /// <param name="pe">緯度経度座標</param>
+        /// <returns>距離(km)</returns>
+        public double coordinateDistance(System.Windows.Point ps, System.Windows.Point pe)
+        {
+            return coordinateDistance(ps.X, ps.Y, pe.X, pe.Y);
+        }
+
+        /// <summary>
+        /// 球面上の2点間座標の距離(static関数)
+        /// </summary>
+        /// <param name="ps">緯度経度座標</param>
+        /// <param name="pe">緯度経度座標</param>
+        /// <returns>距離(km)</returns>
+        public static double CoordinateDistance(System.Windows.Point ps, System.Windows.Point pe)
+        {
+            return CoordinateDistance(ps.X, ps.Y, pe.X, pe.Y);
+        }
+
+
+        /// <summary>
+        /// 球面上の2点間座標の方位
+        /// </summary>
+        /// <param name="longi1">座標1経度</param>
+        /// <param name="lati1">座標1緯度</param>
+        /// <param name="longi2">座標2経度</param>
+        /// <param name="lati2">座標2緯度</param>
+        /// <returns>方位角(°)</returns>
+        public double azimuth(double longi1, double lati1, double longi2, double lati2)
+        {
+            double x1 = longi1 / 180 * Math.PI;
+            double y1 = lati1 / 180 * Math.PI;
+            double x2 = longi2 / 180 * Math.PI;
+            double y2 = lati2 / 180 * Math.PI;
+            double phai = 90 - (Math.Atan2(Math.Sin(x2 - x1), Math.Cos(y1) * Math.Tan(y2) - Math.Sin(y1) * Math.Cos(x2 - x1))) * 180 / Math.PI;
+            return phai;
+        }
+
+        /// <summary>
+        /// 球面上の2点間座標の方位
+        /// </summary>
+        /// <param name="longi1">座標1経度</param>
+        /// <param name="lati1">座標1緯度</param>
+        /// <param name="longi2">座標2経度</param>
+        /// <param name="lati2">座標2緯度</param>
+        /// <returns>方位角(°)</returns>
+        public double azimuth2(double longi1, double lati1, double longi2, double lati2)
+        {
+            double l1 = longi1 / 180 * Math.PI;         //	経度
+            double b1 = lati1 / 180 * Math.PI;          //	緯度
+            double l2 = longi2 / 180 * Math.PI;
+            double b2 = lati2 / 180 * Math.PI;
+            double Y = Math.Cos(b2) * Math.Sin(l2 - l1);
+            double X = Math.Cos(b1) * Math.Sin(b2) - Math.Sin(b1) * Math.Cos(b2) * Math.Cos(l2 - l1);
+            double phai = (Math.Atan2(Y, X)) * 180 / Math.PI;
+            return phai < 0 ? phai + 360 : phai;
+        }
 
         //  ---  配列処理  ---
 

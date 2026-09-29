@@ -3,7 +3,13 @@
   <PropertyGroup />
   <ItemGroup />
   <ItemGroup>
+    <Compile Update="Dialog\FileCopyDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Dialog\ImageView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Dialog\FileDeleteDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
