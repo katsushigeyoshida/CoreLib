@@ -132,9 +132,11 @@ namespace CoreLib
                 } else if (e.Key == Key.C) {            //  画面コピー
                     ylib.image2Clipbord(ImImage.Source);
                 } else if (e.Key == Key.E) {            //  コメント登録
-                    setComment();
+                    setComment(mImagePath);
+                } else if (e.Key == Key.G) {            //  緯度経度編集
+                    editCoordinate(mImagePath);
                 } else if (e.Key == Key.I) {            //  イメージのプロパティ
-                    infoImage();
+                    infoImage(mImagePath);
                 }
             } else {
                 if (e.Key == Key.Left) {                //  左に移動
@@ -148,6 +150,7 @@ namespace CoreLib
                 } else if (e.Key == Key.PageDown) {     //  縮小
                     imageZoom(1 / 1.25, cx, cy);
                 } else if (e.Key == Key.F5) {           //  再表示
+
                 } else if (e.Key == Key.Escape) {       //  終了
                     Close();
                 } else if (e.Key == Key.Home) {         //  初期状態
@@ -171,10 +174,10 @@ namespace CoreLib
             double cy = ImImage.ActualHeight / 2.0;
             if (button.Name == "BtGInfo") {
                 //  イメージのプロパティ表示
-                infoImage();
+                infoImage(mImagePath);
             } else if (button.Name == "BtGComment") {
                 //  コメント追加・７編集
-                setComment();
+                setComment(mImagePath);
             } else if (button.Name == "BtGImageCopy") {
                 //  画像をクリップボードにコピー
                 ylib.image2Clipbord(ImImage.Source);
@@ -263,13 +266,16 @@ namespace CoreLib
             double cy = ImImage.ActualHeight / 2.0;
             if (menuItem.Name.CompareTo("imImageInfoMenu") == 0) {
                 //  イメージのプロパティ表示
-                infoImage();
+                infoImage(mImagePath);
+            } else if (menuItem.Name.CompareTo("imCommenMenu") == 0) {
+                //  コメント追加・７編集
+                setComment(mImagePath);
             } else if (menuItem.Name.CompareTo("imClipCopyMenu") == 0) {
                 //  画像をクリップボードにコピー
                 ylib.image2Clipbord(ImImage.Source);
-            } else if (menuItem.Name.CompareTo("imCommenMenu") == 0) {
-                //  コメント追加・７編集
-                setComment();
+            } else if (menuItem.Name.CompareTo("imCoordinateMenu") == 0) {
+                //  緯度経度座標編集
+                editCoordinate(mImagePath);
             } else if (menuItem.Name.CompareTo("imZoomFitMenu") == 0) {
                 //  全体表示(イメージを初期状態にする)
                 Matrix matrix = new Matrix();
@@ -309,19 +315,19 @@ namespace CoreLib
         /// <param name="e"></param>
         private void imCommenMenu_Click(object sender, RoutedEventArgs e)
         {
-            setComment();
+            setComment(mImagePath);
         }
 
         /// <summary>
         /// コメントデータを設定する
         /// </summary>
-        private void setComment()
+        private void setComment(string path)
         {
-            DateTime lastDateTime = ylib.getFileDateTime(mImagePath);
-            ExifInfo exifInfo = new ExifInfo(mImagePath);
+            DateTime lastDateTime = ylib.getFileDateTime(path);
+            ExifInfo exifInfo = new ExifInfo(path);
             string comment = exifInfo.getUserComment();
             if (comment.Length <= 0)
-                comment += ylib.getIPTC(mImagePath)[4];
+                comment += ylib.getIPTC(path)[4];
             InputBox dlg = new InputBox();
             dlg.Owner = this;
             dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -332,9 +338,31 @@ namespace CoreLib
                     if (!exifInfo.save()) {
                         MessageBox.Show(exifInfo.mErrorMsg);
                     } else {
-                        setPhotoInfo(mImagePath);
-                        ylib.setFileDateTime(mImagePath, lastDateTime);
+                        setPhotoInfo(path);
+                        ylib.setFileDateTime(path, lastDateTime);
                     }
+            }
+        }
+
+        /// <summary>
+        /// 座標データの追加・編集
+        /// </summary>
+        /// <param name="path"></param>
+        private void editCoordinate(string path)
+        {
+            ExifInfo exifInfo = new ExifInfo(path);
+            Point coord = exifInfo.getExifGpsCoordinate();
+            InputBox dlg = new InputBox();
+            dlg.Title = "座標編集(緯度,軽度)";
+            dlg.mEditText = coord.Y + "," + coord.X;
+            if (dlg.ShowDialog() == true) {
+                string[] data = dlg.mEditText.Split(',');
+                if (1 <= data.Length) {
+                    coord.X = ylib.string2double(data[1]);
+                    coord.Y = ylib.string2double(data[0]);
+                    if (exifInfo.setExifGpsCoordinate(coord))
+                        exifInfo.save();
+                }
             }
         }
 
@@ -395,12 +423,12 @@ namespace CoreLib
         /// <summary>
         /// イメージのプロパティ表示
         /// </summary>
-        private void infoImage()
+        private void infoImage(string path)
         {
-            string buf = ylib.getIPTCall(mImagePath);
-            ExifInfo exifInfo = new ExifInfo(mImagePath);
+            string buf = ylib.getIPTCall(path);
+            ExifInfo exifInfo = new ExifInfo(path);
             buf += "\n" + exifInfo.getExifInfoAll();
-            messageBox(buf, "属性表示[" + Path.GetFileName(mImagePath) + "]");
+            messageBox(buf, "属性表示[" + Path.GetFileName(path) + "]");
         }
 
         /// <summary>

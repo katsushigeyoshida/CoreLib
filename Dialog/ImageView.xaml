@@ -13,7 +13,8 @@
                 <ContextMenu>
                     <MenuItem Name="imImageInfoMenu" Header="写真情報 Ctrl+I" ToolTip="写真の属性情報を表示" Click="imContextMenu_Click" />
                     <MenuItem Name="imCommenMenu" Header="コメント追加 Ctrl+E" ToolTip="コメントの追加・修正" Click="imContextMenu_Click"  />
-                    <MenuItem Name="imClipCopyMenu" Header="コピー Ctrl+C" ToolTip="画像をクリップボードにコピーC" Click="imContextMenu_Click" />
+                    <MenuItem Name="imClipCopyMenu" Header="コピー Ctrl+C" ToolTip="画像をクリップボードにコピー" Click="imContextMenu_Click" />
+                    <MenuItem Name="imCoordinateMenu" Header="座標編集 Ctrl+G" ToolTip="緯度経度座標の取得と編集" Click="imContextMenu_Click" />
                     <MenuItem Name="imZoomFitMenu" Header="全体表示 Home" ToolTip="画像全体を表示する" Click="imContextMenu_Click"  />
                     <MenuItem Name="imZoomUpMenu" Header="拡大表示 PageUp" ToolTip="画像全体を表示する" Click="imContextMenu_Click"  />
                     <MenuItem Name="imZoomDownMenu" Header="縮小表示 PageDown" ToolTip="画像全体を表示する" Click="imContextMenu_Click"  />
