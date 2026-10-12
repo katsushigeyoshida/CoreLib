@@ -42,6 +42,7 @@ namespace CoreLib
         public string mScriptPath;
 
         private YLib ylib = new YLib();
+        private YFile yfile = new YFile();
 
 
         /// <summary>
@@ -353,7 +354,7 @@ namespace CoreLib
         {
             if (0 < args.Count) {
                 string path = args[0].getValue();
-                string text = ylib.loadTextFile(path);
+                string text = yfile.loadTextFile(path);
                 return new Token(text, TokenType.STRING);
             }
 
@@ -370,7 +371,7 @@ namespace CoreLib
             if (1 < args.Count) {
                 string path = args[0].getValue();
                 string text = args[1].getValue();
-                ylib.saveTextFile(path, text);
+                yfile.saveTextFile(path, text);
             }
 
             return new Token("", TokenType.EMPTY);
@@ -386,7 +387,7 @@ namespace CoreLib
         {
             if (0 < args.Count) {
                 string path = args[0].getValue();
-                List<string[]> listData = ylib.loadCsvData(path);
+                List<string[]> listData = yfile.loadCsvData(path);
                 int maxlength = listData.Max(p => p.Length);
                 string[,] texts = new string[listData.Count, maxlength];
                 for (int i = 0; i < listData.Count; i++) {
@@ -418,7 +419,7 @@ namespace CoreLib
                         strings[j] = texts[i, j];
                     listData.Add(strings);
                 }
-                ylib.saveCsvData(path, listData);
+                yfile.saveCsvData(path, listData);
             }
 
             return new Token("", TokenType.EMPTY);
@@ -493,7 +494,7 @@ namespace CoreLib
                     }
                 }
                 filters.Add(new string[] { "すべてのファイル", "*.*" });
-                string path = ylib.fileOpenSelectDlg("ファイル選択", dir, filters);
+                string path = yfile.fileOpenSelectDlg("ファイル選択", dir, filters);
                 if (0 < path.Length)
                     return new Token(path, TokenType.STRING);
             }

@@ -9,11 +9,12 @@
     <StackPanel >
         <TextBlock x:Name="tbTitle" Text="タイトル" FontSize="12" Height="18" Margin="20,2,0,0" />
         <TextBlock x:Name="tbMessage" Text="メッセージ" FontSize="12" Height="30" Margin="20,0,0,0" />
-        <StackPanel Orientation="Horizontal" >
-            <Button x:Name="btOK" Content="OK" Width="50" Margin="20,0,0,0" Click="btOK_Click" />
-            <Button x:Name="btCanecel" Content="Cancel" Width="50" Margin="20,0,0,0" Click="btCanecel_Click" />
-            <Button x:Name="btYes" Content="Yes" Width="50" Margin="20,0,0,0" Click="btYes_Click" />
-            <Button x:Name="btNo" Content="No" Width="50" Margin="20,0,0,0" Click="btNo_Click" />
-            <Button x:Name="btYNCancel" Content="Cancel" Width="50" Margin="20,0,0,0" Click="btYNCancel_Click" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
+            <Button x:Name="btOK" Content="OK" Width="50" Margin="10,0,0,0" Click="btOK_Click" />
+            <Button x:Name="btCanecel" Content="Cancel" Width="50" Margin="5,0,0,0" Click="btCanecel_Click" />
+            <Button x:Name="btYes" Content="Yes" Width="50" Margin="5,0,0,0" Click="btYes_Click" />
+            <Button x:Name="btNo" Content="No" Width="50" Margin="5,0,0,0" Click="btNo_Click" />
+            <Button x:Name="btYNCancel" Content="Cancel" Width="50" Margin="5,0,0,0" Click="btYNCancel_Click" />
         </StackPanel>
+        <CheckBox Name="cbContinueMessage" Content="次回確認メッセージを出す" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top"/>
     </StackPanel></Window>

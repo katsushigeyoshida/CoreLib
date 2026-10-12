@@ -140,6 +140,8 @@ namespace CoreLib
         private Util mUtil = new Util();
         private YCalc mCalc = new YCalc();                      //  数式処理
         private YLib ylib = new YLib();                         //  汎用関数
+        private YFile yfile = new YFile();
+
 
         /// <summary>
         /// コンストラクタ
@@ -344,7 +346,7 @@ namespace CoreLib
             string scriptPath = tokens[1].getValue();
             scriptPath = Path.Combine(mScriptFolder, scriptPath);
             if (File.Exists(scriptPath)) {
-                List<string> scriptData = ylib.loadListData(scriptPath);
+                List<string> scriptData = yfile.loadListData(scriptPath);
                 string code = string.Join("\n", scriptData);
                 addScript(code);
 

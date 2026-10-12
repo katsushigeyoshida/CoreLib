@@ -334,5 +334,53 @@ namespace CoreLib.Properties {
                 this["ImageViewLeft"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double InputSelectWidth {
+            get {
+                return ((double)(this["InputSelectWidth"]));
+            }
+            set {
+                this["InputSelectWidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double InputSelectHeight {
+            get {
+                return ((double)(this["InputSelectHeight"]));
+            }
+            set {
+                this["InputSelectHeight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double InputSelectTop {
+            get {
+                return ((double)(this["InputSelectTop"]));
+            }
+            set {
+                this["InputSelectTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double InputSelectLeft {
+            get {
+                return ((double)(this["InputSelectLeft"]));
+            }
+            set {
+                this["InputSelectLeft"] = value;
+            }
+        }
     }
 }

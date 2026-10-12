@@ -27,6 +27,8 @@ namespace CoreLib
         public string mMessage = "";
         public MessageBoxButton mButton = MessageBoxButton.OK;
         public MessageBoxResult mResult = MessageBoxResult.OK;
+        public bool mContinueMessageDisp = false;                   //  継続表示チェックボタン表示
+        public bool mContinueMessage = true;                        //  継続表示の有無
 
         public MessageBoxEx()
         {
@@ -36,9 +38,25 @@ namespace CoreLib
             mWindowHeight = Height;
         }
 
+        /// <summary>
+        /// 前処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             double minWidth = 120;
+            Title = mDlgTitle;
+            if (mTitle.Length == 0)
+                tbTitle.Visibility = Visibility.Collapsed;
+            tbTitle.Text = mTitle;
+            tbMessage.Text = mMessage;
+            Size textSize = measureText(mMessage, tbMessage.FontSize);
+            int rowCount = mMessage.Count(p => p == '\n');
+            tbMessage.Height = 30 + rowCount * tbMessage.FontSize * 1.2 + 10;
+            Height = tbMessage.Height + 80 + (0 < mTitle.Length ? 20 : 0);
+            Width = Math.Max(textSize.Width + 50, minWidth);
+
             switch (mButton) {
                 case MessageBoxButton.OK:
                     btCanecel.Visibility = Visibility.Collapsed;
@@ -65,45 +83,71 @@ namespace CoreLib
                     break;
             }
 
-            Title = mDlgTitle;
-            if (mTitle.Length ==0)
-                tbTitle.Visibility = Visibility.Collapsed;
-            tbTitle.Text = mTitle;
-            tbMessage.Text = mMessage;
-            Size textSize = measureText(mMessage, tbMessage.FontSize);
-            int rowCount = mMessage.Count(p => p == '\n');
-            tbMessage.Height = 30 + rowCount * tbMessage.FontSize * 1.2 + 10;
-            Height = tbMessage.Height + 80 + (0 < mTitle.Length ? 20 : 0);
-            Width = Math.Max(textSize.Width + 50, minWidth);
+            if (mContinueMessageDisp) {
+                cbContinueMessage.Visibility = Visibility.Visible;
+                Height += 20;
+            } else
+                cbContinueMessage.Visibility = Visibility.Collapsed;
+            cbContinueMessage.IsChecked = mContinueMessage;
         }
 
+        /// <summary>
+        /// OKボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btOK_Click(object sender, RoutedEventArgs e)
         {
             mResult = MessageBoxResult.OK;
+            mContinueMessage = cbContinueMessage.IsChecked == true;
             Close();
         }
 
+        /// <summary>
+        /// Cancelボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btCanecel_Click(object sender, RoutedEventArgs e)
         {
             mResult = MessageBoxResult.Cancel;
+            mContinueMessage = cbContinueMessage.IsChecked == true;
             Close();
         }
 
+        /// <summary>
+        /// Yesボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btYes_Click(object sender, RoutedEventArgs e)
         {
             mResult = MessageBoxResult.Yes;
+            mContinueMessage = cbContinueMessage.IsChecked == true;
             Close();
         }
 
+        /// <summary>
+        /// Noボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btNo_Click(object sender, RoutedEventArgs e)
         {
             mResult = MessageBoxResult.No;
+            mContinueMessage = cbContinueMessage.IsChecked == true;
             Close();
         }
 
+        /// <summary>
+        /// YesNoのCancelボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btYNCancel_Click(object sender, RoutedEventArgs e)
         {
             mResult = MessageBoxResult.Cancel;
+            mContinueMessage = cbContinueMessage.IsChecked == true;
             Close();
         }
 

@@ -10,6 +10,8 @@ namespace CoreLib
         private List<string> mKeyWordList = new List<string>(); //  入力候補リスト
 
         private YLib ylib = new YLib();
+        private YFile yfile = new YFile();
+
 
         public Snippet() { }
 
@@ -55,7 +57,7 @@ namespace CoreLib
         {
             List<string> funcList = new List<string>();
             if (File.Exists(filepath)) {
-                string str = ylib.loadTextFile(filepath);
+                string str = yfile.loadTextFile(filepath);
                 List<string> list = exructFuncList(str);
                 string buf = "";
                 for (int i = 0; i < list.Count; i++) {

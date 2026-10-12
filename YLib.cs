@@ -96,33 +96,8 @@ namespace CoreLib
     ///  int getStrByteCount(string str)                            文字列の長さをbyte数で求める
     ///  string stringUncode2String(string text)                    Unicodeの文字列を文字列に変換
     ///  string tab2space(string text, int tabsize = 4)             タブをスペースに変換
-    ///  
-    ///  ---  ファイル・ディレクトリ関連  ------
-    ///  bool makeDir(string path)                                  ファイルパスからディレクトリを作成
-    ///  string folderSelect(string title, string initFolder)       フォルダの選択ダイヤログの表示
-    ///  string fileOpenSelectDlg(string title, string initDir, List<string[]> filters) ファイル読込選択ダイヤログ表示
-    ///  string fileSaveSelectDlg(string title, string initDir, List<string[]> filters) ファイル保存選択ダイヤログ表示
-    ///  string consoleFileSelect(string folder, string fname)      Console用ファイル選択
-    ///  void copyDrectory(string srcDir, string destDir)           ディレクトリをコピー
-    ///  void fileCopy(string srcFile, string destFile, int copyType)   ファイルのコピー
-    ///  string[] getFiles(string path)                             指定されたパスからファイルリストを作成
-    ///  List<string> getDirectories(string path)                   ディレクトリリストの取得
-    ///  List<string> getFilesDirectories(string folder, string fileName)   フォルダとファイルの一覧を取得
-    ///  List<FileInfo> getDirectoriesInfo(string folder, string fileName = "*")    ファイル情報検索(サブディレクトリを含む)
-    ///  List<string> getDrives()                                   ドライブの一覧を取得
-    ///  List<string[]> loadCsvData(string filePath, string[] title, bool firstTitle = false)   CSV形式のファイルを読み込みList<String[]>形式で出力する
-    ///  List<string[]> loadCsvData(string filePath, bool tabSep = false)       CSV形式のファイルを読み込む
-    ///  void saveCsvData(string path, string[] format, List<string[]> data)    タイトルをつけてCSV形式でListデータをファイルに保存
-    ///  void saveCsvData(string path, List<string[]> csvData)      データをCSV形式でファイルに書き込む
     ///  string arrayStr2CsvData(string[] data)                     配列データをCSVデータに変換
     ///  string[] csvData2ArrayStr(string line)                     CSVデータを配列データに戻す
-    ///  List<string[]> loadJsonData(string filePath)               JSON形式のファイルを読み込む
-    ///  List<string> loadListData(string filePath)                 ファイルを読み込んでリストデータにする
-    ///  string loadTextFile(string path)                           テキストファイルの読込
-    ///  void saveTextFile(string path, string buffer)              テキストファイルの保存
-    ///  byte[] loadBinData(string path, int size = 0)              バイナリファイルの読込
-    ///  void saveBinData(string path, byte[] buffer)               バイナリデータをファイルに書き込む
-    ///  bool gzipDecompress(string ipath, string opath)            gzipファイルを解凍する
     ///  
     ///  --- データ処理関係  ------
     ///  List<string[]> splitJson(string jsonData, string baseTitle = "")   JSON形式の文字列から[名前:値]の対データをリストデータとして取得する
@@ -676,10 +651,10 @@ namespace CoreLib
         public bool processStart(string prog, string arg)
         {
             try {
-                if (File.Exists(prog))
+                //if (File.Exists(prog))
                     Process.Start(prog, arg);
-                else
-                    return false;
+                //else
+                //    return false;
             } catch (Exception e) {
                 Debug.WriteLine(e.Message);
                 return false;
@@ -702,7 +677,7 @@ namespace CoreLib
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                     //Windowsのとき  
                     url = url.Replace("&", "^&");
-                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+                    Process.Start(new ProcessStartInfo("cmd", $"/c start　\"\" \"{url}\"") { CreateNoWindow = true });
                 } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                     //Linuxのとき  
                     Process.Start("xdg-open", url);
@@ -731,15 +706,15 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// メッセージダイヤログ(親indowの中央に表示)
+        /// メッセージダイヤログ(親Windowの中央に表示)
         /// ボタンの種類 MessageBoxButton.OK/OKCancel/YesNo/YesNoCancel
         /// </summary>
         /// <param name="owner">オーナー</param>
         /// <param name="message">メッセージ</param>
-        /// <param name="title">メッセージのタイトル</param>
-        /// <param name="dlgTitle">ダイヤログのタイトル</param>
+        /// <param name="title">ダイヤログのタイトル</param>
+        /// <param name="dlgTitle">メッセージ内タイトル</param>
         /// <param name="buttonType">ボタンの種類</param>
-        /// <returns></returns>
+        /// <returns>MessageBoxResult</returns>
         public MessageBoxResult messageBox(Window owner, string message, string title = "",
             string dlgTitle = "",MessageBoxButton buttonType = MessageBoxButton.OK)
         {
@@ -752,6 +727,31 @@ namespace CoreLib
             dlg.mButton = buttonType;
             dlg.ShowDialog();
             return dlg.mResult;
+        }
+
+        /// <summary>
+        /// メッセージ表示ダイヤログ
+        /// </summary>
+        /// <param name="owner">オーナー</param>
+        /// <param name="message">メッセージ</param>
+        /// <param name="title">ダイヤログのタイトル</param>
+        /// <param name="dlgTitle">メッセージ内タイトル</param>
+        /// <param name="buttonType">ボタンの種類</param>
+        /// <param name="continueMessage">(MessageBoxResult, MessageContinue)</param>
+        /// <returns></returns>
+        public (MessageBoxResult result, bool cont) messageBoxEx(Window owner, string message, string title = "",
+            string dlgTitle = "", MessageBoxButton buttonType = MessageBoxButton.OK, bool continueMessage = false)
+        {
+            MessageBoxEx dlg = new MessageBoxEx();
+            dlg.Owner = owner;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.mMessage = message;
+            dlg.mDlgTitle = dlgTitle;
+            dlg.mTitle = title;
+            dlg.mButton = buttonType;
+            dlg.mContinueMessageDisp = continueMessage;
+            dlg.ShowDialog();
+            return (dlg.mResult, dlg.mContinueMessage);
         }
 
         // ---  ストップウォッチ  ---
@@ -1675,516 +1675,8 @@ namespace CoreLib
             return buf;
         }
 
-        //  ---  ファイル・ディレクトリ関連  ------
 
-        /// <summary>
-        /// ファイルパスからディレクトリを作成
-        /// </summary>
-        /// <param name="path">ファイルパス</param>
-        /// <returns>成否</returns>
-        public bool makeDir(string path)
-        {
-            try {
-                string folder = Path.GetDirectoryName(path);
-                if (0 < folder.Length && !Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
-
-            } catch (Exception e) {
-                return false;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// フォルダの選択ダイヤログの表示
-        /// </summary>
-        /// <param name="title">タイトル</param>
-        /// <param name="initFolder">初期ディレクトリ</param>
-        /// <returns>フォルダパス</returns>
-        public string folderSelect(string title, string initFolder)
-        {
-            var dlg = new CommonOpenFileDialog {
-                Title = title,
-                IsFolderPicker = true,
-                InitialDirectory = initFolder,
-                DefaultDirectory = initFolder,
-            };
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok) {
-                return dlg.FileName;
-            } else {
-                return "";
-            }
-        }
-
-        /// <summary>
-        /// ファイル読込選択ダイヤログ表示
-        /// フィルタ例  ("CSVファイル", "*.csv;*.csv")("すべてのファイル", "*.*")
-        /// Nuget で WindowsAPICodePack をインストール
-        ///  CommonOpenFileDialogの使い方
-        ///  参照 https://kuttsun.blogspot.com/2017/11/blog-post.html
-        /// </summary>
-        /// <param name="title">タイトル</param>
-        /// <param name="initDir">初期ディレクトリ</param>
-        /// <param name="filters">フィルタリスト</param>
-        /// <returns>ファイルパス</returns>
-        public string fileOpenSelectDlg(string title, string initDir, List<string[]> filters)
-        {
-            var dlg = new CommonOpenFileDialog {
-                Title = title,
-                InitialDirectory = initDir,
-                DefaultDirectory = initDir
-            };
-            foreach (string[] filter in filters)
-                dlg.Filters.Add(new CommonFileDialogFilter(filter[0], filter[1]));
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok) {
-                return dlg.FileName;
-            } else {
-                return "";
-            }
-        }
-
-        /// <summary>
-        /// ファイル保存選択ダイヤログ表示
-        /// フィルタ例  ("CSVファイル", "*.csv;*.csv")("すべてのファイル", "*.*")
-        /// Nuget で WindowsAPICodePack をインストール
-        ///  CommonOpenFileDialogの使い方
-        ///  参照 https://kuttsun.blogspot.com/2017/11/blog-post.html
-        /// </summary>
-        /// <param name="title">タイトル</param>
-        /// <param name="initDir">初期ディレクトリ</param>
-        /// <param name="filters">フィルタリスト</param>
-        /// <returns>ファイルパス</returns>
-        public string fileSaveSelectDlg(string title, string initDir, List<string[]> filters)
-        {
-            var dlg = new CommonSaveFileDialog {
-                Title = title,
-                InitialDirectory = initDir,
-                DefaultDirectory = initDir
-            };
-            foreach (string[] filter in filters)
-                dlg.Filters.Add(new CommonFileDialogFilter(filter[0], filter[1]));
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok) {
-                return dlg.FileName;
-            } else {
-                return "";
-            }
-        }
-
-        /// <summary>
-        /// Console用ファイル選択
-        /// </summary>
-        /// <param name="folder">検索先フォルダ</param>
-        /// <param name="fname">検索ファイル名(*.fit)</param>
-        /// <returns>選択ファイルパス</returns>
-        public string consoleFileSelect(string folder, string fname)
-        {
-            List<string> files;
-            if (folder == null) {
-                files = getDrives();
-            } else {
-                folder = Path.GetFullPath(folder);
-                files = getFilesDirectories(folder, fname);
-                files.Insert(0, "..");
-            }
-            for (int i = 0; i < files.Count; i++) {
-                if (Directory.Exists(files[i])) {
-                    Console.WriteLine($"{i}: [{files[i]}]");
-                } else {  
-                    Console.WriteLine($"{i}: {files[i]}");
-                }
-            }
-            Console.Write("番号入力 >> ");
-            string inp = Console.ReadLine();
-            int n = 0;
-            if (!int.TryParse(inp, out n))
-                return "";
-            if (files.Count <= n)
-                return "";
-            if (Directory.Exists(files[n])) {
-                if (files[int.Parse(inp)].CompareTo("..") == 0) {
-                    folder = Path.GetDirectoryName(folder);
-                } else 
-                    folder = files[int.Parse(inp)];
-                return consoleFileSelect(folder, fname);
-            }
-            return files[n];
-        }
-
-        /// <summary>
-        /// ディレクトリをコピー
-        /// srcDir以下のファイルとディレクトリをdestDir以下にコピーする
-        /// </summary>
-        /// <param name="srcDir">コピー元ディレクトリ</param>
-        /// <param name="destDir">コピー先ディレクトリ</param>
-        public void copyDrectory(string srcDir, string destDir)
-        {
-            if (!Directory.Exists(destDir)) {
-                Directory.CreateDirectory(destDir);
-            }
-            File.SetAttributes(destDir, File.GetAttributes(srcDir));
-            if (!destDir.EndsWith(Path.DirectorySeparatorChar.ToString())) {
-                destDir = destDir + Path.DirectorySeparatorChar;
-            }
-
-            string[] files = Directory.GetFiles(srcDir);
-            foreach (string file in files) {
-                File.Copy(file, destDir + Path.GetFileName(file), true);
-            }
-
-            string[] dirs = Directory.GetDirectories(srcDir);
-            foreach (string dir in dirs) {
-                copyDrectory(dir, destDir + Path.GetFileName(dir));
-            }
-        }
-
-        /// <summary>
-        /// ファイルのコピー(renameも含む)
-        /// copyType: 0:update, 1: != date | != size, 2:force, 3:new(dest not existe)
-        /// </summary>
-        /// <param name="srcFile">コピー元ファイルパス</param>
-        /// <param name="destFile">コピー先ファイルパス</param>
-        /// <param name="copyType">コピー条件</param>
-        public void fileCopy(string srcFile, string destFile, int copyType)
-        {
-            FileInfo sf = new FileInfo(srcFile);
-            FileInfo df = new FileInfo(destFile);
-            if (df.Exists && df.IsReadOnly)
-                df.IsReadOnly = false;
-            if ((copyType == 0 && sf.LastWriteTime > df.LastWriteTime) ||
-                (copyType == 1 && (sf.LastWriteTime != df.LastWriteTime || sf.Length != df.Length)) ||
-                (copyType == 2) ||
-                (copyType == 3 && !df.Exists)
-                ) {
-                if (!Directory.Exists(Path.GetDirectoryName(destFile)))
-                    Directory.CreateDirectory(Path.GetDirectoryName(destFile));
-                if (File.Exists(srcFile))
-                    File.Copy(srcFile, destFile, true);
-            }
-        }
-
-        /// <summary>
-        /// 指定されたパスからファイルリストを作成
-        /// 指定されたpathからフォルダ名とワイルドカードのファイル名に分けて
-        /// ファイルリストを取得する
-        /// 例 path = D:\folder\*.flac
-        /// </summary>
-        /// <param name="path">パス名</param>
-        /// <param name="recursive">再帰検索</param>
-        /// <returns>ファイルリスト</returns>
-        public string[] getFiles(string path, bool recursive = false)
-        {
-            List<string> files = new List<string>();
-            try {
-                string folder = Path.GetDirectoryName(path);
-                string ext = Path.GetFileName(path);
-                if (recursive) {
-                    string[] folders = Directory.GetDirectories(folder);
-                    foreach (string dir in folders) {
-                        string[] filesList = getFiles(Path.Combine(dir, ext), recursive);
-                        if (filesList != null)
-                            files.AddRange(filesList);
-                    }
-                    string[] fileList = Directory.GetFiles(folder, ext);
-                    if (fileList != null)
-                        files.AddRange(fileList);
-                    return files.ToArray();
-                } else
-                    return Directory.GetFiles(folder, ext);
-            } catch (Exception e) {
-                System.Diagnostics.Debug.WriteLine("getFiles: " + e.Message);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// ディレクトリ情報リストの取得
-        /// </summary>
-        /// <param name="path">パス</param>
-        /// <returns>ディレクトリ情報リスト</returns>
-        public List<DirectoryInfo> getDirectoriesInfo(string path)
-        {
-            List<DirectoryInfo> dirList = new List<DirectoryInfo>();
-            try {
-                DirectoryInfo di = new DirectoryInfo(path);
-                foreach (DirectoryInfo dirInfo in di.GetDirectories()) {
-                    dirList.Add(dirInfo);
-                }
-                return dirList;
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 指定されたパスからディレクトリリストを作成
-        /// </summary>
-        /// <param name="path">パス名</param>
-        /// <param name="all">全属性/Normal属性</param>
-        /// <returns>ディレクトリリスト</returns>
-        public List<string> getDirectories(string path, bool all = true)
-        {
-            List<string> dirList = new List<string>();
-            try {
-                DirectoryInfo di = new DirectoryInfo(path);
-                foreach (DirectoryInfo dir in di.GetDirectories()) {
-                    if(all || (dir.Attributes & FileAttributes.Hidden) == 0)
-                        dirList.Add(dir.FullName);
-                }
-                return dirList;
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// フォルダとファイルの一覧を取得
-        /// </summary>
-        /// <param name="folder">フォルダ</param>
-        /// <param name="fileName">ファイル名(*.ext)</param>
-        /// <returns></returns>
-        public List<string> getFilesDirectories(string folder, string fileName)
-        {
-            List<string> fileDirList = new List<string>();
-            try {
-                DirectoryInfo di = new DirectoryInfo(folder);
-                foreach (DirectoryInfo dir in di.GetDirectories()) {
-                    fileDirList.Add(dir.FullName);
-                }
-                string[] files = Directory.GetFiles(folder, fileName);
-                foreach (var file in files) {
-                    fileDirList.Add(file);
-                }
-                return fileDirList;
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// ファイル情報検索(サブディレクトリを含む)
-        /// </summary>
-        /// <param name="folder">検索フォルダ</param>
-        /// <returns>ファイルリスト</returns>
-        public List<FileInfo> getDirectoriesInfo(string folder, string fileName = "*")
-        {
-            List<FileInfo> fileList = new List<FileInfo>();
-            try {
-                DirectoryInfo di = new DirectoryInfo(folder);
-                foreach (DirectoryInfo dir in di.GetDirectories()) {
-                    List<FileInfo> filesInfo = getDirectoriesInfo(dir.FullName, fileName);
-                    if (filesInfo != null) {
-                        fileList.AddRange(filesInfo);
-                    }
-                }
-                string[] files = Directory.GetFiles(folder, fileName);
-                foreach (var file in files) {
-                    FileInfo fi = new FileInfo(file);
-                    if (fi != null)
-                        fileList.Add(fi);
-                }
-                return fileList;
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// ドライブの一覧取得
-        /// </summary>
-        /// <returns></returns>
-        public List<DirectoryInfo> getDrivesInfo()
-        {
-            string[] drives = Directory.GetLogicalDrives();
-            List<DirectoryInfo> dirs = new List<DirectoryInfo>();
-            foreach (string drive in drives)
-                dirs.Add(new DirectoryInfo(drive));
-            return dirs;
-        }
-
-        /// <summary>
-        /// ドライブの一覧を取得する
-        /// </summary>
-        /// <returns></returns>
-        public List<string> getDrives()
-        {
-            string[] drives = Directory.GetLogicalDrives();
-            return drives.ToList();
-        }
-
-        /// <summary>
-        /// CSV形式のファイルを読み込みList<String[]>形式で出力する
-        /// title[]が指定されて一行目にタイトルが入っていればタイトルの順番に合わせて取り込む
-        /// titleがnullであればそのまま配列に置き換える
-        /// </summary>
-        /// <param name="filePath">ファイル名パス</param>
-        /// <param name="title">タイトルの配列</param>
-        /// <param name="firstTitle">1列目の整合性確認</param>
-        /// <param name="comment">false:文字列の先頭が'#'だと取得しない</param>
-        /// <returns>取得データ(タイトル行なし)</returns>
-        public List<string[]> loadCsvData(string filePath, string[] title, bool firstTitle = false, bool comment = true)
-        {
-            //	ファイルデータの取り込み
-            List<string[]> fileData = loadCsvData(filePath, false, comment);
-            if (fileData == null)
-                return null;
-            if (fileData.Count == 0)
-                return fileData;
-
-            //	フォーマットの確認(タイトル行の展開)
-            int start = 1;
-            int[] titleNo = new int[title.Length];
-            if (title != null && 0 < fileData.Count) {
-                if (fileData[0][0].CompareTo(title[0]) == 0 || firstTitle) {
-                    //	データの順番を求める
-                    for (int n = 0; n < title.Length; n++) {
-                        titleNo[n] = -1;
-                        for (int m = 0; m < fileData[0].Length; m++) {
-                            if (title[n].CompareTo(fileData[0][m]) == 0) {
-                                titleNo[n] = m;
-                                break;
-                            }
-                        }
-                    }
-                    start = 1;
-                } else {
-                    //  タイトルがない場合そのまま順で追加
-                    for (int n = 0; n < title.Length; n++)
-                        titleNo[n] = n;
-                    start = 0;
-                }
-            } else {
-                return null;
-            }
-
-            //  CSVデータを配列にしてListに登録
-            List<string[]> listData = new List<string[]>();
-            for (int i = start; i < fileData.Count; i++) {
-                //  指定のタイトル順に並べ替えて追加
-                string[] buffer = new string[title.Length];
-                for (int n = 0; n < title.Length; n++) {
-                    if (0 <= titleNo[n] && titleNo[n] < fileData[i].Length) {
-                        buffer[n] = fileData[i][titleNo[n]];
-                    } else {
-                        buffer[n] = "";
-                    }
-                }
-                listData.Add(buffer);
-            }
-            return listData;
-        }
-
-        /// <summary>
-        /// CSV形式のファイルを読み込む
-        /// </summary>
-        /// <param name="filePath">ファイルパス</param>
-        /// <param name="tabSep">Tabセパレート</param>
-        /// <param name="comment">false: 文字列の先頭が'#'だと取得しない</param>
-        /// <returns>データリスト</returns>
-        public List<string[]> loadCsvData(string filePath, bool tabSep = false, bool comment = true)
-        {
-            List<string[]> csvData = new List<string[]>();
-            if (!File.Exists(filePath))
-                return csvData;
-            try {
-                using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                    using (StreamReader dataFile = new StreamReader(filePath, mEncoding[mEncordingType])) {
-                        csvData.Clear();
-                        string line;
-                        while ((line = dataFile.ReadLine()) != null) {
-                            if (!comment && 0 < line.Length && line[0] == '#')
-                                continue;
-                            string[] buf;
-                            if (tabSep) {
-                                buf = line.Split('\t');
-                            } else {
-                                buf = seperateString(line);
-                            }
-                            if (0 < buf.Length)
-                                csvData.Add(buf);
-                        }
-                        //dataFile.Close(); //  usingの場合は不要 Disposeを含んでいる
-                    }
-                    return csvData;
-                }
-            } catch (Exception e) {
-                mError = true;
-                mErrorMessage = e.Message;
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// タイトルをつけてCSV形式でListデータをファイルに保存
-        /// コメントリストが設定されている場合、ファイルの先頭に# commentの形式で出力される
-        /// </summary>
-        /// <param name="path">ファイル名パス</param>
-        /// <param name="format">タイトル列</param>
-        /// <param name="data">Listデータ</param>
-        /// <param name="comment">コメントリスト</param>
-        public void saveCsvData(string path, string[] format, List<string[]> data, List<string> comment = null)
-        {
-            List<string[]> dataList = new List<string[]>();
-            dataList.Add(format);
-            foreach (string[] v in data)
-                dataList.Add(v);
-
-            saveCsvData(path, dataList, comment);
-        }
-
-        /// <summary>
-        /// データをCSV形式でファイルに書き込む
-        /// コメントリストが設定されている場合、ファイルの先頭に# commentの形式で出力される
-        /// </summary>
-        /// <param name="path">ファイルパス</param>
-        /// <param name="csvData">データリスト</param>
-        /// <param name="comment">コメントリスト</param>
-        public void saveCsvData(string path, List<string[]> csvData, List<string> comment = null)
-        {
-            if (0 < csvData.Count) {
-                string folder = Path.GetDirectoryName(path);
-                if (0 < folder.Length && !Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
-
-                using (StreamWriter dataFile = new StreamWriter(path, false, mEncoding[mEncordingType])) {
-                    if (comment != null) {
-                        foreach (var buf in comment)
-                            dataFile.WriteLine("# " + buf);
-                    }
-                    foreach (string[] data in csvData) {
-                        string buf = "";
-                        for (int i = 0; i < data.Length; i++) {
-                            data[i] = data[i] == null ? "" : data[i].Replace("\"", "\\\"");
-                            buf += "\"" + data[i] + "\"";
-                            if (i != data.Length - 1)
-                                buf += ",";
-                        }
-                        dataFile.WriteLine(buf);
-                    }
-                    //dataFile.Close(); //  usingの場合は不要 Disposeを含んでいる
-                }
-            }
-        }
-
-        /// <summary>
-        /// リストデータをファイルに書き込む
-        /// </summary>
-        /// <param name="path">パス</param>
-        /// <param name="data">リストデータ</param>
-        public void saveListData(string path, List<string> data)
-        {
-            if (data == null || data.Count == 0)
-                return;
-            string folder = Path.GetDirectoryName(path);
-            if (0 < folder.Length && !Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            using (StreamWriter dataFile = new StreamWriter(path, false, mEncoding[mEncordingType])) {
-                foreach (string buf in data) {
-                    dataFile.WriteLine(buf);
-                }
-                //dataFile.Close(); //  usingの場合は不要 Disposeを含んでいる
-            }
-        }
+        //  --- データ処理関係  ------
 
         /// <summary>
         /// 配列データをCSVデータに変換
@@ -2213,220 +1705,6 @@ namespace CoreLib
             string[] buf = seperateString(line);
             return buf;
         }
-
-        /// <summary>
-        /// JSON形式のファイルを読み込む
-        /// </summary>
-        /// <param name="filePath">ファイルパス</param>
-        /// <returns>データリスト</returns>
-        public List<string[]> loadJsonData(string filePath)
-        {
-            List<string[]> jsonList = new List<string[]>();
-            if (!File.Exists(filePath)) {
-                mError = true;
-                mErrorMessage = filePath + " のファイルが存在しません";
-                return null;
-            }
-            try {
-                using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                    using (System.IO.StreamReader dataFile = new StreamReader(filePath,
-                       mEncoding[mEncordingType])) {
-                        jsonList.Clear();
-                        string line;
-                        while ((line = dataFile.ReadLine()) != null) {
-                            List<string[]> jsonData = splitJson(getJsonDataString(line));
-                            if (0 < jsonData.Count) {
-                                if (jsonList.Count == 0) {
-                                    string[] buf = new string[jsonData.Count];
-                                    for (int i = 0; i < jsonData.Count; i++)
-                                        buf[i] = jsonData[i][0];
-                                    jsonList.Add(buf);
-                                    buf = new string[jsonData.Count];
-                                    for (int i = 0; i < jsonData.Count; i++)
-                                        buf[i] = jsonData[i][1];
-                                    jsonList.Add(buf);
-                                } else {
-                                    string[] buf = new string[jsonData.Count];
-                                    for (int i = 0; i < jsonData.Count; i++)
-                                        buf[i] = jsonData[i][1];
-                                    jsonList.Add(buf);
-                                }
-                            }
-                        }
-                        //dataFile.Close(); //  usingの場合は不要 Disposeを含んでいる
-                    }
-                }
-            } catch (Exception e) {
-                mError = true;
-                mErrorMessage = e.Message;
-                return null;
-            }
-
-            return jsonList;
-        }
-
-        /// <summary>
-        /// ファイルを読み込んでリストデータにする
-        /// </summary>
-        /// <param name="filePath">ファイルパス</param>
-        /// <returns>リストデータ</returns>
-        public List<string> loadListData(string filePath)
-        {
-            List<string> listData = new List<string>();
-            if (!File.Exists(filePath))
-                return listData;
-            try {
-                using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                    using (StreamReader dataFile = new StreamReader(filePath, mEncoding[mEncordingType])) {
-                        string line;
-                        while ((line = dataFile.ReadLine()) != null) {
-                            if (0 < line.Length)
-                                listData.Add(line);
-                        }
-                    }
-                    return listData;
-                }
-            } catch (Exception e) {
-                mError = true;
-                mErrorMessage = e.Message;
-                return null;
-            }
-        }
-
-
-        /// <summary>
-        /// テキストファイルの読込
-        /// </summary>
-        /// <param name="path">ファイルパス</param>
-        /// <returns>ファイルデータ</returns>
-        public string loadTextFile(string path)
-        {
-            string buffer = "";
-            if (File.Exists(path)) {
-                StreamReader sr = new StreamReader(path, mEncoding[mEncordingType]);
-                buffer = sr.ReadToEnd();
-                sr.Close();
-            }
-            return buffer;
-        }
-
-        /// <summary>
-        /// テキストファイルの保存
-        /// </summary>
-        /// <param name="filePath">ファイルパス</param>
-        /// <param name="buffer">ファイルデータ</param>
-        public void saveTextFile(string path, string buffer)
-        {
-            string folder = Path.GetDirectoryName(path);
-            if (0 < folder.Length && !Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            StreamWriter sw = new StreamWriter(path, false, mEncoding[mEncordingType]);
-            sw.Write(buffer);
-            sw.Close();
-        }
-
-        /// <summary>
-        /// バイナリファイルの読込
-        /// </summary>
-        /// <param name="path">ファイル名</param>
-        /// <param name="size">読込サイズ(省略可)</param>
-        /// <returns>読込データ</returns>
-        public byte[] loadBinData(string path, int size = 0)
-        {
-            using (BinaryReader reader = new BinaryReader(File.OpenRead(path))) {
-                int ret;
-                FileInfo fi = new FileInfo(path);
-                size = size == 0 ? (int)fi.Length : Math.Min(size, (int)fi.Length);
-                byte[] buf = new byte[size];
-                ret = reader.Read(buf, 0, size);
-                return buf;
-            }
-        }
-
-        /// <summary>
-        /// バイナリデータをファイルに書き込む
-        /// </summary>
-        /// <param name="path">ファイル名</param>
-        /// <param name="buffer">バイナリデータ</param>
-        public void saveBinData(string path, byte[] buffer)
-        {
-            using (BinaryWriter writer = new BinaryWriter(File.OpenWrite(path))) {
-                // 書き込み
-                writer.Write(buffer);
-            }
-        }
-
-        /// <summary>
-        /// gzipファイルを解凍する
-        /// 拡張子が gz 出ない場合はリネームしてから解凍
-        /// </summary>
-        /// <param name="ipath"></param>
-        /// <param name="opath"></param>
-        /// <returns></returns>
-        public bool gzipDecompress(string ipath, string opath)
-        {
-            if (!File.Exists(ipath))
-                return false;
-            //  gzipファイル化の確認
-            byte[] header = loadBinData(ipath, 2);
-            if (header[0] != 0x1f || header[1] != 0x8b)
-                return false;
-            string inpath = "";
-            if (!ipath.ToLower().EndsWith(".gz")) {
-                inpath = Path.Combine(Path.GetDirectoryName(ipath), Path.GetFileNameWithoutExtension(ipath) + ".gz");
-                if (File.Exists(inpath))
-                    File.Delete(inpath);
-                File.Move(ipath, inpath);
-            }
-
-            int num;
-            byte[] buf = new byte[1024];                // 1Kbytesずつ処理する
-
-            FileStream inStream                         // 入力ストリーム
-              = new FileStream(inpath, FileMode.Open, FileAccess.Read);
-
-            GZipStream decompStream                     // 解凍ストリーム
-              = new GZipStream(
-                inStream,                               // 入力元となるストリームを指定
-                CompressionMode.Decompress);            // 解凍（圧縮解除）を指定
-
-            FileStream outStream                        // 出力ストリーム
-              = new FileStream(opath, FileMode.Create);
-
-            using (inStream)
-            using (outStream)
-            using (decompStream) {
-                while ((num = decompStream.Read(buf, 0, buf.Length)) > 0) {
-                    outStream.Write(buf, 0, num);
-                }
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// ファイルの日付(最終変更日)の取得
-        /// </summary>
-        /// <param name="path">ファイルパス</param>
-        /// <returns>DateTime</returns>
-        public DateTime getFileDateTime(string path)
-        {
-            FileInfo fileInfo = new FileInfo(path);
-            return fileInfo.LastWriteTime;
-        }
-
-        /// <summary>
-        /// ファイル日付(最終変更日)の設定
-        /// </summary>
-        /// <param name="path">ファイルパス</param>
-        /// <param name="dateTime">DateTime</param>
-        public void setFileDateTime(string path, DateTime dateTime)
-        {
-            FileInfo fileInfo = new FileInfo(path);
-            fileInfo.LastWriteTime = dateTime;
-        }
-
-        //  --- データ処理関係  ------
 
         /// <summary>
         /// JSON形式の文字列から[名前:値]の対データをリストデータとして取得する

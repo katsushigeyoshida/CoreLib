@@ -25,6 +25,7 @@ namespace CoreLib
 
 
         private YLib ylib = new YLib();
+        private YFile yfile = new YFile();
 
 
         public ImageView()
@@ -43,7 +44,7 @@ namespace CoreLib
         {
             if (mImageList == null || mImageList.Count == 0) {
                 string folder = Path.GetDirectoryName(mImagePath);
-                mImageList = ylib.getFiles(Path.Combine(folder, "*.jpg")).ToList();
+                mImageList = yfile.getFiles(Path.Combine(folder, "*.jpg")).ToList();
             }
             ImImage.Source = ylib.getBitmapImage(mImagePath);
             FileInfo fi = new FileInfo(mImagePath);
@@ -323,7 +324,7 @@ namespace CoreLib
         /// </summary>
         private void setComment(string path)
         {
-            DateTime lastDateTime = ylib.getFileDateTime(path);
+            DateTime lastDateTime = yfile.getFileDateTime(path);
             ExifInfo exifInfo = new ExifInfo(path);
             string comment = exifInfo.getUserComment();
             if (comment.Length <= 0)
@@ -339,7 +340,7 @@ namespace CoreLib
                         MessageBox.Show(exifInfo.mErrorMsg);
                     } else {
                         setPhotoInfo(path);
-                        ylib.setFileDateTime(path, lastDateTime);
+                        yfile.setFileDateTime(path, lastDateTime);
                     }
             }
         }

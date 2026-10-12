@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
+/// 
+/// [C言語による最新アルゴリズム辞典 129p]
+/// [Javaによるアルゴリズム辞典 147p]
+/// 
 namespace CoreLib
 {
     /// <summary>

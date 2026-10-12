@@ -79,6 +79,7 @@ namespace CoreLib
         private List<DiffFile> mDiffFileList;   //  比較結果リスト
 
         private YLib ylib = new YLib();
+        private YFile yfile = new YFile();
 
         public DiffFolder()
         {
@@ -232,7 +233,7 @@ namespace CoreLib
                         string srcPath = fileData.getPath(srcFolder);
                         string destPath = fileData.getPath(destFolder);
                         if (File.Exists(srcPath))
-                            ylib.fileCopy(srcPath, destPath, copyType);
+                            yfile.fileCopy(srcPath, destPath, copyType);
                         pbCopyCount.Value++;
                     }
                 }

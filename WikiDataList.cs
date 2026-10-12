@@ -25,6 +25,8 @@ namespace CoreLib
 
         private HtmlLib hlib = new HtmlLib();
         private YLib ylib = new YLib();
+        private YFile yfile = new YFile();
+
 
         /// <summary>
         /// WikiDataのリストを配列リストデータに変換
@@ -65,7 +67,7 @@ namespace CoreLib
                 convDataList.Add(data.convControlCode());
             }
             //  ファイル保存
-            ylib.saveCsvData(filePath, mTitle, convDataList);
+            yfile.saveCsvData(filePath, mTitle, convDataList);
         }
 
         /// <summary>
@@ -74,7 +76,7 @@ namespace CoreLib
         /// <param name="filePath"></param>
         public void loadData(string filePath)
         {
-            List<string[]> dataList = ylib.loadCsvData(filePath);
+            List<string[]> dataList = yfile.loadCsvData(filePath);
             if (1 < dataList.Count) {
                 //mTitle = dataList[0];
                 mDataList.Clear();
@@ -363,7 +365,7 @@ namespace CoreLib
         /// <param name="filePath">検索ファイル名</param>
         public void getSerchWikiDataFile(string searchText, string filePath)
         {
-            List<string[]> dataList = ylib.loadCsvData(filePath);
+            List<string[]> dataList = yfile.loadCsvData(filePath);
             if (dataList != null && 0 < dataList.Count) {
                 for (int i = 1; i < dataList.Count; i++) {
                     for (int j = 0; j < dataList[i].Length; j++) {
