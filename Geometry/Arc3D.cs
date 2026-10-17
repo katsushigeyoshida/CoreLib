@@ -18,6 +18,7 @@ namespace CoreLib
         public double mOpenAngle { get { return mEa - mSa; } }
         private double mEps = 1E-8;
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         /// <summary>
         /// コンストラクタ
@@ -123,8 +124,8 @@ namespace CoreLib
         /// </summary>
         public void normalize()
         {
-            mSa = ylib.mod(mSa, Math.PI * 2);
-            mEa = ylib.mod(mEa, Math.PI * 2);
+            mSa = ymath.mod(mSa, Math.PI * 2);
+            mEa = ymath.mod(mEa, Math.PI * 2);
             if (mEa <= mSa + mEps)
                 mEa += Math.PI * 2;
         }

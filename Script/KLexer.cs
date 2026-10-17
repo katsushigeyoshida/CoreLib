@@ -52,6 +52,8 @@ namespace CoreLib
 
         private KLexer mLexer = new KLexer();
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         /// <summary>
         /// コンストラクタ(データの種別は自動判定)
@@ -97,7 +99,7 @@ namespace CoreLib
                 string result = "0";
                 if (double.TryParse(mValue, out d)) {
                     if (d != 0)
-                        result = ylib.roundRound((decimal)d,12).ToString().TrimEnd('0');
+                        result = ymath.roundRound((decimal)d,12).ToString().TrimEnd('0');
                     if (result[result.Length - 1] == '.')
                         result = result.TrimEnd('.');
                     return result;

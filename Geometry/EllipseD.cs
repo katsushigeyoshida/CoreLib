@@ -67,6 +67,7 @@ namespace CoreLib
         private double mEps = 1E-6;
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         public EllipseD()
         {
@@ -143,11 +144,11 @@ namespace CoreLib
         /// </summary>
         public void normalize()
         {
-            mSa = ylib.mod(mSa, Math.PI * 2);
-            mEa = ylib.mod(mEa, Math.PI * 2);
+            mSa = ymath.mod(mSa, Math.PI * 2);
+            mEa = ymath.mod(mEa, Math.PI * 2);
             if (mEa <= mSa)
                 mEa += Math.PI * 2;
-            mRotate = ylib.mod(mRotate, Math.PI * 2);
+            mRotate = ymath.mod(mRotate, Math.PI * 2);
         }
 
         /// <summary>
@@ -600,7 +601,7 @@ namespace CoreLib
             double c = wa * k2 * k2 + wb * k3 * k3 - wa * wb * k1 * k1;
             double d = -2 * wa * wb * k1 * k2;
             double e = -wa * wb * k2 * k2;
-            List<double> ylist = ylib.solveQuarticEquation(a, b, c, d, e);
+            List<double> ylist = ymath.solveQuarticEquation(a, b, c, d, e);
             for (int i = 0; i < ylist.Count; i++) {
                 PointD ip = new PointD();
                 if (mEps < Math.Abs((k1 * ylist[i] + k2))) {
@@ -715,7 +716,7 @@ namespace CoreLib
 
             if (Math.Abs(arc2.mCp.x) < mEps) {
                 //  k1 == 0 の時は2次方程式の解
-                List<double> ylist = ylib.solveQuadraticEquation(k1, k2, k3);
+                List<double> ylist = ymath.solveQuadraticEquation(k1, k2, k3);
                 for (int i = 0; i < ylist.Count; i++) {
                     double wk = w2 - w1 * ylist[i] * ylist[i];
                     if (wk < 0)
@@ -736,7 +737,7 @@ namespace CoreLib
                 double c = k2 * k2 + 2 * k1 * k3 + w1 * arc2.mCp.x * arc2.mCp.x;
                 double d = 2 * k2 * k3;
                 double e = k3 * k3 - arc2.mCp.x * arc2.mCp.x * w2;
-                List<double> ylist = ylib.solveQuarticEquation(a, b, c, d, e);
+                List<double> ylist = ymath.solveQuarticEquation(a, b, c, d, e);
                 for (int i = 0; i < ylist.Count; i++) {
                     double x = (k1 * ylist[i] * ylist[i] + k2 * ylist[i] + k3) / arc2.mCp.x;
                     double y = ylist[i];
@@ -789,7 +790,7 @@ namespace CoreLib
             double d = 2 * (a1 * d2 * d3 + a3 * g1 * g2);
             double e = a1 * d3 * d3 + a3 * g2 * g2;
 
-            List<double> ylist = ylib.solveQuarticEquation(a, b, c, d, e);
+            List<double> ylist = ymath.solveQuarticEquation(a, b, c, d, e);
             for (int i = 0; i < ylist.Count; i++) {
                 double x = (d1 * ylist[i] * ylist[i] + d2 * ylist[i] + d3) / (g1 * ylist[i] + g2);
                 double y = ylist[i];

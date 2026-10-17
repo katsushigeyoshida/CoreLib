@@ -41,6 +41,7 @@ namespace CoreLib
         private Variable mVar;
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         /// <summary>
         /// コンストラクタ
@@ -89,7 +90,7 @@ namespace CoreLib
         /// <returns>戻り変数</returns>
         private Token unitMatrix(List<Token> args, Token ret)
         {
-            double[,] matrix = ylib.unitMatrix(ylib.intParse(args[0].mValue));
+            double[,] matrix = ymath.unitMatrix(ylib.intParse(args[0].mValue));
 
             //  戻り値の設定
             mVar.setReturnArray(matrix, ret);
@@ -109,7 +110,7 @@ namespace CoreLib
             double[,]? a = mVar.cnvArrayDouble2(args[0]);
             if (a == null) return new Token("", TokenType.ERROR);
             //  行列演算
-            double[,] c = ylib.matrixTranspose(a);
+            double[,] c = ymath.matrixTranspose(a);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
@@ -132,7 +133,7 @@ namespace CoreLib
             double[,]? b = mVar.cnvArrayDouble2(args[1]);
             if (b == null) return new Token("", TokenType.ERROR);
             //  行列演算
-            double[,] c = ylib.matrixMulti(a, b);
+            double[,] c = ymath.matrixMulti(a, b);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
@@ -154,7 +155,7 @@ namespace CoreLib
             double[,]? b = mVar.cnvArrayDouble2(args[1]);
             if (b == null) return new Token("", TokenType.ERROR);
             //  行列演算
-            double[,] c = ylib.matrixAdd(a, b);
+            double[,] c = ymath.matrixAdd(a, b);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
@@ -173,7 +174,7 @@ namespace CoreLib
             double[,]? a = mVar.cnvArrayDouble2(args[0]);
             if (a == null) return new Token("", TokenType.ERROR);
             //  行列演算
-            double[,] c = ylib.matrixInverse(a);
+            double[,] c = ymath.matrixInverse(a);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
@@ -192,7 +193,7 @@ namespace CoreLib
             double[,]? a = mVar.cnvArrayDouble2(args[0]);
             if (a == null) return new Token("", TokenType.ERROR);
             //  行列演算
-            double[,] c = ylib.copyMatrix(a);
+            double[,] c = ymath.copyMatrix(a);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
@@ -212,9 +213,9 @@ namespace CoreLib
             int n1 = mVar.getArrayOder(args[1]);        //  移動ベクトル
             if (n0 == 0 && n1 != 1) return new Token("", TokenType.ERROR);
             List<double> v = mVar.cnvListDouble(args[1]);
-            double[,] transMtrix = ylib.translate2DMatrix(v[0], v[1]);
+            double[,] transMtrix = ymath.translate2DMatrix(v[0], v[1]);
             double[,] mp = getMatrixData(args[0]);
-            double[,] c = ylib.matrixMulti(mp, transMtrix);
+            double[,] c = ymath.matrixMulti(mp, transMtrix);
             c = setMatrixData(c);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
@@ -235,9 +236,9 @@ namespace CoreLib
             int n1 = mVar.getArrayOder(args[1]);        //  回転角
             if (n0 == 0 && n1 != 0) return new Token("", TokenType.ERROR);
             double th = ylib.doubleParse(mVar.getVariable(args[1]).mValue);
-            double[,] transMtrix = ylib.rotate2DMatrix(th);
+            double[,] transMtrix = ymath.rotate2DMatrix(th);
             double[,] mp = getMatrixData(args[0]);
-            double[,] c = ylib.matrixMulti(mp, transMtrix);
+            double[,] c = ymath.matrixMulti(mp, transMtrix);
             c = setMatrixData(c);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
@@ -258,9 +259,9 @@ namespace CoreLib
             int n1 = mVar.getArrayOder(args[1]);        //  スケール(ベクトル)
             if (n0 == 0 && n1 != 1) return new Token("", TokenType.ERROR);
             List<double> v = mVar.cnvListDouble(args[1]);
-            double[,] scaleMtrix = ylib.scale2DMatrix(v[0], v[1]);
+            double[,] scaleMtrix = ymath.scale2DMatrix(v[0], v[1]);
             double[,] mp = getMatrixData(args[0]);
-            double[,] c = ylib.matrixMulti(mp, scaleMtrix);
+            double[,] c = ymath.matrixMulti(mp, scaleMtrix);
             c = setMatrixData(c);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
@@ -282,10 +283,10 @@ namespace CoreLib
             if (n0 == 0 && n1 != 1) return new Token("", TokenType.ERROR);
             //  移動ベクトル
             List<double> v = mVar.cnvListDouble(args[1]);
-            double[,] transMtrix = ylib.translate3DMatrix(v[0], v[1], v[2]);
+            double[,] transMtrix = ymath.translate3DMatrix(v[0], v[1], v[2]);
             //  変換元データ
             double[,] mp = getMatrixData(args[0], 3);
-            double[,] c = ylib.matrixMulti(mp, transMtrix);
+            double[,] c = ymath.matrixMulti(mp, transMtrix);
             c = setMatrixData(c, 3);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
@@ -313,14 +314,14 @@ namespace CoreLib
             double[,] rotateMtrix;
             string axis = args[2].getValue();
             if (axis == "X")
-                rotateMtrix = ylib.rotateX3DMatrix(th);
+                rotateMtrix = ymath.rotateX3DMatrix(th);
             else if (axis == "Y")
-                rotateMtrix = ylib.rotateY3DMatrix(th);
+                rotateMtrix = ymath.rotateY3DMatrix(th);
             else if (axis == "Z")
-                rotateMtrix = ylib.rotateZ3DMatrix(th);
+                rotateMtrix = ymath.rotateZ3DMatrix(th);
             else
                 return new Token("", TokenType.ERROR);
-            double[,] c = ylib.matrixMulti(mp, rotateMtrix);
+            double[,] c = ymath.matrixMulti(mp, rotateMtrix);
             c = setMatrixData(c, 3);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
@@ -346,8 +347,8 @@ namespace CoreLib
             double[,] mp = getMatrixData(args[0]);
             List<double> v = mVar.cnvListDouble(args[1]);
             double th = ylib.doubleParse(mVar.getVariable(args[2]).mValue);
-            double[,] transMtrix = ylib.rotate(new Point3D(v[0], v[1], v[2]), th);
-            double[,] c = ylib.matrixMulti(mp, transMtrix);
+            double[,] transMtrix = ymath.rotate(new Point3D(v[0], v[1], v[2]), th);
+            double[,] c = ymath.matrixMulti(mp, transMtrix);
             c = setMatrixData(c, 3);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);
@@ -369,9 +370,9 @@ namespace CoreLib
             int n1 = mVar.getArrayOder(args[1]);        //  拡大ペクトル
             if (n0 == 0 && n1 != 1) return new Token("", TokenType.ERROR);
             List<double> v = mVar.cnvListDouble(args[1]);
-            double[,] transMtrix = ylib.scale3DMatrix(v[0], v[1], v[2]);
+            double[,] transMtrix = ymath.scale3DMatrix(v[0], v[1], v[2]);
             double[,] mp = getMatrixData(args[0]);
-            double[,] c = ylib.matrixMulti(mp, transMtrix);
+            double[,] c = ymath.matrixMulti(mp, transMtrix);
             c = setMatrixData(c, 3);
             //  戻り値の設定
             mVar.setReturnArray(c, ret);

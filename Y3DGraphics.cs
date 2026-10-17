@@ -125,13 +125,14 @@ namespace CoreLib
         private List<SurfacePrimitive> mDataList = new List<SurfacePrimitive>();
         private double[,] mPartsMatrix;
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
         public PartsPrimitive()
         {
-            mPartsMatrix = ylib.unitMatrix(4);
+            mPartsMatrix = ymath.unitMatrix(4);
         }
 
         /// <summary>
@@ -139,7 +140,7 @@ namespace CoreLib
         /// </summary>
         public void clearMatrix()
         {
-            mPartsMatrix = ylib.unitMatrix(4);
+            mPartsMatrix = ymath.unitMatrix(4);
         }
 
         /// <summary>
@@ -148,12 +149,12 @@ namespace CoreLib
         /// <param name="scale">スケール</param>
         public void setScaleMatrix(Point3D scale)
         {
-            double[,] mp = ylib.unitMatrix(4);
+            double[,] mp = ymath.unitMatrix(4);
             mp[0, 0] = scale.x;
             mp[1, 1] = scale.y;
             mp[2, 2] = scale.z;
             mp[3, 3] = 1;
-            mPartsMatrix = ylib.matrixMulti(mPartsMatrix, mp);
+            mPartsMatrix = ymath.matrixMulti(mPartsMatrix, mp);
         }
 
         /// <summary>
@@ -162,7 +163,7 @@ namespace CoreLib
         /// <param name="vec">移動ベクトル</param>
         public void setTranlateMatrix(Point3D vec)
         {
-            double[,] mp = ylib.unitMatrix(4);
+            double[,] mp = ymath.unitMatrix(4);
             mp[0, 0] = 1;
             mp[1, 1] = 1;
             mp[2, 2] = 1;
@@ -170,7 +171,7 @@ namespace CoreLib
             mp[3, 1] = vec.y;
             mp[3, 2] = vec.z;
             mp[3, 3] = 1;
-            mPartsMatrix = ylib.matrixMulti(mPartsMatrix, mp);
+            mPartsMatrix = ymath.matrixMulti(mPartsMatrix, mp);
         }
 
         /// <summary>
@@ -179,14 +180,14 @@ namespace CoreLib
         /// <param name="th">回転角(rad)</param>
         public void setRotateXMatrix(double th)
         {
-            double[,] mp = ylib.unitMatrix(4);
+            double[,] mp = ymath.unitMatrix(4);
             mp[0, 0] = 1.0;
             mp[1, 1] = Math.Cos(th);
             mp[1, 2] = Math.Sin(th);
             mp[2, 1] = -Math.Sin(th);
             mp[2, 2] = Math.Cos(th);
             mp[3, 3] = 1.0;
-            mPartsMatrix = ylib.matrixMulti(mPartsMatrix, mp);
+            mPartsMatrix = ymath.matrixMulti(mPartsMatrix, mp);
         }
 
         /// <summary>
@@ -195,14 +196,14 @@ namespace CoreLib
         /// <param name="th">回転角(rad)</param>
         public void setRotateYMatrix(double th)
         {
-            double[,] mp = ylib.unitMatrix(4);
+            double[,] mp = ymath.unitMatrix(4);
             mp[0, 0] = Math.Cos(th);
             mp[0, 2] = -Math.Sin(th);
             mp[1, 1] = 1.0;
             mp[2, 0] = Math.Sin(th);
             mp[2, 2] = Math.Cos(th);
             mp[3, 3] = 1.0;
-            mPartsMatrix = ylib.matrixMulti(mPartsMatrix, mp);
+            mPartsMatrix = ymath.matrixMulti(mPartsMatrix, mp);
         }
 
         /// <summary>
@@ -211,14 +212,14 @@ namespace CoreLib
         /// <param name="th">回転角(rad)</param>
         public void setRotateZMatrix(double th)
         {
-            double[,] mp = ylib.unitMatrix(4);
+            double[,] mp = ymath.unitMatrix(4);
             mp[0, 0] = Math.Cos(th);
             mp[0, 1] = Math.Sin(th);
             mp[1, 0] = -Math.Sin(th);
             mp[1, 1] = Math.Cos(th);
             mp[2, 2] = 1.0;
             mp[3, 3] = 1.0;
-            mPartsMatrix = ylib.matrixMulti(mPartsMatrix, mp);
+            mPartsMatrix = ymath.matrixMulti(mPartsMatrix, mp);
         }
 
         /// <summary>

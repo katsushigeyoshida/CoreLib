@@ -1,15 +1,14 @@
-﻿using Microsoft.WindowsAPICodePack.Dialogs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -40,210 +39,185 @@ namespace CoreLib
     /// bool onAltKey()                                 Altキーの確認
     /// bool onKey(int keyCode)                         キーの確認
     /// 
-    /// ---  システム関連  ------
-    ///  void DoEvents()                                コントロールを明示的に更新するコード
-    ///  string getLastFolder(string folder)            フルパスのディレクトリから最後のフォルダ名を取り出す
-    ///  string getLastFolder(string folder, int n)     フルパスのディレクトリから最後のフォルダ名を取り出す
-    ///  string getAppFolderPath()                      実行ファイルのフォルダを取得(アプリケーションが存在するのディレクトリ)
-    ///  string getAppName()                            実行プログラム名をフルパスで取得
-    ///  void fileExecute(string path)                  ファイルを実行する
-    ///  bool processStart(string prog, string arg)     プログラムの実行
-    ///  void openUrl(string url)                       URLを標準ブラウザで開く
-    ///  static void Swap<T>(ref T lhs, ref T rhs)      ジェネリックによるswap関数
-    ///  MessageBoxResult messageBox(Window owner, string message, string title = "", MessageBoxButton buttonType = MessageBoxButton.OK)
-    ///  
-    /// ---  ストップウォッチ  ---
-    /// void stopWatchStartNew()                    ストップウォッチ機能初期化・計測開始
-    /// TimeSpan stopWatchLapTime()                 ストップウォッチ機能ラップ時間取得
-    /// TimeSpan stopWatchRestart()                 ストップウォッチ機能計測時間の取得と再スタート
-    /// TimeSpan stopWatchStop()                    ストップウォッチ機能計測時間の取得と終了
-    /// TimeSpan stopWatchTotalTime()               ストップウォッチ機能累積時間の取得
-    /// 
-    ///  ---  ネットワーク関連  ---
-    ///  bool webFileDownload(string url, string filePath)          Web上のファイルをダウンロードする
-    ///  string getWebText(string url)                               URLのWebデータの読込
-    ///  string getWebText(string url, int encordType = 0)          エンコードタイプを指定してURLのWebデータの読込
-    ///  
-    ///  ---  文字列処理関連  ----
-    ///  bool wcMatch(string srcstr, string pattern)                ワイルドカードによる文字検索
-    ///  int indexOf(string text, string val, int count = 1)        文字列を前から指定位置を検索
-    ///  int lastIndexOf(string text, string val, int count = 1)    文字列を後から指定位置を検索
-    ///  string stripBrackets(string text, char sb = '[', char eb = ']')    文字列から括弧で囲まれた領域を取り除く
-    ///  List<string> extractBrackets(string text, char sb = '{', char eb = '}', bool withBracket = false) 括弧で囲まれた文字列を抽出
-    ///  string trimControllCode(string buf)                        文字列内のコントロールコードを除去
-    ///  bool IsNumberString(string num, bool allNum = false)       数値文字列かを判定
-    ///  string double2StrZeroSup(double val, string form = "f1")   数値をゼロサプレスして文字列に変化
-    ///  bool boolParse(string str, bool val = true)                文字列を論理値に変換
-    ///  int intParse(string str, int val = 0)                      文字列を整数に変換
-    ///  double doubleParse(string str, double val = 0.0)           文字列を実数に変換
-    ///  int string2int(string num)                                 文字列の先頭が数値の場合、数値に変換
-    ///  double string2double(string num)                           文字列の先頭が数値の場合、数値に変換
-    ///  List<string> string2StringNumbers(string num)              文字列の中から複数の数値文字列を抽出
-    ///  string string2StringNum(string num)                        文字列から数値に関係ない文字を除去し、実数に変換できる文字列にする
-    ///  string strZne2Han(string zenStr)                           文字列内の全角英数字を半角に変換
-    ///  string strNumZne2Han(string zenStr)                        文字列内の全角数値を半角に変換
-    ///  string strControlCodeCnv(string str)                       文字列の中の改行コード、','、'"'を'\'付きコードに置き換える
-    ///  string strControlCodeRev(string str)                       文字列の中の'\'付きコードを通常のコードに戻す
-    ///  string stripControlCode(string str)                        文字列からコントロールコードを除外する
-    ///  string[] seperateString(string str)                        文字列をカンマセパレータで分解して配列に格納
-    ///  List<string> splitString(string str, string[] sep)         文字列を指定文字列で分ける
-    ///  string stripBracketString(string str, char bracket = '(')  括弧付き文字列で前後の括弧を除いた文字列
-    ///  string getBracketString(string str, int n, char bracket = '(') 括弧で囲まれた文字列の抽出(括弧含む)
-    ///  string insertLinefeed(string str, string word, int lineSize)   一行が指定文字数を超えたら改行を入れる
-    ///  List<string> getPattern(string html, string pattern, string group) 正規表現を使ったHTMLデータからパターン抽出
-    ///  List<string[]> getPattern(string html, string pattern)     正規表現を使ったHTMLからのパターン抽出
-    ///  List<string[]> getPattern2(string html, string pattern)    正規表現を使ったHTMLからのパターン抽出
-    ///  int getStrByteCount(string str)                            文字列の長さをbyte数で求める
-    ///  string stringUncode2String(string text)                    Unicodeの文字列を文字列に変換
-    ///  string tab2space(string text, int tabsize = 4)             タブをスペースに変換
-    ///  string arrayStr2CsvData(string[] data)                     配列データをCSVデータに変換
-    ///  string[] csvData2ArrayStr(string line)                     CSVデータを配列データに戻す
-    ///  
-    ///  --- データ処理関係  ------
-    ///  List<string[]> splitJson(string jsonData, string baseTitle = "")   JSON形式の文字列から[名前:値]の対データをリストデータとして取得する
-    ///  string getJsonDataString(string jsonData)                          JSON形式の文字列から{}内の文字列を取得する
-    ///  
-    ///  ---  日付・時間関連  ------
-    ///  int date2JulianDay(int year, int month, int day)                   歴日からユリウス日に変換
-    ///  double getJD(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)   ユリウス日(紀元前4713年(-4712年)1月1日が0日)の取得
-    ///  int julianDay(int y, int m, int d)                                 天文年鑑の数式でユリウス日を求める
-    ///  double getMJD(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)  準ユリウス日(1582年10月15日が0日)の取得
-    ///  (int year, int month, int day) JulianDay2Date(double jd)           ユリウス日から西暦(年月日)を求める
-    ///  (int hour, int min, int sec) JulianDay2Time(double jd)             ユリウス日から時間(時分秒)の取得
-    ///  string JulianDay2DateYear(double jd, int type = 0)                 ユリウス日から歴日文字列に変換
-    ///  double getGreenwichSiderealTime(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)    恒星時(Wikipedia https://ja.wikipedia.org/wiki/恒星時)
-    ///  double getLocalSiderealTime(double dSiderealTime, double dLongitude)   地方恒星時の取得
-    ///  
-    ///  ---  グラフィック処理関連  ------
-    ///  string getColorName(Brush color)                                   Brush を色名に変換
-    ///  Brush getColor(string color)                                       色名を Brush値に変換
-    ///  Point rotateOrg(Point po, double rotate)                           原点を中心に回転
-    ///  Point rotatePoint(Point ctr, Point po, double rotate)              回転中心を指定して回転
-    ///  double angleOrg(Point po)                                          原点に対する座標点の水平線との角度(rad)
-    ///  double anglePoint(Point ctr, Point po)                             中心座標を指定して回転角度(rad)
-    ///  int angleQuadrant(double ang)                                      角度の象限を求める(0-3)
-    ///  List<Point> circlePeakPoint(Point c, double r)                     円の4頂点?を求める
-    ///  List<PointD> arcPeakPoint(PointD c, double r, double sa, double ea)円弧の頂点リストを求める
-    ///  List<Point> arcPeakPoint(Point c, double r, double sa, double ea)  円弧の頂点リストを求める
-    ///  List<PointD> pointSort(List<PointD> plist)                         点リストを中心点の角度でソート
-    ///  List<Point> pointSort(List<Point> plist)                           点リストを中心点の角度でソート
-    ///  List<PointD> pointListSqueeze(List<PointD> plist)                  点座標リストで重複点を削除
-    ///  List<PointD> devideArcList(PointD c, double r, double sa, double ea, int div = 32) 円弧を分割した点座標リストを作成
-    ///  List<PointD> divideCircleList(PointD c, double r, int div = 32)    円を分割した点座標リストを作成
-    ///  List<Point> divideCircleList(Point c, double r, int div = 32)      円を分割した点座標リストを作成
-    ///  Point averagePoint(List<Point> pList)                              一種の中心点(点リストの平均位置)
-    ///  PointD nearPoint(List<PointD> plist, PointD pos)                   座標点リストで指定点に最も近い点
-    ///  
-    ///  ---  ビットマップ処理  ----
-    ///  Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe) 画面の指定領域をキャプチャする
-    ///  Bitmap getActiveWindowCapture()                                    アクティブウィンドウの画面をキャプチャする
-    ///  Bitmap getFullScreenCapture()                                      全画面をキャプチャする
-    ///  BitmapImage cnvBitmap2BitmapImage(Bitmap bitmap, ImageFormat imageFormat)  BitmapをBitmapImageに変換
-    ///  Bitmap cnvBitmapImage2Bitmap(BitmapImage bitmapImage)              BitmapImageをBitmapに変換
-    ///  Bitmap cnvBitmapSource2Bitmap(BitmapSource bitmapSource)           BitmapSourceをBitmapに変換
-    ///  BitmapSource bitmap2BitmapSource(Bitmap bitmap)                    BitMap からBitmapSourceに変換
-    ///  Bitmap trimingBitmap(Bitmap bitmap, Point sp, Point ep)            Bitmapデータをトリミングする
-    ///  int setCanvasBitmapImage(Canvas canvas, BitmapImage bitmapImage, double ox, double oy, double width, double height)    BitmapImageをCanvasに登録する
-    ///  Bitmap verticalCombineImage(System.Drawing.Bitmap[] src)           画像を縦方向に連結
-    ///  Bitmap horizontalCombineImage(System.Drawing.Bitmap[] src)         画像の水平方向に連結
-    ///  void saveBitmapImage(BitmapSource bitmapSource, string filePath)   画像データをファイルに保存
-    ///  Media.Color Draw2MediaColor(Drawing.Color color)                   Drawing.Color から Media.Color に変換
-    ///  Drawing.Color Media2DrawColor(Windows.Media.Color color)           Media.Color から Drawing.Color に変換
-    ///  BitmapSource canvas2Bitmap(Canvas canvas, double offsetX = 0, double offsetY = 0)  CanvasをBitmapに変換
-    ///  void moveImage(Canvas canvas, BitmapSource bitmapSource, double dx, double dy, int offset = 0) Bitmap 図形を移動
-    /// 
-    ///  ---  数値処理関連  ------
-    ///  double mod(double a, double b)                                     剰余関数 (負数の剰余を正数で返す)
-    ///  int mod(int a, int b)                                              剰余関数 (負数の剰余を正数で返す)
-    ///  double log(double a, double b)                                     底指定の対数(log b a)
-    ///  float roundFloor(float val, int n)                                 指定の有効桁で切り捨てる
-    ///  float roundCeil(float val, int n)                                  指定の有効桁で切り上げる
-    ///  float roundRound(float val, int n)                                 指定の有効桁数で四捨五入する
-    ///  decimal roundRound(decimal val, int digits = 13)                   指定の有効桁数で四捨五入
-    ///  double floorStepSize(double val)                                   最上位桁が1,2,5になるように下側に丸める
-    ///  double graphStepSize(double range, double targetSteps, int fromBase = 10)  グラフ作成時の補助線間隔を求める
-    ///  double graphHeightSize(double height, double stepSize)             グラフの最大値を求める
-    ///  List<double> solveQuadraticEquation(double a, double b, double c)                      2次方程式の解
-    ///  List<double> solveCubicEquation(double a, double b, double c, double d)                3次方程式の解(カルダノの公式)
-    ///  List<double> solveQuarticEquation(double a, double b, double c, double d, double e)    4次方程式の解(フェラリ(Ferrari)の公式)
-    ///  double Cuberoot(double x)                                          3乗根(x^1/3)
-    ///  Complex Squreroot(Complex x)                                       複素数の平方根
-    /// 
-    /// ---  統計処理
-    /// 
-    /// double getSumList(List<double> list)        ∑x リストの合計
-    /// double getSqrSumList(List<double> list)     ∑x^2 リストの自乗和(二乗の合計)
-    /// double getAverageList(List<double> list)    ∑x / n 平均値
-    /// double getDevSumList(List<double> list)     ∑(x-xm) 偏差の和(常に0)
-    /// double getVerSumList(List<double> list)     ∑(x-xm)^2　偏差の平方和
-    /// double getVariance(List<double> list)       s^2 = ∑(x-xm)^2 / n 分散(variance)
-    /// double getStdDev(List<double> list)         標準偏差(standard deviation) s = sqrt(∑(x-xm)^2 / n)
-    /// double getDevProductSumList(List<double> Xlist, List<double> Ylist) ∑(x-xm)(y-ym) 偏差積和
-    /// double getCovarince(List<double> Xlist, List<double> Ylist) 共分散(Covariance) Cov(x,y) = 1/n * Σ(x-xm)(y-ym)
-    /// double getCorelation(List<double> Xlist, List<double> Ylist)    相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
-    /// double getRegA(List<double> Xlist, List<double> Ylist)  回帰分析(regression analysis)の係数(a)の取得  y = ax + b
-    /// double getRegB(List<double> Xlist, List<double> Ylist)  回帰分析(regression analysis)の係数(b)の取得  y = ax + b
-    /// double getCoefficentDeterminatio(List<double> Xlist, List<double> Ylist, double a, double b)  決定係数(coefficient of determination)
-    /// double getXYSumList(List<PointD> list)          ∑xy X*Yの合計
-    /// double getDevProductSumList(List<PointD> list)  ∑(x-xm)(y-ym) 偏差積和
-    /// double getCovarince(List<PointD> list)      共分散(Covariance)
-    /// double getCorelation(List<PointD> list)     相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
-    /// double getRegA(List<PointD> list)           回帰分析(regression analysis)の係数(a)の取得  y = ax + b
-    /// double getRegB(List<PointD> list)           回帰分析(regression analysis)の係数(b)の取得  y = ax + b
-    /// double getCoefficentDeterminatio(List<PoinD> list, double a, double b)  決定係数(coefficient of determination)
-    /// double getRegVariance(List<PointD> list, double a, double b)            理論値に対する分散(回帰曲線の残差の二乗和)
-    /// 
-    ///  ---  配列処理  ---
-    ///  
-    /// double[,] doubleArray2Sort(double[,] data, int col = 0)     2次元配列のソート(数値)
-    /// string[,] stringArray2Sort(string[,] data, int col = 0)     2次元配列のソート(文字列)
-    /// 
-    ///  ---  行列計算  ---
-    ///  
-    ///  double[,] unitMatrix(int unit)                     単位行列
-    ///  double[,] matrixTranspose(double[,] A)             転置行列  行列Aの転置A^T
-    ///  double[,] matrixMulti(double[,] A, double[,] B)    行列の積  AxB
-    ///  double[,] matrixAdd(double[,] A, double[,] B)      行列の和 A+B
-    ///  double[,] matrixInverse(double[,] A)               逆行列 A^-1
-    ///  double[,] copyMatrix(double[,] A)                  行列のコピー
-    ///  
-    ///  --  座標変換関連  --
-    ///  double[,] translate3DMatrix(double dx, double dy, double dz)       移動量を3D変換マトリックス(4x4)に設定
-    ///  double[,] rotateX3DMatrix(double th)                               X軸回転を3D変換マトリックス(4x4)に設定
-    ///  double[,] rotateY3DMatrix(double th)                               Y軸回転を3D変換マトリックス(4x4)に設定
-    ///  double[,] rotateZ3DMatrix(double th)                               Z軸回転を3D変換マトリックス(4x4)に設定
-    ///  double[,] scale3DMatrix(double sx, double sy, double sz)           拡大縮小のスケール値を3D変換マトリックス(4x4)に設定
-    ///  double[,] translate2DMatrix(double dx, double dy)                  移動量を2D変換マトリックス(3x3)に設定
-    ///  double[,] rotate2DMatrix(double th)                                原点回転を2D変換マトリックス(3x3)に設定
-    ///  double[,] scale2DMatrix(double sx, double sy)                      拡大縮小のスケール値を2D変換マトリックス(3x3)に設定
-    ///  double[,] inverse2DMatrix()                                        原点に対して反転する2D変換マトリックス(3x3)に設定
-    ///  double[,] inverseX2DMatrix()                                       X軸に対して反転する2D変換マトリックス(3x3)に設定
-    ///  double[,] inverseY2DMatrix()                                       Y軸に対して反転する2D変換マトリックス(3x3)に設定
-    /// 
-    ///  ---  単位変換関連  ------
-    ///  string getCoordinatePattern(string coordinate)
-    ///  Point cnvCoordinate(string coordinate)
-    ///  Point cnvCoordinate2(string coordinate)
-    ///  double R2D(double rad)
-    ///  double D2R(double deg)
-    ///  double H2D(double hour)
-    ///  double D2H(double deg)
-    ///  double H2R(double hour)
-    ///  double R2H(double rad)
-    ///  string deg2DMS(double deg)
-    ///  double DMS2deg(string dms)
-    ///  string hour2HMS(double hour)
-    ///  double HMS2hour(string hms)
-    ///  double DMS2deg(int d, int m, double s)
-    ///  double HMS2hour(int h, int m, double s)
-    ///  double HM2hour(string hm)
-    ///  double DM2deg(string dm)
-    ///  double dm2deg(string dm)
-    ///  double hm2hour(string hm)
-    /// 
-    /// ---  bit演算  -----
-    /// 
-    /// 
+    //  ---  システム関連  ------
+    //	List<string> getSystemFontFamilyName(bool languageSelect = false)	 フォント名リストの取得(en-us,ja-jp)
+    //	System.Windows.FontStyle convFontStyle(string style)	 文字列をFontStyleに変換して変換
+    //	System.Windows.FontWeight convFontWeight(string weight)	 文字列をFontWeightに変換して変換
+    //	void DoEvents()	                                コントロールを明示的に更新するコード
+    //	object ExitFrames(object arg)	                DoEventsからのコールバック
+    //	string getLastFolder(string folder)	            フルパスのディレクトリから最後のフォルダ名を取り出す
+    //	string getLastFolder(string folder, int n)	    フルパスのディレクトリから最後のフォルダ名を取り出す
+    //	string getAppFolderPath()	                    実行ファイルのフォルダを取得(アプリケーションが存在するのディレクトリ)
+    //	string getAppName(bool fullpath = true)	        実行プログラム名をフルパスで取得
+    //	void fileExecute(string path)	                ファイルを実行する
+    //	bool processStart(string prog, string arg)	    プログラムの実行
+    //	void openUrl(string url)	                    URLを標準ブラウザで開く
+    //	static void Swap<T>(ref T lhs, ref T rhs)	    ジェネリックによるswap関数
+    //	MessageBoxResult messageBox(Window owner, string message, string title = "",	 メッセージダイヤログ(親Windowの中央に表示)
+    //	(MessageBoxResult result, bool cont) messageBoxEx(Window owner, string message, string title = "",	 メッセージ表示ダイヤログ
+    //	void setClipboard(List<string> fileList, int effect)	 クリップボードにDropEffectを設定
+    //	(List<string> files, int copyType) getClipboardFiles()	 クリップボードからDropFileを取り出す
+    ///
+    // ---  ストップウォッチ  ---
+    //	void stopWatchStartNew()	    ストップウォッチ機能初期化・計測開始
+    //	TimeSpan stopWatchLapTime()	    ストップウォッチ機能ラップ時間取得
+    //	TimeSpan stopWatchRestart()	    ストップウォッチ機能計測時間の取得と再スタート
+    //	TimeSpan stopWatchStop()	    ストップウォッチ機能計測時間の取得と終了
+    //	TimeSpan stopWatchTotalTime()	 ストップウォッチ機能累積時間の取得
+    ///
+    //  ---  ネットワーク関連  ---
+    //	bool webFileDownload(string url, string filePath)	 Web上のファイルをダウンロードする
+    //	string getWebText(string url)	                    URLのWebデータの読込
+    //	string getWebText(string url, int encordType = 0)	 エンコードタイプを指定してURLのWebデータの読込
+    ///
+    //  ---  文字列処理関連  -----
+    //	bool wcMatch(string srcstr, string pattern)	                ワイルドカードによる文字検索
+    //	int indexOf(string text, string val, int count = 1)	        文字列を前から指定位置を検索する
+    //	int lastIndexOf(string text, string val, int count = 1)	    文字列を後から指定位置を検索する
+    //	string stripBrackets(string text, char sb = '[', char eb = ']')	 文字列から括弧で囲まれた領域を取り除く
+    //	List<string> extractBrackets(string text, char sb = '{', char eb = '}', bool withBracket = false)	 括弧で囲まれた文字列を抽出する(ディフォルトは'{','}')
+    //	string trimControllCode(string buf)	                        文字列内のコントロールコードを除去する
+    //	string HanCode =	private string ZenCode =
+    //	string strZne2Han(string zenStr)	                        文字列内の全角英数字を半角に変換する
+    //	string HanNumCode = "0123456789.+-";	private string ZenNumCode = "０１２３４５６７８９．＋－";
+    //	string strNumZne2Han(string zenStr)	                        文字列内の全角数値を半角に変換する
+    //	string strControlCodeCnv(string str)	                    文字列の中の改行コード、','、'"'を'\'付きコードに置き換える
+    //	string strControlCodeRev(string str)	                    文字列の中の'\'付きコードを通常のコードに戻す
+    //	string stripControlCode(string str)	                        文字列からコントロールコードを除外する
+    //	string[] seperateString(string str)	                        文字列をカンマセパレータで分解して配列に格納する
+    //	List<string> splitString(string str, string[] sep)	        文字列を指定文字列で分ける
+    //	string stripBracketString(string str, char bracket = '(')	括弧付き文字列で前後の括弧を除いた文字列
+    //	string getBracketString(string str, int n, char bracket = '(', bool withBracket = true)	 括弧で囲まれた文字列の抽出(括弧含む)
+    //	string insertLinefeed(string str, string word = ",", int lineSize = 80)	 一行が指定文字数を超えたら改行を入れる
+    //	List<string> getPattern(string html, string pattern, string group)	 正規表現を使ったHTMLデータからパターン抽出
+    //	List<string[]> getPattern(string html, string pattern)	    正規表現を使ったHTMLからのパターン抽出
+    //	List<string[]> getPattern2(string html, string pattern)	    正規表現を使ったHTMLからのパターン抽出
+    //	int getStrByteCount(string str)	                            文字列の長さをbyte数で求める
+    //	string stringUncode2String(string text)	                    Unicode文字コードの文字列を文字列に変換
+    //	string tab2space(string text, int tabsize = 4)	            タブをスペースに変換
+
+    //  ---  数値処理  ----------
+    //	bool IsNumberString(string num, bool allNum = false)	    数値文字列かを判定する
+    //	string double2StrZeroSup(double val, string form = "f1")	数値をゼロサプレスして文字列に変換
+    //	bool boolParse(string str, bool val = true)	                文字列を論理値に変換
+    //	int intParse(string str, int val = 0)	                    文字列を整数に変換
+    //	double doubleParse(string str, double val = 0.0)	        文字列を実数に変換
+    //	int string2int(string num)	                                文字列の先頭が数値の場合、数値に変換する
+    //	double string2double(string num)	                        文字列の先頭が数値の場合、数値に変換する
+    //	List<string> string2StringNumbers(string num)	            文字列の中から複数の数値文字列を抽出する
+    //	string numChar = ".0123456789";	private string startNum = "+-123456789";
+    //	string string2StringNum(string num)	                        文字列から数値に関係ない文字を除去し、実数に変換できる文字列にする
+
+    ///
+    //  --- データ処理関係  ------
+    //	string arrayStr2CsvData(string[] data)	                            配列データをCSVデータに変換
+    //	string[] csvData2ArrayStr(string line)	                            CSVデータを配列データに戻す
+    //	List<string[]> splitJson(string jsonData, string baseTitle = "")    JSON形式の文字列から[名前:値]の対データをリストデータとして取得する
+    //	string getJsonDataString(string jsonData)	                        JSON形式の文字列から{}内の文字列を取得する
+    ///
+    //  ---  日付・時間関連  ------
+    //	int date2JulianDay(int year, int month, int day)	        歴日からユリウス日に変換
+    //	double getJD(int nYear, int nMonth, int nDay, int nHour = 0, int nMin = 0, int nSec = 0)	 ユリウス日(紀元前4713年(-4712年)1月1日が0日)の取得 (https://www.dinop.com/vc/getjd.html)
+    //	int julianDay(int y, int m, int d)	                        天文年鑑の数式でユリウス日を求める
+    //	double getMJD(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)	 準ユリウス日(1582年10月15日が0日)の取得
+    //	(int year, int month, int day) JulianDay2Date(double jd)	ユリウス日から西暦(年月日)を求める
+    //	(int hour, int min, int sec) JulianDay2Time(double jd)	    ユリウス日から時間(時分秒)の取得
+    //	string JulianDay2DateYear(double jd, int type = 0)	        ユリウス日から歴日文字列に変換
+    //	double getGreenwichSiderealTime(int nYear, int nMonth, int nDay, int nHour, int nMin, int nSec)	 恒星時(Wikipedia https://ja.wikipedia.org/wiki/恒星時)
+    //	double getLocalSiderealTime(double dSiderealTime, double dLongitude)	 地方恒星時の取得
+    ///
+    //  ---  グラフィック処理関連  ------
+    //	ColorTitle[] getColorList()	                                Media.ColorsよりColor Listを取得
+    //	int getBrushNo(System.Windows.Media.Brush color)	        BrushListからListNoの取得
+    //	string getBrushName(System.Windows.Media.Brush color)	    Brush を色名に変換
+    //	System.Windows.Media.Brush getBrsh(string colorName)	    色名を Brush値に変換
+    //	string getColorName(System.Windows.Media.Brush color)	    Brush を色名に変換
+    //	string getColorName(int colorNo)	                        色番号から色名を取得
+    //	System.Windows.Media.Brush getColor(string color)	        色名を Brush値に変換
+    //	System.Windows.Point rotateOrg(System.Windows.Point po, double rotate)	 原点を中心に回転
+    //	System.Windows.Point rotatePoint(System.Windows.Point ctr, System.Windows.Point po, double rotate)	 回転中心を指定して回転
+    //	double angleOrg(System.Windows.Point po)	                原点に対する座標点の水平線との角度(rad)
+    //	double anglePoint(System.Windows.Point ctr, System.Windows.Point po)	 中心座標を指定して回転角度(rad)
+    //	int angleQuadrant(double ang)	                            角度の象限を求める(0-3)
+    //	List<System.Windows.Point> circlePeakPoint(System.Windows.Point c, double r)	 円の4頂点?を求める
+    //	List<PointD> arcPeakPoint(PointD c, double r, double sa, double ea)	 円弧の頂点リストを求める
+    //	List<System.Windows.Point> arcPeakPoint(System.Windows.Point c, double r, double sa, double ea)	 円弧の頂点リストを求める
+    //	List<PointD> pointSort(List<PointD> plist)	                点リストを中心点の角度でソート
+    //	List<System.Windows.Point> pointSort(List<System.Windows.Point> plist)	 点リストを中心点の角度でソート
+    //	List<PointD> pointListSqueeze(List<PointD> plist)	        点座標リストで重複点を削除
+    //	List<PointD> devideArcList(PointD c, double r, double sa, double ea, int div = 32)	 円弧を分割した点座標リストを作成
+    //	List<PointD> divideCircleList(PointD c, double r, int div = 32)	 円を分割した点座標リストを作成
+    //	List<System.Windows.Point> divideCircleList(System.Windows.Point c, double r, int div = 32)	 円を分割した点座標リストを作成
+    //	System.Windows.Point averagePoint(List<System.Windows.Point> pList)	 一種の中心点(点リストの平均位置)
+    //	PointD nearPoint(List<PointD> plist, PointD pos)	        座標点リストで指定点に最も近い点
+    ///
+    //  ---  ビットマップ処理  ----
+    //	Bitmap getScreen(System.Drawing.Point ps, System.Drawing.Point pe)	画面の指定領域をキャプチャする
+    //	Bitmap getActiveWindowCapture()	                                    アクティブウィンドウの画面をキャプチャする
+    //	System.Drawing.Bitmap getFullScreenCapture()	                    全画面をキャプチャする
+    //	System.Drawing.Bitmap getBitmap(string path)	                    画像ファイルからBitmapを取得
+    //	BitmapImage getBitmapImage(string path)	                            画像ファイルからBitmapImageを取得
+    //	BitmapImage getThumbnailImage(string path, int width, int height, bool exif = true)	 JPEGのサムネイル画像を取得する
+    //	BitmapImage cnvBitmap2BitmapImage(System.Drawing.Bitmap bitmap,	 BitmapをBitmapImageに変換
+    //	BitmapImage getExifThumbnailImage(string path)	                    JPEGのExifサムネイル画像(0x501B)を取出す
+    //	BitmapImage cnvBitmap2BitmapImage(System.Drawing.Bitmap bitmap)	    BitmapをBitmapImageに変換
+    //	System.Drawing.Bitmap cnvBitmapImage2Bitmap(BitmapImage bitmapImage)	 BitmapImageをBitmapに変換
+    //	System.Drawing.Bitmap cnvBitmapSource2Bitmap(BitmapSource bitmapSource)	 BitmapSourceをBitmapに変換
+    //	BitmapSource bitmap2BitmapSource(System.Drawing.Bitmap bitmap)	    BitMap からBitmapSourceに変換
+    //	BitmapImage bitmapSource2BitmapImage(BitmapSource bitmapSource)	    BitmapSourceからBitmapImageに変換(動作未確認)
+    //	System.Drawing.Bitmap trimingBitmap(System.Drawing.Bitmap bitmap, System.Windows.Point sp, System.Windows.Point ep)	 Bitmapデータをトリミングする
+    //	int setCanvasBitmapImage(System.Windows.Controls.Canvas canvas, BitmapImage bitmapImage, double ox, double oy, double width, double height)	 BitmapImageをCanvasに登録する
+    //	System.Drawing.Bitmap verticalCombineImage(System.Drawing.Bitmap[] src)	 画像を縦方向に連結
+    //	System.Drawing.Bitmap horizontalCombineImage(System.Drawing.Bitmap[] src)	 画像の水平方向に連結
+    //	void saveBitmapImage(BitmapSource bitmapSource, string filePath)	 画像データをファイルに保存
+    //	System.Windows.Media.Color Draw2MediaColor(System.Drawing.Color color)	 Drawing.Color から Media.Color に変換
+    //	System.Drawing.Color Media2DrawColor(System.Windows.Media.Color color)	 Media.Color から Drawing.Colorに変換
+    //	BitmapSource canvas2Bitmap(Canvas canvas, double offsetX = 0, double offsetY = 0)	 CanvasをBitmapに変換
+    //	void moveImage(Canvas canvas, BitmapSource bitmapSource, double dx, double dy, int offset = 0)	 Bitmap 図形を移動させる
+    //	void image2Clipbord(System.Windows.Media.ImageSource imageSource)   Imageコントロールの画像をクリップボードに貼り付ける
+    //	List<string> getIPTC(string path)	                                JPEGファイルからIPTC情報の取得
+    //	string getIPTCall(string path)	                                    JPEGファイルの全IPTC情報を文字列化
+    ///
+    //  ---  配列処理  ---
+    //	double[,] doubleArray2Sort(double[,] data, int col = 0)	 2次元配列のソート(数値)
+    //	string[,] stringArray2Sort(string[,] data, int col = 0)	 2次元配列のソート(文字列))
+    ///
+    //  ---  単位変換関連  ------
+    //	string getCoordinatePattern(string coordinate)	        度分秒表示の座標があればその文字列を返す
+    //	System.Windows.Point cnvCoordinate(string coordinate)	度分秒表示の座標を度に変換する(IndexOf使うことで正規表現より早い)
+    //	System.Windows.Point cnvCoordinate2(string coordinate)	度分秒表示の座標を度に変換する(正規表現を使う)
+    //	double R2D(double rad)	                                ラジアンから度に変換
+    //	double D2R(double deg)	                                度からラジアンに変換
+    //	double H2D(double hour)	                                時(hh.hhhh)から度(ddd.dddd)
+    //	double D2H(double deg)	                                度()ddd.dddd)から時(hh.hhhh)に変換
+    //	double H2R(double hour)	                                時(hh.hhhh)からラジアンに変換
+    //	double R2H(double rad)	                                ラジアンから時(hh.hhhh)に変換
+    //	string deg2DMS(double deg)	                            度(ddd.dddd)を度分秒(dd°mm′ss″)文字列に変換
+    //	double DMS2deg(string dms)	                            度分秒(dd°mm′ss″)文字列を度(ddd.dddd)に変換
+    //	string hour2HMS(double hour)	                        時(hh.hhhh)を時分秒(HHhMMmSSs)文字列に変換
+    //	double HMS2hour(string hms)	                            時分秒(HHhMMmSSs)文字列を時(hh.hhhh)に変換
+    //	double hhmmss2hour(string hhmmss)	                    時分秒(hhmmss)文字列を時(hh.hhhh)に変換
+    //	double DMS2deg(int d, int m, double s)	                度分秒(dd,mm,ss)を度(ddd.dddd)
+    //	double HMS2hour(int h, int m, double s)	                時分秒(hh,mm,ss)を時(hh.hhhh)に変換
+    //	double HM2hour(string hm)	                            時分(hhmm.m)を時(hh.hhhh)に変換
+    //	double DM2deg(string dm)	                            度分(±ddmm.m)を度(ddd.dddd)に変換
+    //	double dm2deg(string dm)    	                        度分秒(±dd:mm:ss)を度(dd.ddddに変換
+    //	double hm2hour(string hm)	                            時分(hh:mm)を時(hh.hhhh)に変換
+    ///
+    //  ---  bit演算関連  ------
+    //	List<int> getBitOnNo(byte[] bytes)	                    OnBit位置の取得
+    //	bool IsEmpty(byte[] bytes)	                            Bit配列がすべて 0 かの確認
+    //	bool bitAnd(byte[] bytesA, byte[] bytesB)	            2つの　bitリストの and で同一のbitがあればtrue
+    //	bool getBitOn(byte[] bytes, int n)	                    Bitデータで指定位置のBitがOnかの確認
+    //	void bitOnAll(byte[] bytes, bool off = false)	        すべてのBitをOn/Offにする
+    //	void bitOn(byte[] bytes, int n)	                        BitデータをBit位置指定でOnにする
+    //	void bitOff(byte[] bytes, int n)	                    BitデータをBit位置指定でOffにする
+    //	string binary2HexString(byte[] bytes, int start = 0, int size = 0)	 16進文字列に変換
+    //	string binary2AsciiString(byte[] data, int start = 0, int size = 0)	 byte配列をASCii文字列に変換
+    //	byte[] intList2ByteArray(List<Int32> intlist)	        intリストをbyte配列に変換
+    //	byte[] ByteCopy(byte[] a, int start, int size)	        byteデータの指定範囲をコピーする
+    //	byte[] ByteOverWrite(byte[] src, int start, byte[] dest)    byte配列にbyteデータを上書きする
+    //	byte[] ByteCat(byte[] src1, byte[] src2)	            byte配列同士を連結する
     /// </summary>
     public class YLib
     {
@@ -406,6 +380,17 @@ namespace CoreLib
         private TimeSpan mStopWatchTotalTime;   //  mSwの経過時間
         public ColorTitle[] mBrushList;
         private char[] mBrackets = { '(', ')', '{', '}', '[', ']', '\"', '\"' };    //  括弧リスト
+        private double[] mKaigen = {    //  改元の日付(yyyy.mmdd)
+            2019.0501, 1989.0108, 1926.1225, 1912.0730, 1868.0908, 1865.0407, 1864,   1861,   1860,   1854,   1848,   1844,   1830,   1818
+        };
+        private string[] mGengou = {    //  元号名
+            "令和",    "平成",     "昭和",   "大正",    "明治",    "慶応",    "元治", "文久", "万延", "安政", "嘉永", "弘化", "天保", "文政"
+        };
+        private string[] mMonth = {
+            "january","february","march","april","may","june","july","august","september","october","novmber","december",
+            "jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec",
+        };
+
         private Encoding[] mEncoding;
         public int mEncordingType = 0;
         public bool mError = false;
@@ -595,7 +580,7 @@ namespace CoreLib
         /// <returns>抽出フォルダ名</returns>
         public string getLastFolder(string folder, int n)
         {
-            String[] buf = folder.Split('\\');
+            string[] buf = folder.Split('\\');
             if (0 < buf.Length)
                 return buf[buf.Length - n];
             else
@@ -752,6 +737,57 @@ namespace CoreLib
             dlg.mContinueMessageDisp = continueMessage;
             dlg.ShowDialog();
             return (dlg.mResult, dlg.mContinueMessage);
+        }
+
+        /// <summary>
+        /// クリップボードにファイルリストを7設定(FileDrop + Preferred DropEffect + Text)
+        /// </summary>
+        /// <param name="fileList">ファイルリスト</param>
+        /// <param name="effect">コピータイプ(0:Non 1:Copy 2:Mpve 4:Link)</param>
+        public void setClipboard(List<string> fileList, int effect)
+        {
+            //  [FileDrop]
+            //  FileName/FilNameWも合わせて作られる
+            string[] files = fileList.ToArray();
+            DataObject dataObject = new DataObject();
+            dataObject.SetData(DataFormats.FileDrop, files);
+
+            //  [Preferred DropEffect]
+            // Set Preferred DropEffect to COPY
+            // This is a DWORD (4 bytes) in little-endian format
+            MemoryStream dropEffectStream = new MemoryStream();
+            byte[] dropEffectBytes = BitConverter.GetBytes((uint)effect);
+            dropEffectStream.Write(dropEffectBytes, 0, dropEffectBytes.Length);
+            dataObject.SetData("Preferred DropEffect", dropEffectStream);
+
+            //  [Text]
+            dataObject.SetData(DataFormats.Text, string.Join('\n', fileList));
+
+            Clipboard.SetDataObject(dataObject, true);
+        }
+
+        /// <summary>
+        /// クリップボードからファイルリスト(FileDrop+ Preferred DropEffect)を取り出す
+        /// </summary>
+        /// <returns>(ファイルリスト,コピータイプ　0:NONE 1:COPY 2:MOVE 4:LINK)</returns>
+        public (List<string> files, int copyType) getClipboardFiles()
+        {
+            List<string> files = new List<string>();
+            uint effect = 0;
+            IDataObject iData = Clipboard.GetDataObject();
+            if (iData.GetDataPresent(DataFormats.FileDrop)) {
+                string[] fileArray = (string[])iData.GetData(DataFormats.FileDrop);
+                files = fileArray.ToList();
+            }
+            if (iData.GetDataPresent("Preferred DropEffect")) {
+                MemoryStream ms = iData.GetData("Preferred DropEffect") as MemoryStream;
+                if (ms != null && ms.Length >= 4) {
+                    byte[] bytes = new byte[4];
+                    ms.Read(bytes, 0, 4);
+                    effect = BitConverter.ToUInt32(bytes, 0);  //  0:NONE 1:COPY 2:MOVE 4:LINK
+                }
+            }
+            return (files, (int)effect);
         }
 
         // ---  ストップウォッチ  ---
@@ -1050,211 +1086,6 @@ namespace CoreLib
             return obuf;
         }
 
-        /// <summary>
-        /// 数値文字列かを判定する
-        /// 数値以外の文字があっても数値にできるものは数値として判定
-        /// 数値文字列が複数ある時は数値文字列とはしない
-        /// </summary>
-        /// <param name="num">数値文字列</param>
-        /// <param name="allNum">すべて数値のみ</param>
-        /// <returns>判定</returns>
-        public bool IsNumberString(string num, bool allNum = false)
-        {
-            if (num == null)
-                return false;
-            if (num.Length == 1 && num.CompareTo("0") == 0)
-                return true;
-            List<string> numbers = string2StringNumbers(num);
-            if (1 < numbers.Count)
-                return false;
-            string nbuf = allNum ? num : string2StringNum(num);
-            double val;
-            return double.TryParse(nbuf, out val) ? true : false;
-        }
-
-        /// <summary>
-        /// 数値をゼロサプレスして文字列に変換
-        /// </summary>
-        /// <param name="val">数値</param>
-        /// <param name="form">書式</param>
-        /// <returns>数値文字列</returns>
-        public string double2StrZeroSup(double val, string form = "f1")
-        {
-            string valStr = val.ToString(form);
-            if (0 <= valStr.IndexOf('.')) {
-                for (int i = valStr.Length - 1; 0 < i; i--) {
-                    if (valStr[i] !='0') {
-                        if (valStr[i] == '.')
-                            return valStr.Substring(0, i);
-                        else
-                            return valStr.Substring(0, i + 1);
-                    }
-                }
-            }
-            return valStr;
-        }
-
-
-        /// <summary>
-        /// 文字列を論理値に変換
-        /// 変換できない場合はdefaultを使用
-        /// </summary>
-        /// <param name="str">文字列</param>
-        /// <param name="val">default値(省略時はtrue)</param>
-        /// <returns></returns>
-        public bool boolParse(string str, bool val = true)
-        {
-            bool b;
-            if (bool.TryParse(str, out b))
-                return b;
-            else
-                return val;
-        }
-
-        /// <summary>
-        /// 文字列を整数に変換
-        /// 変換できない場合はdefaultを使用
-        /// </summary>
-        /// <param name="str">数値文字列</param>
-        /// <param name="val">default値(省略時は0)</param>
-        /// <returns>整数値</returns>
-        public int intParse(string str, int val = 0)
-        {
-            int d;
-            if (int.TryParse(str, out d))
-                return d;
-            else
-                return val;
-        }
-
-        /// <summary>
-        /// 文字列を実数に変換
-        /// 変換できない場合はdefaultを使用
-        /// </summary>
-        /// <param name="str">数値文字列</param>
-        /// <param name="val">default値(省略時は0)</param>
-        /// <returns>実数値</returns>
-        public double doubleParse(string str, double val = 0.0)
-        {
-            double d;
-            if (double.TryParse(str, out d))
-                return d;
-            else
-                return val;
-        }
-
-        /// <summary>
-        /// 文字列の先頭が数値の場合、数値に変換する
-        /// 変換できない時は0を返す
-        /// 先頭の空白や0、後尾の数値以外の文字は除外して変換する
-        /// </summary>
-        /// <param name="num">数値入り文字列</param>
-        /// <returns>整数値</returns>
-        public int string2int(string num)
-        {
-            if (num == null)
-                return 0;
-
-            string nbuf = string2StringNum(num);
-            int n = nbuf.IndexOf('.');
-            if (0 <= n)
-                nbuf = nbuf.Substring(0, n);
-            int val;
-            val = int.TryParse(nbuf, out val) ? val : 0;
-            return val;
-        }
-
-        /// <summary>
-        /// 文字列の先頭が数値の場合、数値に変換する
-        /// 変換できない時は0を返す
-        /// 先頭の空白や0、後尾の数値以外の文字は除外して変換する
-        /// </summary>
-        /// <param name="num">数値入り文字列</param>
-        /// <returns>実数値</returns>
-        public double string2double(string num)
-        {
-            if (num == null)
-                return 0;
-
-            string nbuf = string2StringNum(num);
-            double val;
-            val = double.TryParse(nbuf, out val) ? val : 0;
-            return val;
-        }
-
-        /// <summary>
-        /// 文字列の中から複数の数値文字列を抽出する
-        /// </summary>
-        /// <param name="num">文字列</param>
-        /// <returns>数値文字列リスト</returns>
-        public List<string> string2StringNumbers(string num)
-        {
-            List<string> data = new List<string>();
-            char[] startChar = startNum.ToCharArray();
-            int sp = 0;
-            while (sp < num.Length) {
-                sp = num.IndexOfAny(startChar, sp);
-                if (sp < 0)
-                    break;
-                string buf = string2StringNum(num.Substring(sp));
-                if (0 < buf.Length) {
-                    data.Add(buf);
-                    sp += buf.Length;
-                } else {
-                    sp++;
-                }
-            }
-            return data;
-        }
-
-        private string startNum = "+-123456789";
-        private string numChar = ".0123456789";
-
-        /// <summary>
-        /// 文字列から数値に関係ない文字を除去し、実数に変換できる文字列にする
-        /// </summary>
-        /// <param name="num">文字列</param>
-        /// <returns>数値文字列</returns>
-        public string string2StringNum(string num)
-        {
-            string buf = "";
-            num = num.Replace(",", "");             //  桁区切りのカンマを除く
-            num = num.TrimStart(' ');               //  先頭の空白と0を除く
-            for (int i = 0; i < num.Length; i++) {
-                if (buf.Length == 0 || num[i] == 'E' || num[i] == 'e') {
-                    if (0 <= startNum.IndexOf(num[i])) {
-                        buf += num[i];
-                    } else if (buf.Length == 0 && (i + 1 < num.Length) && num[i] == '0' && num[i + 1] != '.') {
-                        //  先頭の不要な0を除く
-                    } else if (i + 1 < num.Length && num[i] == '0' && num[i + 1] == '.') {
-                        buf += num[i++];
-                        buf += num[i];
-                    } else if (i + 1 < num.Length && (num[i] == 'E' || num[i] == 'e') && 0 <= startNum.IndexOf(num[i + 1])) {
-                        buf += num[i++];
-                        buf += num[i];
-                    } else {
-                        break;
-                    }
-                } else {
-                    if (0 <= numChar.IndexOf(num[i])) {
-                        buf += num[i];
-                    } else {
-                        break;
-                    }
-                }
-            }
-            if (buf.Length == 1 && (buf[0] == '+' || buf[0] == '-' || buf[0] == '.'))
-                return "";
-            for (int i = buf.Length - 1; 0 <= i; i--) {
-                if (0 <= numChar.IndexOf(buf[i])) {
-                    buf = buf.Substring(0, i + 1);
-                    break;
-                }
-            }
-
-            return buf;
-        }
-
         private string ZenCode =
             "　！”＃＄％＆’（）＊＋，－．／" +
              "０１２３４５６７８９：；＜＝＞？" +
@@ -1437,9 +1268,9 @@ namespace CoreLib
         /// <returns>分割リスト</returns>
         public List<string> splitString(string str, string[] sep)
         {
-            List<String> strList = new List<string>();
+            List<string> strList = new List<string>();
             int i = 0;
-            String buf = "";
+            string buf = "";
             while (i < str.Length) {
                 bool find = false;
                 for (int j = 0; j < sep.Length; j++) {
@@ -1675,6 +1506,324 @@ namespace CoreLib
             return buf;
         }
 
+        /// <summary>
+        /// 文字列のハッシュ値(MD5)を求める
+        /// 比較は SrcHash.SequenceEqual(DestHash)
+        /// </summary>
+        /// <param name="text">文字列</param>
+        /// <returns>ハッシュ値</returns>
+        public byte[] getHashMD5(string text)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(text);
+            MD5 md5 = MD5.Create();
+            byte [] hashCode = md5.ComputeHash(data);
+            md5.Clear();
+            return hashCode;
+        }
+
+
+        //  ---  数値変換  -----------------
+
+        /// <summary>
+        /// 数値文字列かを判定する
+        /// 数値以外の文字があっても数値にできるものは数値として判定
+        /// 数値文字列が複数ある時は数値文字列とはしない
+        /// </summary>
+        /// <param name="num">数値文字列</param>
+        /// <param name="allNum">すべて数値のみ</param>
+        /// <returns>判定</returns>
+        public bool IsNumberString(string num, bool allNum = false)
+        {
+            if (num == null)
+                return false;
+            if (num.Length == 1 && num.CompareTo("0") == 0)
+                return true;
+            List<string> numbers = string2StringNumbers(num);
+            if (1 < numbers.Count)
+                return false;
+            string nbuf = allNum ? num : string2StringNum(num);
+            double val;
+            return double.TryParse(nbuf, out val) ? true : false;
+        }
+
+        /// <summary>
+        /// 数値をゼロサプレスして文字列に変換
+        /// </summary>
+        /// <param name="val">数値</param>
+        /// <param name="form">書式</param>
+        /// <returns>数値文字列</returns>
+        public string double2StrZeroSup(double val, string form = "f1")
+        {
+            string valStr = val.ToString(form);
+            if (0 <= valStr.IndexOf('.')) {
+                for (int i = valStr.Length - 1; 0 < i; i--) {
+                    if (valStr[i] != '0') {
+                        if (valStr[i] == '.')
+                            return valStr.Substring(0, i);
+                        else
+                            return valStr.Substring(0, i + 1);
+                    }
+                }
+            }
+            return valStr;
+        }
+
+
+        /// <summary>
+        /// 文字列を論理値に変換
+        /// 変換できない場合はdefaultを使用
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <param name="val">default値(省略時はtrue)</param>
+        /// <returns></returns>
+        public bool boolParse(string str, bool val = true)
+        {
+            bool b;
+            if (bool.TryParse(str, out b))
+                return b;
+            else
+                return val;
+        }
+
+        /// <summary>
+        /// 文字列を整数に変換
+        /// 変換できない場合はdefaultを使用
+        /// </summary>
+        /// <param name="str">数値文字列</param>
+        /// <param name="val">default値(省略時は0)</param>
+        /// <returns>整数値</returns>
+        public int intParse(string str, int val = 0)
+        {
+            int d;
+            if (int.TryParse(str, out d))
+                return d;
+            else
+                return val;
+        }
+
+        /// <summary>
+        /// 文字列を整数に変換(0xがつくと16進として変換)
+        /// </summary>
+        /// <param name="str">数値文字列</param>
+        /// <param name="val">default値(省略時は0)</param>
+        /// <returns></returns>
+        public long longParse(string str, int val = 0)
+        {
+            long i;
+            str = str.Replace(",", "");
+            if (str.StartsWith("0x"))
+                return Convert.ToInt64(str, 16);
+            else if (long.TryParse(str.Trim(), out i))
+                return i;
+            else
+                return val;
+        }
+
+        /// <summary>
+        /// 文字列を実数に変換
+        /// 変換できない場合はdefaultを使用
+        /// </summary>
+        /// <param name="str">数値文字列</param>
+        /// <param name="val">default値(省略時は0)</param>
+        /// <returns>実数値</returns>
+        public double doubleParse(string str, double val = 0.0)
+        {
+            double d;
+            if (double.TryParse(str, out d))
+                return d;
+            else
+                return val;
+        }
+
+        /// <summary>
+        /// 文字列の先頭が数値の場合、数値に変換する
+        /// 変換できない時は0を返す
+        /// 先頭の空白や0、後尾の数値以外の文字は除外して変換する
+        /// </summary>
+        /// <param name="num">数値入り文字列</param>
+        /// <returns>整数値</returns>
+        public int string2int(string num)
+        {
+            if (num == null)
+                return 0;
+
+            string nbuf = string2StringNum(num);
+            int n = nbuf.IndexOf('.');
+            if (0 <= n)
+                nbuf = nbuf.Substring(0, n);
+            int val;
+            val = int.TryParse(nbuf, out val) ? val : 0;
+            return val;
+        }
+
+        /// <summary>
+        /// 文字列の先頭が数値の場合、数値に変換する
+        /// 変換できない時は0を返す
+        /// 先頭の空白や0、後尾の数値以外の文字は除外して変換する
+        /// </summary>
+        /// <param name="num">数値入り文字列</param>
+        /// <returns>実数値</returns>
+        public double string2double(string num)
+        {
+            if (num == null)
+                return 0;
+
+            string nbuf = string2StringNum(num);
+            double val;
+            val = double.TryParse(nbuf, out val) ? val : 0;
+            return val;
+        }
+
+        /// <summary>
+        /// 文字列の中から複数の数値文字列を抽出する
+        /// </summary>
+        /// <param name="num">文字列</param>
+        /// <returns>数値文字列リスト</returns>
+        public List<string> string2StringNumbers(string num)
+        {
+            List<string> data = new List<string>();
+            char[] startChar = startNum.ToCharArray();
+            int sp = 0;
+            while (sp < num.Length) {
+                sp = num.IndexOfAny(startChar, sp);
+                if (sp < 0)
+                    break;
+                string buf = string2StringNum(num.Substring(sp));
+                if (0 < buf.Length) {
+                    data.Add(buf);
+                    sp += buf.Length;
+                } else {
+                    sp++;
+                }
+            }
+            return data;
+        }
+
+        private string startNum = "+-123456789";
+        private string numChar = ".0123456789";
+
+        /// <summary>
+        /// 文字列から数値に関係ない文字を除去し、実数に変換できる文字列にする
+        /// </summary>
+        /// <param name="num">文字列</param>
+        /// <returns>数値文字列</returns>
+        public string string2StringNum(string num)
+        {
+            string buf = "";
+            num = num.Replace(",", "");             //  桁区切りのカンマを除く
+            num = num.TrimStart(' ');               //  先頭の空白と0を除く
+            for (int i = 0; i < num.Length; i++) {
+                if (buf.Length == 0 || num[i] == 'E' || num[i] == 'e') {
+                    if (0 <= startNum.IndexOf(num[i])) {
+                        buf += num[i];
+                    } else if (buf.Length == 0 && (i + 1 < num.Length) && num[i] == '0' && num[i + 1] != '.') {
+                        //  先頭の不要な0を除く
+                    } else if (i + 1 < num.Length && num[i] == '0' && num[i + 1] == '.') {
+                        buf += num[i++];
+                        buf += num[i];
+                    } else if (i + 1 < num.Length && (num[i] == 'E' || num[i] == 'e') && 0 <= startNum.IndexOf(num[i + 1])) {
+                        buf += num[i++];
+                        buf += num[i];
+                    } else {
+                        break;
+                    }
+                } else {
+                    if (0 <= numChar.IndexOf(num[i])) {
+                        buf += num[i];
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if (buf.Length == 1 && (buf[0] == '+' || buf[0] == '-' || buf[0] == '.'))
+                return "";
+            for (int i = buf.Length - 1; 0 <= i; i--) {
+                if (0 <= numChar.IndexOf(buf[i])) {
+                    buf = buf.Substring(0, i + 1);
+                    break;
+                }
+            }
+
+            return buf;
+        }
+
+        //  ---  16進文字列処理  -----------
+
+        /// <summary>
+        /// 16進文字列をintに変換
+        /// </summary>
+        /// <param name="str">16進文字列</param>
+        /// <param name="val">default値(省略時は0)</param>
+        /// <returns></returns>
+        public int intHexParse(string str, int val = 0)
+        {
+            str = str.Replace(" ", "");
+            if (int.TryParse(str, System.Globalization.NumberStyles.HexNumber, null, out int number)) {
+                return number;
+            } else {
+                return val;
+            }
+        }
+
+        /// <summary>
+        /// 16進文字列をlongに変換
+        /// </summary>
+        /// <param name="str">16進文字列</param>
+        /// <param name="val">default値(省略時は0)</param>
+        /// <returns></returns>
+        public long longHexParse(string str, int val = 0)
+        {
+            str = str.Replace(" ", "");
+            if (long.TryParse(str, System.Globalization.NumberStyles.HexNumber, null, out long number)) {
+                return number;
+            } else {
+                return val;
+            }
+        }
+
+        /// <summary>
+        /// 文字列が16進数かの判定
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <returns>16進数?</returns>
+        public bool isHexNumber(string str)
+        {
+            foreach (char c in str) {
+                if (!isHexNumber(c))
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 文字が16進数かの判定
+        /// </summary>
+        /// <param name="c">文字</param>
+        /// <returns>16進数?</returns>
+        public bool isHexNumber(char c)
+        {
+            if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')))
+                return false;
+            return true;
+        }
+
+        /// <summary>
+        /// 文字列が10進数かの判定(実数含む)
+        /// </summary>
+        /// <param name="str">文字列</param>
+        /// <returns>10進数?</returns>
+        public bool isDecNumber(string str)
+        {
+            for (int i = 0; i < str.Length; i++) {
+                if (!(Char.IsNumber(str[i]) || str[i] == '.' ||
+                    (i == 0 && str[i] == '-') ||
+                    (0 < i && (str[i] == 'E' || str[i] == 'e') && Char.IsNumber(str[i - 1])) ||
+                    (0 < i && (str[i - 1] == 'E' || str[i - 1] == 'e') && (str[i] == '-' || str[i] == '+'))))
+                    return false;
+            }
+            return true;
+        }
+
 
         //  --- データ処理関係  ------
 
@@ -1789,6 +1938,398 @@ namespace CoreLib
 
         //  ---  日付・時間関連  ------
 
+
+        /// <summary>
+        /// 日時を分単位で丸める
+        /// </summary>
+        /// <param name="et">日時</param>
+        /// <param name="min">丸める分数</param>
+        /// <returns>丸めた日時</returns>
+        public DateTime roundDateTimeMin(DateTime et, int min)
+        {
+            DateTime st = new DateTime(2000, 1, 1, 0, 0, 0);
+            TimeSpan dt = et - st;
+            DateTime rt = st.Add(new TimeSpan(0, (int)(Math.Floor(dt.TotalMinutes / min) * min), 0));
+            return rt;
+        }
+
+        /// <summary>
+        /// 秒数を時分秒の文字列に変換 s → mm:ss or hh:mm:ss
+        /// </summary>
+        /// <param name="seconds">時間(秒)</param>
+        /// <param name="auto">自動で選択(mm:ss or hh:mm:ss)</param>
+        /// <returns>時刻文字列</returns>
+        public string second2String(double seconds, bool auto)
+        {
+            long second = (long)seconds % 60;
+            long minute = (long)(seconds / 60) % 60;
+            long hour = (long)(seconds / 3600);
+            if (0 < hour || !auto)
+                return string.Format("{0:00}:{1:00}:{2:00}", hour, minute, second);
+            else
+                return string.Format("{0:00}:{1:00}", minute, second);
+        }
+
+        /// <summary>
+        /// 文字列の時刻タイプの判定
+        /// hh:mm:ss,hh:mm,hh:mm AM/PM, h時m分s秒, h時m分
+        /// </summary>
+        /// <param name="time">文字列</param>
+        /// <returns></returns>
+        public bool IsTime(string time)
+        {
+            if (Regex.IsMatch(time, "(^[01][0-9]|^2[0123]):([0-5][0-9]):([0-5][0-9])") ||     //  24時:分:秒
+                Regex.IsMatch(time, "(^[1-9]|^1[012]):([0-5][0-9]):([0-5][0-9])") ||          //  12時:分:秒
+                Regex.IsMatch(time, "(^[01][0-9]|^2[0123]):([0-5][0-9])") ||                  //  時:分
+                Regex.IsMatch(time, "(^[1-9]|^1[012]):([0-5][0-9]) (AM|PM)") ||               //  時:分 PM
+                Regex.IsMatch(time, "(^[0-9]|^[01][0-9]|^2[0123])時([0-9]|[0-5][0-9])分([0-9]|[0-5][0-9])秒") ||
+                Regex.IsMatch(time, "(^[0-9]|^[01][0-9]|^2[0123])時([0-9]|[0-5][0-9])分"))
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 文字列時刻を秒数に変換
+        /// hh:mm:ss,hh:mm,hh:mm AM/PM,hh時mm分ss秒,hh時mm分
+        /// </summary>
+        /// <param name="time">時刻文字列</param>
+        /// <returns>秒数</returns>
+
+        public int time2Seconds(string time)
+        {
+            int h = 0;
+            int m = 0;
+            int s = 0;
+            if (Regex.IsMatch(time, "([01][0-9]|2[0123]):([0-5][0-9]):([0-5][0-9])")) {     //  24時:分:秒
+                h = int.Parse(time.Substring(0, 2));
+                m = int.Parse(time.Substring(3, 2));
+                s = int.Parse(time.Substring(6, 2));
+            } else if (Regex.IsMatch(time, "([1-9]|1[012]):([0-5][0-9]):([0-5][0-9])")) {   //  12時:分:秒
+                h = int.Parse(time.Substring(0, time.IndexOf(':')));
+                m = int.Parse(time.Substring(time.IndexOf(':') + 1, time.IndexOf(':', time.IndexOf(':') + 1) - time.IndexOf(':') - 1));
+                s = int.Parse(time.Substring(time.IndexOf(':', time.IndexOf(':') + 1) + 1));
+            } else if (Regex.IsMatch(time, "([01][0-9]|2[0123]):([0-5][0-9])")) {           //  時:分
+                h = int.Parse(time.Substring(0, time.IndexOf(':')));
+                m = int.Parse(time.Substring(time.IndexOf(':') + 1));
+            } else if (Regex.IsMatch(time, "([1-9]|1[012]):([0-5][0-9]) (AM|PM)")) {        //  時:分 PM
+                h = int.Parse(time.Substring(0, time.IndexOf(':')));
+                m = int.Parse(time.Substring(time.IndexOf(':') + 1, time.IndexOf(' ') - time.IndexOf(':')));
+                if (0 < time.IndexOf("PM"))
+                    h += 12;
+            } else if (Regex.IsMatch(time, "([0-9]|[01][0-9]|2[0123])時([0-9]|[0-5][0-9])分([0-9]|[0-5][0-9])秒")) {
+                h = int.Parse(time.Substring(0, time.IndexOf('時')));
+                int hp = time.IndexOf('時') + 1;
+                int mp = time.IndexOf('分') - time.IndexOf('時') - 1;
+                m = int.Parse(time.Substring(time.IndexOf('時') + 1, time.IndexOf('分') - time.IndexOf('時') - 1));
+                s = int.Parse(time.Substring(time.IndexOf('分') + 1, time.IndexOf('秒') - time.IndexOf('分') - 1));
+            } else if (Regex.IsMatch(time, "([0-9]|[01][0-9]|2[0123])時([0-9]|[0-5][0-9])分")) {
+                h = int.Parse(time.Substring(0, time.IndexOf('時')));
+                m = int.Parse(time.Substring(time.IndexOf('時') + 1, time.IndexOf('分') - time.IndexOf('時') - 1));
+            } else {
+                return 0;
+            }
+            return ((h * 60) + m) * 60 + s;
+        }
+
+        /// <summary>
+        /// 文字列が曜日かの判定
+        /// </summary>
+        /// <param name="weekday">曜日</param>
+        /// <returns></returns>
+        public bool IsWeekday(string weekday)
+        {
+            if (Regex.IsMatch(weekday, "^[日月火水木金土]|^[日月火水木金土]曜|^[日月火水木金土]曜日") ||
+                Regex.IsMatch(weekday, "(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)") ||
+                Regex.IsMatch(weekday, "(Sun|Mon|Tue|Wed|Thu|Fri|Sat)"))
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 文字列から曜日の番号を返す
+        /// 日曜日を0とする
+        /// </summary>
+        /// <param name="weekday">曜日</param>
+        /// <returns>曜日の位置</returns>
+        public int WeekNo(string weekday)
+        {
+            if (weekday.Length < 1)
+                return -1;
+            int weekNo = "日月火水木金土".IndexOf(weekday.Substring(0, 1));
+            if (weekNo < 0 && 2 < weekday.Length) {
+                weekNo = "SunMonTueWedThuFriSat".IndexOf(weekday.Substring(0, 3));
+                weekNo = weekNo < 0 ? weekNo : weekNo / 3;
+            }
+            return weekNo;
+        }
+
+        /// <summary>
+        /// 曜日の位置から曜日文字列を返す
+        /// </summary>
+        /// <param name="weekNo">曜日の位置</param>
+        /// <returns>曜日文字列</returns>
+        public string getWeekday(int weekNo, int type)
+        {
+            string[,] weekday = {
+                { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" },
+                { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" },
+                { "日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日" },
+                { "日", "月", "火", "水", "木", "金", "土" },
+            };
+            return weekday[type % weekday.GetLength(0), weekNo % weekday.GetLength(1)];
+        }
+
+        public string[] mDatePattern = {
+            //  [month] dd, yyyy
+            "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec).*?([12][0-9]|3[01]|[1-9]),.*?(1[89][0-9][0-9]|2[01][0-9][0-9])",
+            //  [元号]yy年mm月dd日
+            "(令和|平成|昭和|大正|明治|慶応|元治|文久|万延|安政|嘉永|弘化|天保|文政)([1-9]|[0-9][0-9])年([1-9]|[01][0-2])月([0-2][0-9]|3[01]|[1-9])日",
+            //  yyyy年ww周
+            "(^1[89][0-9][0-9]|2[01][0-9][0-9])年([1-5][0-9]|[1-9])週",
+            //  yyyy年mm月w週
+            "(^1[89][0-9][0-9]|2[01][0-9][0-9])年([1-9]|1[0-2])月([1-5])週",
+            //  yyyy年mm月dd日
+            "(1[89][0-9][0-9]|2[01][0-9][0-9])年([1-9]|1[0-2])月([12][0-9]|3[01]|[1-9])日",
+            //  yyyy年mm月
+            "(1[89][0-9][0-9]|2[01][0-9][0-9])年(1[0-2]|[1-9])月",
+            //  yyyy年
+            "(1[89][0-9][0-9]|2[01][0-9][0-9])年",
+            //  mm月dd日
+            "([1-9]|1[0-2])月([1-9]|[12][0-9]|3[01])日",
+            //  yyyy/mm/dd
+            "(19[0-9][0-9]|2[01][0-9][0-9])/([1-9]|1[0-2]|0[1-9])/([12][0-9]|3[01]|0[1-9]|[1-9])",
+            //  yyyy/mm
+            "(1[89][0-9][0-9]|2[01][0-9][0-9])/([1-9]|1[0-2]|0[1-9])",
+            //  yyyy-mm-dd
+            "(1[89][0-9][0-9]|2[01][0-9][0-9])-([1-9]|1[0-2]|0[1-9])-([12][0-9]|3[01]|0[1-9]|[1-9])",
+            //  dd/mm/yyyy
+            "(1[0-2]|0[1-9]|[1-9])/([1-9]|[12][0-9]|3[01]|0[1-9])/(19[0-9][0-9]|2[01][0-9][0-9])",
+            //  yyyymmdd
+            "(1[89][0-9][0-9]|2[01][0-9][0-9])(1[0-2]|0[1-9])([12][0-9]|3[01]|0[1-9])",
+            //  yyyy
+            "(1[89][0-9][0-9]|2[01][0-9][0-9])",
+            //  dd[month]yyyy
+            "([0-9][0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(1[89][0-9][0-9]|2[01][0-9][0-9])",
+            //  dd-[month]-yy
+            "([0-9][0-9]|[0-9])-(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)-([0-9][0-9])",
+        };
+
+        /// <summary>
+        /// テキストから日付の部分を抽出する
+        /// </summary>
+        /// <param name="text">テキスト</param>
+        /// <returns>日付</returns>
+        public (int, string) getDateMatch(string text)
+        {
+            for (int i = 0; i < mDatePattern.Length; i++) {
+                Match match = Regex.Match(text, mDatePattern[i]);
+                if (0 < match.Value.Length) {
+                    return (i, match.Value);
+                }
+            }
+            return (-1, "");
+        }
+
+        /// <summary>
+        /// 日付文字列から曜日を求める
+        /// 曜日のタイプ  0:Sunday 1:SUN 2:日曜日 3:日
+        /// </summary>
+        /// <param name="type">曜日のタイプ</param>
+        /// <param name="date">日付文字列</param>
+        /// <returns>曜日</returns>
+        public string cnvDateWeekday(int type, string date = "")
+        {
+            DateTime dt;
+            if (date.Length == 0)
+                dt = DateTime.Now;
+            else
+                dt = DateTime.Parse(date);
+            int weekNo = int.Parse(dt.DayOfWeek.ToString("d"));
+            return getWeekday(weekNo, type);
+        }
+
+        /// <summary>
+        /// 各種の日付パターンをyyyy/mm/ddに変換する
+        /// </summary>
+        /// <param name="date">日付文字列</param>
+        /// <returns></returns>
+        public string cnvDateFormat(string date)
+        {
+            int year = 0;
+            int month = 0;
+            int day = 0;
+            int week = 0;
+            int jd = 0;
+            for (int i = 0; i < mDatePattern.Length; i++) {
+                if (Regex.IsMatch(date.ToLower(), mDatePattern[i])) {
+                    List<string[]> dateList = getPattern(date.ToLower(), mDatePattern[i]);
+                    switch (i) {
+                        case 0: //  [manth] dd, yyyy
+                            year = intParse(dateList[0][3]);
+                            month = Array.IndexOf(mMonth, dateList[0][1]) % 12 + 1;
+                            day = intParse(dateList[0][2]);
+                            break;
+                        case 1: //  [元号]yy年mm月dd日
+                            year = intParse(dateList[0][2]) + (int)mKaigen[Array.IndexOf(mGengou, dateList[0][1])] - 1;
+                            month = intParse(dateList[0][3]);
+                            day = intParse(dateList[0][4]);
+                            break;
+                        case 2: //  yyyy年ww周
+                            year = intParse(dateList[0][1]);
+                            week = intParse(dateList[0][2]);
+                            jd = (week - 1) * 7 + (date2JulianDay(year, 1, 1) / 7) * 7 - 1;
+                            month = JulianDay2Month(jd);
+                            day = JulianDay2Day(jd);
+                            break;
+                        case 3: //  yyyy年mm月w週
+                            year = intParse(dateList[0][1]);
+                            month = intParse(dateList[0][2]);
+                            week = intParse(dateList[0][3]);
+                            jd = (week - 1) * 7 + (date2JulianDay(year, month, 1) / 7) * 7 - 1;
+                            day = JulianDay2Day(jd);
+                            break;
+                        case 4: //  yyyy年mm月dd日
+                            year = intParse(dateList[0][1]);
+                            month = intParse(dateList[0][2]);
+                            day = intParse(dateList[0][3]);
+                            break;
+                        case 5: //  yyyy年mm月
+                            year = intParse(dateList[0][1]);
+                            month = intParse(dateList[0][2]);
+                            day = 1;
+                            break;
+                        case 6: //  yyyy年
+                            year = intParse(dateList[0][1]);
+                            month = 1;
+                            day = 1;
+                            break;
+                        case 7: //  mm月dd日
+                            year = DateTime.Now.Year;
+                            month = intParse(dateList[0][1]);
+                            day = intParse(dateList[0][2]);
+                            break;
+                        case 8: //   yyyy/mm/dd
+                            year = intParse(dateList[0][1]);
+                            month = intParse(dateList[0][2]);
+                            day = intParse(dateList[0][3]);
+                            break;
+                        case 9: //  yyyy/mm
+                            year = intParse(dateList[0][1]);
+                            month = intParse(dateList[0][2]);
+                            day = 1;
+                            break;
+                        case 10: //  yyyy-mm-dd
+                            year = intParse(dateList[0][1]);
+                            month = intParse(dateList[0][2]);
+                            day = intParse(dateList[0][3]);
+                            break;
+                        case 11: //  mm/dd/yyyy
+                            year = intParse(dateList[0][3]);
+                            month = intParse(dateList[0][1]);
+                            day = intParse(dateList[0][2]);
+                            break;
+                        case 12: //  yyyymmdd
+                            year = intParse(dateList[0][1]);
+                            month = intParse(dateList[0][2]);
+                            day = intParse(dateList[0][3]);
+                            break;
+                        case 13: //  yyyy
+                            year = intParse(dateList[0][1]);
+                            month = 1;
+                            day = 1;
+                            break;
+                        case 14:    //  dd[month]yyyy
+                            year = intParse(dateList[0][3]);
+                            month = Array.IndexOf(mMonth, dateList[0][2].ToLower()) % 12 + 1;
+                            day = intParse(dateList[0][1]);
+                            break;
+                        case 15:    //  dd-[month]-yy
+                            year = 2000 + intParse(dateList[0][3]);
+                            month = Array.IndexOf(mMonth, dateList[0][2].ToLower()) % 12 + 1;
+                            day = intParse(dateList[0][1]);
+                            break;
+                    }
+
+                    string buf = string.Format("{0:0000}/{1:00}/{2:00}", year, month, day);
+                    //  デバッグ用
+                    //buf = "(" + i + ") " + buf + " ";
+                    //foreach (string[] datas in dateList) {
+                    //    for (int j = 0; j < datas.Length; j++)
+                    //        buf += j + ": " + datas[j] + " ";
+                    //}
+                    return buf;
+                }
+            }
+            return "";      //  UnMatch!!
+        }
+
+        /// <summary>
+        /// 文字列が日付かを判定する
+        /// yyyy年mm月dd日,mm月dd日,yyyy/mm/dd,yyyy-mm-dd,yyyymmdd,mm/dd/yyyy,GGyy年mm月dd日
+        /// yyyy年mm月,yyyy年は含めない
+        /// </summary>
+        /// <param name="date">文字列</param>
+        /// <returns></returns>
+        public bool IsDateString(string date)
+        {
+            if (Regex.IsMatch(date, "(^19[0-9][0-9]|^2[01][0-9][0-9])年([1-9]|1[0-2])月([1-9]|[12][0-9]|3[01])日") ||            //  yyyy年mm月dd日
+                Regex.IsMatch(date, "(^[1-9]|^1[0-2])月([1-9]|[12][0-9]|3[01])日") ||                                             //  mm月dd日
+                Regex.IsMatch(date, "(^19[0-9][0-9]|^2[01][0-9][0-9])/([1-9]|1[0-2]|0[1-9])/([1-9]|[12][0-9]|3[01]|0[1-9])") ||   //  yyyy/mm/dd
+                Regex.IsMatch(date, "(^19[0-9][0-9]|^2[01][0-9][0-9])-([1-9]|1[0-2]|0[1-9])-([1-9]|[12][0-9]|3[01]|0[1-9])") ||   //  yyyy-mm-dd
+                Regex.IsMatch(date, "(^[1-9]|1[0-2]|^0[1-9])/([1-9]|[12][0-9]|3[01]|0[1-9])/(19[0-9][0-9]|2[01][0-9][0-9])") ||   //  mm/dd/yyyy
+                Regex.IsMatch(date.ToLower(), "(^[0-9][0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(19[0-9][0-9]|2[01][0-9][0-9])") ||   //  dd[month]yyyy
+                Regex.IsMatch(date.ToLower(), "(^[0-9][0-9]|^[0-9])-(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)-([0-9][0-9])") ||   //  dd-[month]-yy
+                (Regex.IsMatch(date, "(^19[0-9][0-9]|^2[01][0-9][0-9])(1[0-2]|0[1-9])([12][0-9]|3[01]|0[1-9])") && (date.Length == 8)) ||//  yyyymmdd
+                Regex.IsMatch(date, "(^令和|^平成|^昭和|^大正|^明治)([1-9]|[0-9][0-9])年([1-9]|[01][0-2])月([1-9]|[0-2][0-9]|3[01])日"))  //  [元号]yy年mm月dd日
+                return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 文字列が年を表しているかを判定する
+        /// yyyy年
+        /// </summary>
+        /// <param name="date">文字列</param>
+        /// <returns></returns>
+        public bool IsDateYearString(string date)
+        {
+            if (Regex.IsMatch(date, "(19[0-9][0-9]|2[01][0-9][0-9])年"))
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 文字列が年月を表しているか判定する
+        /// yyyy年mm月
+        /// </summary>
+        /// <param name="date">文字列</param>
+        /// <returns></returns>
+        public bool IsDateMonthString(string date)
+        {
+            if (Regex.IsMatch(date, "(^19[0-9][0-9]|^2[01][0-9][0-9])年([1-9]|1[0-2])月"))
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// 文字列が週単位の日付を表しているか判定する
+        /// yyyy年mm月ww週,yyyy年ww週
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
+        public bool IsDateWeekString(string date)
+        {
+            if (Regex.IsMatch(date, "(^19[0-9][0-9]|^2[01][0-9][0-9])年([1-9]|1[0-2])月([1-5])週") ||
+                Regex.IsMatch(date, "(^19[0-9][0-9]|^2[01][0-9][0-9])年([1-9]|[1-5][0-9])週"))
+                return true;
+            else
+                return false;
+        }
+
         /// <summary>
         /// 歴日からユリウス日に変換
         /// </summary>
@@ -1864,6 +2405,41 @@ namespace CoreLib
                 return 0.0;
             else
                 return dJD - 2400000.5;
+        }
+
+        /// <summary>
+        /// ユリウス日から年を抽出
+        /// </summary>
+        /// <param name="jd">ユリウス日</param>
+        /// <returns>西洋年</returns>
+        public int JulianDay2Year(int jd)
+        {
+            (int year, int month, int day) = JulianDay2Date(jd);
+            return year;
+        }
+
+
+        /// <summary>
+        /// ユリウス日から月を抽出
+        /// </summary>
+        /// <param name="jd">ユリウス日</param>
+        /// <returns>月</returns>
+        public int JulianDay2Month(int jd)
+        {
+            (int year, int month, int day) = JulianDay2Date(jd);
+            return month;
+        }
+
+        /// <summary>
+        /// ユリウス日から日を抽出
+        /// </summary>
+        /// <param name="jd">ユリウス日</param>
+        /// <returns>日</returns>
+
+        public int JulianDay2Day(int jd)
+        {
+            (int year, int month, int day) = JulianDay2Date(jd);
+            return day;
         }
 
         /// <summary>
@@ -1965,6 +2541,132 @@ namespace CoreLib
             }
             return date;
         }
+
+        /// <summary>
+        /// 和暦をユリウス日に変換
+        /// </summary>
+        /// <param name="wareki"></param>
+        /// <returns></returns>
+        public int wareki2JulianDay(string wareki)
+        {
+            string era = wareki.Substring(0, 2);
+            int yp = wareki.IndexOf("年");
+            int mp = wareki.IndexOf("月");
+            int dp = wareki.IndexOf("日");
+            int year = int.Parse(wareki.Substring(2, yp - 2));
+            int month = int.Parse(wareki.Substring(yp + 1, mp - yp - 1));
+            int day = int.Parse(wareki.Substring(mp + 1, dp - mp - 1));
+            if (era.CompareTo("令和") == 0) {
+                year += (int)mKaigen[0] - 1;
+            } else if (era.CompareTo("平成") == 0) {
+                year += (int)mKaigen[1] - 1;
+            } else if (era.CompareTo("昭和") == 0) {
+                year += (int)mKaigen[2] - 1;
+            } else if (era.CompareTo("大正") == 0) {
+                year += (int)mKaigen[3] - 1;
+            } else if (era.CompareTo("明治") == 0) {
+                year += (int)mKaigen[4] - 1;
+            }
+            return date2JulianDay(year, month, day);
+        }
+
+
+        /// <summary>
+        /// 令和年を西暦年に変換(yy.mmdd → yyyy.mmdd)
+        /// </summary>
+        /// <param name="reiwa">令和年</param>
+        /// <returns>西暦年</returns>
+        private double reiwa2Date(double reiwa)
+        {
+            double dyear = (int)mKaigen[0] + (int)reiwa - 1;
+            return dyear + (reiwa % 1);
+        }
+
+        /// <summary>
+        /// 平成年を西暦年に変換(yy.mmdd → yyyy.mmdd)
+        /// </summary>
+        /// <param name="heisei">平成年</param>
+        /// <returns>西暦年</returns>
+        private double heisei2Date(double heisei)
+        {
+            double dyear = (int)mKaigen[1] + (int)heisei - 1;
+            return dyear + (heisei % 1);
+        }
+
+        /// <summary>
+        /// 昭和年を西暦年に変換(yy.mmdd → yyyy.mmdd)
+        /// </summary>
+        /// <param name="shyouwa">昭和年</param>
+        /// <returns>西暦年</returns>
+        private double shyouwa2Date(double shyouwa)
+        {
+            double dyear = (int)mKaigen[2] + (int)shyouwa - 1;
+            return dyear + (shyouwa % 1);
+        }
+
+        /// <summary>
+        /// 大正年を西暦年に変換(yy.mmdd → yyyy.mmdd)
+        /// </summary>
+        /// <param name="taisyou">大正年</param>
+        /// <returns>西暦年</returns>
+        private double taisyou2Date(double taisyou)
+        {
+            double dyear = (int)mKaigen[3] + (int)taisyou - 1;
+            return dyear + (taisyou % 1);
+        }
+
+        /// <summary>
+        /// 明治年を西暦年に変換(yy.mmdd → yyyy.mmdd)
+        /// </summary>
+        /// <param name="meiji">明治年</param>
+        /// <returns>西暦年</returns>
+        private double meiji2Date(double meiji)
+        {
+            double dyear = (int)mKaigen[4] + (int)meiji - 1;
+            return dyear + (meiji % 1);
+        }
+
+        /// <summary>
+        /// 西暦(yyyy/mm/dd)を和暦に変換する
+        /// </summary>
+        /// <param name="date">西暦(yyyy/mm/dd)(省略時は現在日)</param>
+        /// <returns>和暦</returns>
+        public string toWareki(string date = "")
+        {
+            DateTime dt;
+            DateTime calenderStart = DateTime.Parse("1868/09/08");   //  カレンダの範囲1868/09/18-9999/12/31)
+            if (date.Length == 0)
+                dt = DateTime.Now;
+            else
+                dt = DateTime.Parse(date);
+            //  和暦の使用準備
+            JapaneseCalendar jc = new JapaneseCalendar();
+            CultureInfo ci = new CultureInfo("Ja-JP", true);
+            ci.DateTimeFormat.Calendar = jc;
+            //  DateTime日付を和暦で表示する
+            if (calenderStart < dt)
+                return dt.ToString("ggy年M月d日", ci);
+            else
+                return getWareki(date);
+        }
+
+        /// <summary>
+        /// 西暦和暦変換(文政(1818年)以降令和まで
+        /// </summary>
+        /// <param name="date">yyyy/mm/dd</param>
+        /// <returns>[元号]yy年mm月dd日</returns>
+        public string getWareki(string date)
+        {
+            int year = int.Parse(date.Substring(0, 4));
+            int month = int.Parse(date.Substring(5, 2));
+            int day = int.Parse(date.Substring(8, 2));
+            for (int i = 0; i < mKaigen.Length; i++) {
+                if ((int)mKaigen[i] <= year)
+                    return $"{mGengou[i]}{year - (int)mKaigen[i] + 1}年{month}月{day}日";
+            }
+            return $"{year}年{month}月{day}日";
+        }
+
 
         /// <summary>
         /// 恒星時(Wikipedia https://ja.wikipedia.org/wiki/恒星時)
@@ -2907,732 +3609,6 @@ namespace CoreLib
             return buf;
         }
 
-        //  ---  数値処理関連  ------
-
-        /// <summary>
-        /// 2点間の距離
-        /// </summary>
-        /// <param name="ps">始点</param>
-        /// <param name="pe">終点</param>
-        /// <returns>距離</returns>
-        public double distance(System.Windows.Point ps, System.Windows.Point pe)
-        {
-            double dx = ps.X - pe.X;
-            double dy = ps.Y - pe.Y;
-            return Math.Sqrt(dx * dx + dy * dy);
-        }
-
-        /// <summary>
-        /// 剰余関数 (負数の剰余を正数で返す)
-        /// </summary>
-        /// <param name="a">被除数</param>
-        /// <param name="b">除数</param>
-        /// <returns>剰余</returns>
-        public double mod(double a, double b)
-        {
-            double c = (a % b);
-            c += c < 0.0 ? b : 0.0;
-            return c;
-        }
-
-        /// <summary>
-        /// 剰余関数 (負数の剰余を正数で返す)
-        /// </summary>
-        /// <param name="a">被除数</param>
-        /// <param name="b">除数</param>
-        /// <returns>剰余</returns>
-        public int mod(int a, int b)
-        {
-            int c = (a % b);
-            c += c < 0 ? b : 0;
-            return c;
-        }
-
-        /// <summary>
-        /// 底指定の対数(log b a)
-        /// </summary>
-        /// <param name="a">数値</param>
-        /// <param name="b">底(10進,60進とか)</param>
-        /// <returns></returns>
-        public double log(double a, double b)
-        {
-            return Math.Log10(a) / Math.Log10(b);
-        }
-
-        /// <summary>
-        /// 指定の有効桁で切り捨てる
-        /// </summary>
-        /// <param name="val">数値</param>
-        /// <param name="n">丸める有効桁</param>
-        /// <returns>丸めた値</returns>
-        public float roundFloor(float val, int n)
-        {
-            if (val == 0f)
-                return val;
-            float sign = Math.Sign(val);
-            if (val < 0)
-                val *= sign;
-            float mag = (float)Math.Floor(Math.Log10(val));     //  桁数を求める
-            float magPow = (float)Math.Pow(10, mag - n + 1);    //  
-            return (float)Math.Floor(val * sign / magPow) * magPow;
-        }
-
-        /// <summary>
-        /// 指定の有効桁で切り上げる
-        /// </summary>
-        /// <param name="val">数値</param>
-        /// <param name="n">丸める有効桁</param>
-        /// <returns>丸めた値</returns>
-        public float roundCeil(float val, int n)
-        {
-            if (val == 0f)
-                return val;
-            float sign = Math.Sign(val);
-            if (val < 0)
-                val *= sign;
-            float mag = (float)Math.Floor(Math.Log10(val));
-            float magPow = (float)Math.Pow(10, mag - n + 1);
-            return (float)Math.Ceiling(val * sign / magPow) * magPow;
-        }
-
-        /// <summary>
-        /// 指定の有効桁数で四捨五入する
-        /// </summary>
-        /// <param name="val">数値</param>
-        /// <param name="n">丸める有効桁数</param>
-        /// <returns>丸めた値</returns>
-        public float roundRound(float val, int n)
-        {
-            if (val == 0f)
-                return val;
-            float sign = Math.Sign(val);
-            if (val < 0)
-                val *= sign;
-            float mag = (float)Math.Floor(Math.Log10(val));
-            float magPow = (float)Math.Pow(10, mag - n + 1);
-            return (float)Math.Round(val * sign / magPow) * magPow;
-        }
-
-        /// <summary>
-        /// 指定の有効桁数で四捨五入する
-        /// </summary>
-        /// <param name="val">数値</param>
-        /// <param name="digits">丸める有効桁数</param>
-        /// <returns>丸めた数値</returns>
-        public decimal roundRound(decimal val, int digits = 13)
-        {
-            if (val == 0M)
-                return val;
-            int mag = (int)Math.Log10(Math.Abs((double)val)) + 1;
-            var scale = (decimal)Math.Pow(10, mag);
-            var result = scale * Math.Round(val / scale, digits, MidpointRounding.AwayFromZero);
-            int decimals = digits - mag;
-            return Math.Round(result, (decimals < 0) ? 0 : decimals);
-        }
-
-        /// <summary>
-        /// 最上位桁が1,2,5になるように下側に丸める
-        /// </summary>
-        /// <param name="val">数値</param>
-        /// <returns>丸めた値</returns>
-        public double floorStepSize(double val)
-        {
-            double mag = Math.Floor(Math.Log10(Math.Abs(val)));
-            double magPow = Math.Floor(Math.Abs(val) / Math.Pow(10, mag));
-            double magMsd = 0;
-            if (magPow >= 5)
-                magMsd = 5 * Math.Pow(10, mag);
-            else if (magPow >= 2)
-                magMsd = 2 * Math.Pow(10, mag);
-            else
-                magMsd = Math.Pow(10, mag);
-            return magMsd * Math.Sign(val);
-        }
-
-        /// <summary>
-        /// グラフ作成時の補助線間隔を求める
-        /// 補助線の間隔は1,2,5の倍数
-        /// </summary>
-        /// <param name="range">補助線の範囲</param>
-        /// <param name="targetSteps">補助線の数</param>
-        /// <param name="fromBase">基底数(10進,60進,24進...)</param>
-        /// <returns>補助線の間隔</returns>
-        public double graphStepSize(double range, double targetSteps, int fromBase = 10)
-        {
-            // calculate an initial guess at step size
-            double tempStep = range / targetSteps;                  //  仮の間隔
-
-            // get the magnitude of the step size
-            double mag = Math.Floor(log(tempStep, fromBase));       //  ステップサイズの桁数
-            double magPow = Math.Pow(fromBase, mag);                //  最上位数
-
-            // calculate most significant digit of the new step size
-            double magMsd = (int)(tempStep / magPow + 0.5);         //  ステップサイズの最上位桁
-
-            // promote the MSD to either 1, 2, or 5
-            if (magMsd > fromBase / 2.0)
-                magMsd = fromBase;
-            else if (magMsd > fromBase / 5.0)
-                magMsd = Math.Floor(fromBase / 2.0);
-            else if (magMsd > fromBase / 10.0)
-                magMsd = Math.Floor(fromBase / 5.0);
-
-            return magMsd * magPow;
-        }
-
-        /// <summary>
-        /// グラフの最大値を求める
-        /// </summary>
-        /// <param name="height">データの最大値</param>
-        /// <param name="stepSize">目盛間隔</param>
-        /// <returns></returns>
-        public double graphHeightSize(double height, double stepSize)
-        {
-            //  グラフ高さの調整
-            if (height < 0)
-                return ((int)(height / stepSize) - 1) * stepSize;
-            else
-                return ((int)(height / stepSize) + 1) * stepSize;
-        }
-
-        /// <summary>
-        /// 有効桁数を指定して値を丸めて文字列に変換
-        /// 表示桁数が有効桁より大きくなる時指数表示にする
-        /// </summary>
-        /// <param name="val">値</param>
-        /// <param name="digits">有効桁数</param>
-        /// <returns>数値文字列</returns>
-        public string axisScaleForm(double val, int digits = 4)
-        {
-            if (val == 0)
-                return "0";
-            int mag = (int)Math.Log10(Math.Abs(val)) - (Math.Abs(val) < 1 ? 1 : 0);
-            var scale = Math.Pow(10, mag);
-            val = (double)roundRound((decimal)val, digits);
-            if (digits > Math.Abs(mag)) {
-                return val.ToString();
-            } else {
-                return $"{val / scale}e{mag}";
-            }
-
-        }
-
-        /// <summary>
-        /// 2次方程式の解を求める
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        /// <returns>実数解リスト</returns>
-        public List<double> solveQuadraticEquation(double a, double b, double c)
-        {
-            List<double> solve = new List<double>();
-            if (a == 0) {
-                solve.Add(-c / b);
-            } else {
-                double d = b * b - 4 * a * c;
-                if (0 < d) {
-                    d = Math.Sqrt(d);
-                    solve.Add((-b + d) / (2 * a));
-                    solve.Add((-b - d) / (2 * a));
-                } else if (d == 0) {
-                    solve.Add(-b / (2 * a));
-                } else {
-                    //  複素数の解
-                    Complex ca = new Complex(a, 0);
-                    Complex cb = new Complex(b, 0);
-                    Complex cc = new Complex(c, 0);
-                    Complex cd = cb * cb - 4 * ca * cc;
-                    Complex x1 = (-cb - Complex.Sqrt(cd) / (2 * ca));
-                    Complex x2 = (-cb + Complex.Sqrt(cd) / (2 * ca));
-                    Console.WriteLine($"複素数の解 {x1} , {x2}");
-                }
-            }
-            return solve;
-        }
-
-        /// <summary>
-        /// 3次方程式の解(カルダノの公式)
-        ///   https://qiita.com/yotapoon/items/42b1749b69c264d6f486
-        ///   https://onihusube.hatenablog.com/entry/2018/10/08/140426
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        /// <param name="d"></param>
-        /// <returns>実数解リスト</returns>
-        public List<double> solveCubicEquation(double a, double b, double c, double d)
-        {
-            List<double> solve = new List<double>();
-            if (a == 0)
-                return solveQuadraticEquation(b, c, d);
-
-            Complex[] x = new Complex[3];
-            double A = b / a;
-            double B = c / a;
-            double C = d / a;
-            double p = B - A * A / 3.0;
-            double q = 2.0 * A * A * A / 27.0 - A * B / 3.0 + C;
-            double D = q * q / 4.0 + p * p * p / 27.0;
-            if (D < 0.0) {//three real solutions
-                double theta = Math.Atan2(Math.Sqrt(-D), -q * 0.5);
-                x[0] = 2.0 * Math.Sqrt(-p / 3.0) * Math.Cos(theta / 3.0) - A / 3.0;
-                x[1] = 2.0 * Math.Sqrt(-p / 3.0) * Math.Cos((theta + 2.0 * Math.PI) / 3.0) - A / 3.0;
-                x[2] = 2.0 * Math.Sqrt(-p / 3.0) * Math.Cos((theta + 4.0 * Math.PI) / 3.0) - A / 3.0;
-            } else {//single real solution and two imaginary solutions(c.c)
-                double u = Cuberoot(-q * 0.5 + Math.Sqrt(D));
-                double v = Cuberoot(-q * 0.5 - Math.Sqrt(D));
-                x[0] = u + v - A / 3.0;
-                x[1] = -0.5 * (u + v) + Math.Sqrt(3.0) * 0.5 * Complex.ImaginaryOne * (u - v) - A / 3.0;
-                x[2] = -0.5 * (u + v) - Math.Sqrt(3.0) * 0.5 * Complex.ImaginaryOne * (u - v) - A / 3.0;
-            }
-            for (int i = 0; i < x.Length; i++) {
-                if (x[i].Imaginary == 0)
-                    solve.Add(x[i].Real);
-                Console.WriteLine($"複素数の解 {x[i]}");
-            }
-            return solve;
-        }
-
-        /// <summary>
-        /// 4次方程式の解(フェラリ(Ferrari)の公式)
-        ///   https://qiita.com/yotapoon/items/42b1749b69c264d6f486
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        /// <param name="d"></param>
-        /// <param name="e"></param>
-        /// <returns>実数解リスト</returns>
-        public List<double> solveQuarticEquation(double a, double b, double c, double d, double e)
-        {
-            List<double> solve = new List<double>();
-            if (a == 0.0) {
-                return solveCubicEquation(b, c, d, e);
-            }
-            Complex[] x = new Complex[4];
-            double A = b / a;
-            double B = c / a;
-            double C = d / a;
-            double D = e / a;
-            double p = -6.0 * Math.Pow(A / 4.0, 2.0) + B;
-            double q =  8.0 * Math.Pow(A / 4.0, 3.0) - 2.0 * B * A / 4.0 + C;
-            double r = -3.0 * Math.Pow(A / 4.0, 4.0) + B * Math.Pow(A / 4.0, 2.0) - C * A / 4.0 + D;
-            List<double> temp = solveCubicEquation(1.0, -p, -4.0 * r, 4.0 * p * r - q * q);
-            Complex m = Squreroot(temp[0] - p);
-            x[0] = (-m + Squreroot(-temp[0] - p + 2.0 * q / m)) * 0.5 - A / 4.0;
-            x[1] = (-m - Squreroot(-temp[0] - p + 2.0 * q / m)) * 0.5 - A / 4.0;
-            x[2] = ( m + Squreroot(-temp[0] - p - 2.0 * q / m)) * 0.5 - A / 4.0;
-            x[3] = ( m - Squreroot(-temp[0] - p - 2.0 * q / m)) * 0.5 - A / 4.0;
-            for (int i = 0; i < x.Length; i++) {
-                if (x[i].Imaginary == 0)
-                    solve.Add(x[i].Real);
-                Console.WriteLine($"複素数の解 {x[i]}");
-            }
-            return solve;
-        }
-
-        /// <summary>
-        /// 3乗根(x^1/3)
-        /// </summary>
-        /// <param name="x"></param>
-        /// <returns></returns>
-        public double Cuberoot(double x)
-        {
-            if (x > 0.0) {
-                return Math.Pow(x, 1.0 / 3.0);
-            } else {
-                return -Math.Pow(-x, 1.0 / 3.0);
-            }
-        }
-
-        /// <summary>
-        /// 複素数の平方根
-        /// </summary>
-        /// <param name="x">複素数</param>
-        /// <returns></returns>
-        public Complex Squreroot(Complex x)
-        {
-            Complex y;
-            double r = x.Magnitude; //  複素数の大きさ(Sqrt(x.Real * x.Real + x.Imaginary * x.Imaginary)) 
-            double theta = x.Phase; //  複素数の位相(Atan2(x.Imaginary, x.Real))
-            if (x.Imaginary == 0.0) {
-                if (x.Real > 0.0) {
-                    y = Math.Sqrt(r);
-                } else {
-                    y = Math.Sqrt(r) * Complex.ImaginaryOne;
-                }
-            } else {
-                if (theta < 0.0) {
-                    theta += 2.0 * Math.PI;
-                }
-                y = Math.Sqrt(r) * (Math.Cos(theta * 0.5) + Complex.ImaginaryOne  * Math.Sin(theta * 0.5));
-            }
-            return y;
-        }
-
-        //  ---  統計処理  ---
-
-        /// <summary>
-        ///  ∑x リストの合計を求める
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>合計値</returns>
-        public double getSumList(List<double> list)
-        {
-            return list.Sum();
-        }
-
-        /// <summary>
-        ///  ∑x^2 リストの自乗和(二乗の合計)を求める
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>二乗和</returns>
-        public double getSqrSumList(List<double> list)
-        {
-            return list.Select(x => x * x).Sum();
-        }
-
-        /// <summary>
-        ///  ∑x / n 平均値
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>平均値</returns>
-        public double getAverageList(List<double> list)
-        {
-            return getSumList(list) / list.Count();
-        }
-
-        /// <summary>
-        ///  ∑(x-xm) 偏差の和(常に0)
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>偏差の和</returns>
-        public double getDevSumList(List<double> list)
-        {
-            double ave = getAverageList(list);
-            return list.Select(x => x - ave).Sum();
-        }
-
-        /// <summary>
-        ///  ∑(x-xm)^2　偏差の平方和
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>偏差の平方和</returns>
-        public double getVerSumList(List<double> list)
-        {
-            double ave = getAverageList(list);
-            return list.Select(x => (x - ave) * (x - ave)).Sum();
-        }
-
-        /// <summary>
-        ///  s^2 = ∑(x-xm)^2 / n 分散(variance)
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>分散値</returns>
-        public double getVariance(List<double> list)
-        {
-            return getVerSumList(list) / list.Count();
-        }
-
-        /// <summary>
-        ///  標準偏差(standard deviation)
-        ///  s = sqrt(∑(x-xm)^2 / n)
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>標準偏差</returns>
-        public double getStdDev(List<double> list)
-        {
-            return Math.Sqrt(getVerSumList(list) / list.Count());
-        }
-
-        /// <summary>
-        ///  ∑(x-xm)(y-ym) 偏差積和
-        /// </summary>
-        /// <param name="Xlist">Xデータリスト</param>
-        /// <param name="Ylist">Yデータリスト</param>
-        /// <returns>偏差積和</returns>
-        public double getDevProductSumList(List<double> Xlist, List<double> Ylist)
-        {
-            double xave = getAverageList(Xlist);
-            double yave = getAverageList(Ylist);
-            double sum = 0;
-            for (int i = 0; i < Math.Min(Xlist.Count, Ylist.Count); i++) {
-                sum += (Xlist[i] - xave) * (Ylist[i] - yave);
-            }
-            return sum;
-        }
-
-        /// <summary>
-        ///  共分散(Covariance)
-        ///  Cov(x,y) = 1/n * Σ(x-xm)(y-ym)
-        /// </summary>
-        /// <param name="Xlist">Xデータリスト</param>
-        /// <param name="Ylist">Yデータリスト</param>
-        /// <returns>共分散</returns>
-        public double getCovarince(List<double> Xlist, List<double> Ylist)
-        {
-            return getDevProductSumList(Xlist, Ylist) / Math.Min(Xlist.Count, Ylist.Count);
-        }
-
-        /// <summary>
-        ///  相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
-        /// </summary>
-        /// <param name="Xlist">Xデータリスト</param>
-        /// <param name="Ylist">Yデータリスト</param>
-        /// <returns>相関係数</returns>
-        public double getCorelation(List<double> Xlist, List<double> Ylist)
-        {
-            return getCovarince(Xlist, Ylist) / (getStdDev(Xlist) * getStdDev(Ylist));
-        }
-
-        /// <summary>
-        ///  回帰分析(regression analysis)の係数(a)の取得  y = ax + b
-        /// </summary>
-        /// <param name="Xlist">Xデータリスト</param>
-        /// <param name="Ylist">Yデータリスト</param>
-        /// <returns>係数(傾き a)</returns>
-        public double getRegA(List<double> Xlist, List<double> Ylist)
-        {
-            return getDevProductSumList(Xlist, Ylist) / getVerSumList(Xlist);
-        }
-
-        /// <summary>
-        ///  回帰分析(regression analysis)の係数(b)の取得  y = ax + b
-        /// </summary>
-        /// <param name="Xlist">Xデータリスト</param>
-        /// <param name="Ylist">Yデータリスト</param>
-        /// <returns>係数(切片 b)</returns>
-        public double getRegB(List<double> Xlist, List<double> Ylist)
-        {
-            return getAverageList(Ylist) - getRegA(Xlist, Ylist) * getAverageList(Xlist);
-        }
-
-        /// <summary>
-        ///  決定係数(coefficient of determination)
-        //  R^2 = 1 - (Σ(y - f(x))^2 / Σ(y - ym)^2) (分散) 
-        /// </summary>
-        /// <param name="Xlist">Xデータリスト</param>
-        /// <param name="Ylist">Yデータリスト</param>
-        /// <param name="a">係数a(傾き)</param>
-        /// <param name="b">係数b(切片</param>
-        /// <returns>決定係数</returns>
-        public double getCoefficentDeterminatio(List<double> Xlist, List<double> Ylist, double a, double b)
-        {
-            double sum = 0;
-            for (int i = 0; i < Xlist.Count; i++) {
-                double t = Ylist[i] - (a * Xlist[i] + b);
-                sum += t * t;
-            }
-            return 1 - sum / getVerSumList(Ylist);
-        }
-
-        /// <summary>
-        ///  ∑xy X*Yの合計
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>X*Yの合計値</returns>
-        public double getXYSumList(List<PointD> list)
-        {
-            return list.Select(p => p.x * p.y).Sum();
-        }
-
-        /// <summary>
-        ///  ∑(x-xm)(y-ym) 偏差積和
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>偏差積和</returns>
-        public double getDevProductSumList(List<PointD> list)
-        {
-            double xave = getAverageList(list.Select(p => p.x).ToList());
-            double yave = getAverageList(list.Select(p => p.y).ToList());
-            return list.Select(p => (p.x - xave) * (p.y - yave)).Sum();
-        }
-
-        /// <summary>
-        ///  共分散(Covariance)
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>共分散値</returns>
-        //  Cov(x,y) = 1/n * Σ(x-xm)(y-ym)
-        public double getCovarince(List<PointD> list)
-        {
-            return getDevProductSumList(list) / list.Count;
-        }
-
-        /// <summary>
-        ///  相関係数(correlation coefficient)  ρ = σxy / (σx * σy)
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>相関係数</returns>
-        public double getCorelation(List<PointD> list)
-        {
-            return getCovarince(list) / (getStdDev(list.Select(p => p.x).ToList()) * getStdDev(list.Select(p => p.y).ToList()));
-        }
-
-        /// <summary>
-        ///  回帰分析(regression analysis)の係数(a)の取得  y = ax + b
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>係数a(傾き)</returns>
-        public double getRegA(List<PointD> list)
-        {
-            return getDevProductSumList(list) / getVerSumList(list.Select(p => p.x).ToList());
-        }
-
-        /// <summary>
-        ///  回帰分析(regression analysis)の係数(b)の取得  y = ax + b
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <returns>係数b(切片)</returns>
-        public double getRegB(List<PointD> list)
-        {
-            return getAverageList(list.Select(p => p.y).ToList()) - getRegA(list) * getAverageList(list.Select(p => p.x).ToList());
-        }
-
-        /// <summary>
-        ///  決定係数(coefficient of determination)
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <param name="a">係数a(傾き)</param>
-        /// <param name="b">係数b(切片</param>
-        /// <returns>決定係数</returns>
-        //  R^2 = 1 - (Σ(y - f(x))^2 / Σ(y - ym)^2) (分散) 
-        public double getCoefficentDeterminatio(List<PointD> list, double a, double b)
-        {
-            double sum = 0;
-            for (int i = 0; i < list.Count; i++) {
-                double t = list[i].y - (a * list[i].x + b);
-                sum += t * t;
-            }
-            return 1 - sum / getVerSumList(list.Select(p => p.y).ToList());
-        }
-
-        /// <summary>
-        /// 理論値に対する分散(回帰曲線の残差の二乗和)
-        ///  R^2 = Σ(y - f(x))^2 / n
-        /// </summary>
-        /// <param name="list">データリスト</param>
-        /// <param name="a">係数a(傾き)</param>
-        /// <param name="b">係数b(切片</param>
-        /// <returns>残差の二乗和</returns>
-        public double getRegVariance(List<PointD> list, double a, double b)
-        {
-            double sum = 0;
-            for (int i = 0; i < list.Count; i++) {
-                double t = list[i].y - (a * list[i].x + b);
-                sum += t * t;
-            }
-            return sum / list.Count;
-        }
-
-
-        //	地球上の２地点の緯度・経度を指定して最短距離とその方位角を計算
-        //	地球を赤道半径r=6378.137kmを半径とする球体として計算しています。
-        //	方位角は北:0度、東:90度、南:180度、西:270度。
-        //	地点A(経度x1, 緯度y1)、地点B(経度x2, 緯度y2)
-        //	ABの距離(km) d = r*acos(sin(y1)*sin(y2)+cos(y1)*cos(y2)*cos(x2-x1))
-        //	方位角　φ = 90 - atan2(sin(x2-x1), cos(y1)*tan(y2) - sin(y1)*cos(x2-x1))
-        //	http://keisan.casio.jp/has10/SpecExec.cgi
-
-        /// <summary>
-        /// 球面上の2点間座標の距離
-        /// </summary>
-        /// <param name="longi1">座標1経度</param>
-        /// <param name="lati1">座標1緯度</param>
-        /// <param name="longi2">座標2経度</param>
-        /// <param name="lati2">座標2緯度</param>
-        /// <returns>距離(km)</returns>
-        public double coordinateDistance(double longi1, double lati1, double longi2, double lati2)
-        {
-            double r = 6378.137;
-            double x1 = longi1 / 180 * Math.PI;
-            double y1 = lati1 / 180 * Math.PI;
-            double x2 = longi2 / 180 * Math.PI;
-            double y2 = lati2 / 180 * Math.PI;
-            double dis = r * Math.Acos(Math.Sin(y1) * Math.Sin(y2) + Math.Cos(y1) * Math.Cos(y2) * Math.Cos(x2 - x1));
-            return double.IsNaN(dis) ? 0 : dis;
-        }
-
-        /// <summary>
-        /// 球面上の2点間座標の距離(static関数)
-        /// </summary>
-        /// <param name="longi1">座標1経度</param>
-        /// <param name="lati1">座標1緯度</param>
-        /// <param name="longi2">座標2経度</param>
-        /// <param name="lati2">座標2緯度</param>
-        /// <returns>距離(km)</returns>
-        public static double CoordinateDistance(double longi1, double lati1, double longi2, double lati2)
-        {
-            double r = 6378.137;
-            double x1 = longi1 / 180 * Math.PI;
-            double y1 = lati1 / 180 * Math.PI;
-            double x2 = longi2 / 180 * Math.PI;
-            double y2 = lati2 / 180 * Math.PI;
-            double dis = r * Math.Acos(Math.Sin(y1) * Math.Sin(y2) + Math.Cos(y1) * Math.Cos(y2) * Math.Cos(x2 - x1));
-            return double.IsNaN(dis) ? 0 : dis;
-        }
-
-        /// <summary>
-        /// 球面上の2点間座標の距離
-        /// </summary>
-        /// <param name="ps">緯度経度座標</param>
-        /// <param name="pe">緯度経度座標</param>
-        /// <returns>距離(km)</returns>
-        public double coordinateDistance(System.Windows.Point ps, System.Windows.Point pe)
-        {
-            return coordinateDistance(ps.X, ps.Y, pe.X, pe.Y);
-        }
-
-        /// <summary>
-        /// 球面上の2点間座標の距離(static関数)
-        /// </summary>
-        /// <param name="ps">緯度経度座標</param>
-        /// <param name="pe">緯度経度座標</param>
-        /// <returns>距離(km)</returns>
-        public static double CoordinateDistance(System.Windows.Point ps, System.Windows.Point pe)
-        {
-            return CoordinateDistance(ps.X, ps.Y, pe.X, pe.Y);
-        }
-
-
-        /// <summary>
-        /// 球面上の2点間座標の方位
-        /// </summary>
-        /// <param name="longi1">座標1経度</param>
-        /// <param name="lati1">座標1緯度</param>
-        /// <param name="longi2">座標2経度</param>
-        /// <param name="lati2">座標2緯度</param>
-        /// <returns>方位角(°)</returns>
-        public double azimuth(double longi1, double lati1, double longi2, double lati2)
-        {
-            double x1 = longi1 / 180 * Math.PI;
-            double y1 = lati1 / 180 * Math.PI;
-            double x2 = longi2 / 180 * Math.PI;
-            double y2 = lati2 / 180 * Math.PI;
-            double phai = 90 - (Math.Atan2(Math.Sin(x2 - x1), Math.Cos(y1) * Math.Tan(y2) - Math.Sin(y1) * Math.Cos(x2 - x1))) * 180 / Math.PI;
-            return phai;
-        }
-
-        /// <summary>
-        /// 球面上の2点間座標の方位
-        /// </summary>
-        /// <param name="longi1">座標1経度</param>
-        /// <param name="lati1">座標1緯度</param>
-        /// <param name="longi2">座標2経度</param>
-        /// <param name="lati2">座標2緯度</param>
-        /// <returns>方位角(°)</returns>
-        public double azimuth2(double longi1, double lati1, double longi2, double lati2)
-        {
-            double l1 = longi1 / 180 * Math.PI;         //	経度
-            double b1 = lati1 / 180 * Math.PI;          //	緯度
-            double l2 = longi2 / 180 * Math.PI;
-            double b2 = lati2 / 180 * Math.PI;
-            double Y = Math.Cos(b2) * Math.Sin(l2 - l1);
-            double X = Math.Cos(b1) * Math.Sin(b2) - Math.Sin(b1) * Math.Cos(b2) * Math.Cos(l2 - l1);
-            double phai = (Math.Atan2(Y, X)) * 180 / Math.PI;
-            return phai < 0 ? phai + 360 : phai;
-        }
 
         //  ---  配列処理  ---
 
@@ -3685,372 +3661,6 @@ namespace CoreLib
         }
 
 
-
-        //  ---  行列計算  ---
-        //  https://qiita.com/sekky0816/items/8c73a7ec32fd9b040127
-
-        /// <summary>
-        /// 単位行列の作成(正方行列のみ)
-        /// </summary>
-        /// <param name="unit">行列のサイズ</param>
-        /// <returns>単位行列</returns>
-        public double[,] unitMatrix(int unit)
-        {
-            double[,] A = new double[unit, unit];
-            for (int i = 0; i < unit; i++)
-                for (int j = 0; j < unit; j++)
-                    if (i == j)
-                        A[i, j] = 1;
-                    else
-                        A[i, j] = 0;
-            return A;
-        }
-
-        /// <summary>
-        /// 転置行列  行列Aの転置A^T
-        /// </summary>
-        /// <param name="A">行列 A</param>
-        /// <returns>転置行列 AT</returns>
-        public double[,] matrixTranspose(double[,] A)
-        {
-            double[,] AT = new double[A.GetLength(1), A.GetLength(0)];
-            for (int i = 0; i < A.GetLength(1); i++) {
-                for (int j = 0; j < A.GetLength(0); j++) {
-                    AT[i, j] = A[j, i];
-                }
-            }
-            return AT;
-        }
-
-        /// <summary>
-        /// 行列の積  AxB
-        /// 行列の積では 結合の法則  (AxB)xC = Ax(BxC) , 分配の法則 (A+B)xC = AxC+BxC , Cx(A+B) = CxA + CxB　が可
-        /// 交換の法則は成立しない  AxB ≠ BxA
-        /// </summary>
-        /// <param name="A">行列 A</param>
-        /// <param name="B">行列 B</param>
-        /// <returns>行列の積</returns>
-        public double[,] matrixMulti(double[,] A, double[,] B)
-        {
-            double[,] product = new double[A.GetLength(0), B.GetLength(1)];
-            for (int i = 0; i < A.GetLength(0); i++) {
-                for (int j = 0; j < B.GetLength(1); j++) {
-                    for (int k = 0; k < A.GetLength(1); k++) {
-                        product[i, j] += A[i, k] * B[k, j];
-                    }
-                }
-            }
-            return product;
-        }
-
-        /// <summary>
-        /// 行列の和 A+B
-        /// 異なるサイズの行列はゼロ行列にする
-        /// </summary>
-        /// <param name="A">行列 A</param>
-        /// <param name="B">行列 B</param>
-        /// <returns>行列の和</returns>
-        public double[,] matrixAdd(double[,] A, double[,] B)
-        {
-            double[,] sum = new double[A.GetLength(0), A.GetLength(1)];
-            if (A.GetLength(0) == B.GetLength(0) && A.GetLength(1) == B.GetLength(1)) {
-                for (int i = 0; i < A.GetLength(0); i++) {
-                    for (int j = 0; j < A.GetLength(1); j++) {
-                        sum[i, j] = A[i, j] + B[i, j];
-                    }
-                }
-            }
-            return sum;
-        }
-
-
-        /// <summary>
-        /// 逆行列 A^-1 (ある行列で線形変換した空間を元に戻す行列)
-        /// </summary>
-        /// <param name="A">行列 A</param>
-        /// <returns>逆行列</returns>
-        public double[,] matrixInverse(double[,] A)
-        {
-            int n = A.GetLength(0);
-            int m = A.GetLength(1);
-            double[,] invA = new double[n, m];
-            double[,] AA = copyMatrix(A);
-            if (n == m) {
-                //  正方行列
-                int max;
-                double tmp;
-                for (int j = 0; j < n; j++) {
-                    for (int i = 0; i < n; i++) {
-                        invA[j, i] = (i == j) ? 1 : 0;
-                    }
-                }
-                for (int k = 0; k < n; k++) {
-                    max = k;
-                    for (int j = k + 1; j < n; j++) {
-                        if (Math.Abs(AA[j, k]) > Math.Abs(AA[max, k])) {
-                            max = j;
-                        }
-                    }
-                    if (max != k) {
-                        for (int i = 0; i < n; i++) {
-                            //  入力行列側
-                            tmp = AA[max, i];
-                            AA[max, i] = AA[k, i];
-                            AA[k, i] = tmp;
-                            //  単位行列側
-                            tmp = invA[max, i];
-                            invA[max, i] = invA[k, i];
-                            invA[k, i] = tmp;
-                        }
-                    }
-                    tmp = AA[k, k];
-                    for (int i = 0; i < n; i++) {
-                        AA[k, i] /= tmp;
-                        invA[k, i] /= tmp;
-                    }
-                    for (int j = 0; j < n; j++) {
-                        if (j != k) {
-                            tmp = AA[j, k] / AA[k, k];
-                            for (int i = 0; i < n; i++) {
-                                AA[j, i] = AA[j, i] - AA[k, i] * tmp;
-                                invA[j, i] = invA[j, i] - invA[k, i] * tmp;
-                            }
-                        }
-                    }
-                }
-                //  逆行列が計算できなかった場合
-                for (int j = 0; j < n; j++) {
-                    for (int i = 0; i < n; i++) {
-                        if (double.IsNaN(invA[j, i])) {
-                            Debug.WriteLine("Error: Unable to compute inverse matrix");
-                            invA[j, i] = 0;     //  とりあえず0に置き換える
-                        }
-                    }
-                }
-                return invA;
-            } else {
-                Debug.WriteLine("Error: It is not a squre matrix");
-                return invA;
-            }
-        }
-
-        /// <summary>
-        /// 行列のコピー
-        /// </summary>
-        /// <param name="A">行列 A</param>
-        /// <returns>コピー行列</returns>
-        public double[,] copyMatrix(double[,] A)
-        {
-            int n = A.GetLength(0);
-            int m = A.GetLength(1);
-            double[,] AA = new double[n, m];
-            for (int i = 0; i < A.GetLength(0); i++) {
-                for (int j = 0; j < A.GetLength(1); j++) {
-                    AA[i, j] = A[i, j];
-                }
-            }
-            return AA;
-        }
-
-        //  ---  座標変換関連  ------
-
-        /// <summary>
-        /// 移動量を3D変換マトリックス(4x4)に設定
-        /// </summary>
-        /// <param name="dx">X軸方向の移動量</param>
-        /// <param name="dy">Y軸方向の移動量</param>
-        /// <param name="dz">Z軸方向の移動量</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] translate3DMatrix(double dx, double dy, double dz)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = 1;
-            mp[1, 1] = 1;
-            mp[2, 2] = 1;
-            mp[3, 0] = dx;
-            mp[3, 1] = dy;
-            mp[3, 2] = dz;
-            mp[3, 3] = 1;
-            return mp;
-        }
-
-        /// <summary>
-        /// X軸回転を3D変換マトリックス(4x4)に設定
-        /// </summary>
-        /// <param name="th">回転角(rad)</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] rotateX3DMatrix(double th)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = 1.0;
-            mp[1, 1] = Math.Cos(th);
-            mp[1, 2] = Math.Sin(th);
-            mp[2, 1] = -Math.Sin(th);
-            mp[2, 2] = Math.Cos(th);
-            mp[3, 3] = 1.0;
-            return mp;
-        }
-
-        /// <summary>
-        /// Y軸回転を3D変換マトリックス(4x4)に設定
-        /// </summary>
-        /// <param name="th">回転角(rad)</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] rotateY3DMatrix(double th)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = Math.Cos(th);
-            mp[0, 2] = -Math.Sin(th);
-            mp[1, 1] = 1.0;
-            mp[2, 0] = Math.Sin(th);
-            mp[2, 2] = Math.Cos(th);
-            mp[3, 3] = 1.0;
-            return mp;
-        }
-
-        /// <summary>
-        /// Z軸回転を3D変換マトリックス(4x4)に設定
-        /// </summary>
-        /// <param name="th">回転角(rad)</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] rotateZ3DMatrix(double th)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = Math.Cos(th);
-            mp[0, 1] = Math.Sin(th);
-            mp[1, 0] = -Math.Sin(th);
-            mp[1, 1] = Math.Cos(th);
-            mp[2, 2] = 1.0;
-            mp[3, 3] = 1.0;
-            return mp;
-        }
-
-        /// <summary>
-        /// 任意の軸を中心に回転させる
-        /// </summary>
-        /// <param name="vec">任意の軸(単位ベクトル)</param>
-        /// <param name="th">回転角(rad)</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] rotate(Point3D vec, double th)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = vec.x * vec.x + (1 - vec.x * vec.x) * Math.Cos(th);
-            mp[0, 1] = vec.x * vec.y * (1 - Math.Cos(th)) - vec.z * Math.Sin(th);
-            mp[0, 2] = vec.y * vec.z * (1 - Math.Cos(th)) + vec.y * Math.Sin(th);
-            mp[1, 0] = vec.x * vec.y * (1 - Math.Cos(th)) + vec.z * Math.Sin(th);
-            mp[1, 1] = vec.y * vec.y + (1 - vec.y * vec.y) * Math.Cos(th);
-            mp[1, 2] = vec.y * vec.z * (1 - Math.Cos(th)) - vec.x * Math.Sin(th);
-            mp[2, 0] = vec.y * vec.z * (1 - Math.Cos(th)) - vec.y * Math.Sin(th);
-            mp[2, 1] = vec.y * vec.z * (1 - Math.Cos(th)) + vec.x * Math.Sin(th);
-            mp[2, 2] = vec.z * vec.z + (1 - vec.z * vec.z) * Math.Cos(th);
-            mp[3, 3] = 1.0;
-            return mp;
-        }
-
-
-        /// <summary>
-        ///  拡大縮小のスケール値を3D変換マトリックス(4x4)に設定
-        /// </summary>
-        /// <param name="sx">X方向縮尺</param>
-        /// <param name="sy">Y方向縮尺</param>
-        /// <param name="sz">Z方向縮尺</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] scale3DMatrix(double sx, double sy, double sz)
-        {
-            double[,] mp = new double[4, 4];
-            mp[0, 0] = sx;
-            mp[1, 1] = sy;
-            mp[2, 2] = sz;
-            mp[3, 3] = 1.0;
-            return mp;
-        }
-
-        /// <summary>
-        /// 移動量を2D変換マトリックス(3x3)に設定
-        /// </summary>
-        /// <param name="dx">X軸方向の移動量</param>
-        /// <param name="dy">Y軸方向の移動量</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] translate2DMatrix(double dx, double dy)
-        {
-            double[,] mp = new double[3, 3];
-            mp[0, 0] = 1;
-            mp[1, 1] = 1;
-            mp[2, 0] = dx;
-            mp[2, 1] = dy;
-            mp[2, 2] = 1;
-            return mp;
-        }
-
-        /// <summary>
-        /// 原点回転を2D変換マトリックス(3x3)に設定
-        /// </summary>
-        /// <param name="th">回転角(rad)</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] rotate2DMatrix(double th)
-        {
-            double[,] mp = new double[3, 3];
-            mp[0, 0] = Math.Cos(th);
-            mp[0, 1] = Math.Sin(th);
-            mp[1, 0] = -Math.Sin(th);
-            mp[1, 1] = Math.Cos(th);
-            mp[2, 2] = 1.0;
-            return mp;
-        }
-
-        /// <summary>
-        ///  拡大縮小のスケール値を2D変換マトリックス(3x3)に設定
-        /// </summary>
-        /// <param name="sx">X方向縮尺</param>
-        /// <param name="sy">Y方向縮尺</param>
-        /// <returns>変換マトリックス</returns>
-        public double[,] scale2DMatrix(double sx, double sy)
-        {
-            double[,] mp = new double[3, 3];
-            mp[0, 0] = sx;
-            mp[1, 1] = sy;
-            mp[2, 2] = 1.0;
-            return mp;
-        }
-
-        /// <summary>
-        /// 原点に対して反転する2D変換マトリックス(3x3)に設定
-        /// </summary>
-        /// <returns>変換マトリックス</returns>
-        public double[,] inverse2DMatrix()
-        {
-            double[,] mp = new double[3, 3];
-            mp[0, 0] = -1;
-            mp[1, 1] = -1;
-            mp[2, 2] =  1;
-            return mp;
-        }
-
-        /// <summary>
-        /// X軸に対して反転する2D変換マトリックス(3x3)に設定
-        /// </summary>
-        /// <returns>変換マトリックス</returns>
-        public double[,] inverseX2DMatrix()
-        {
-            double[,] mp = new double[3, 3];
-            mp[0, 0] = 1;
-            mp[1, 1] = -1;
-            mp[2, 2] = 1;
-            return mp;
-        }
-
-        /// <summary>
-        /// Y軸に対して反転する2D変換マトリックス(3x3)に設定
-        /// </summary>
-        /// <returns>変換マトリックス</returns>
-        public double[,] inverseY2DMatrix()
-        {
-            double[,] mp = new double[3, 3];
-            mp[0, 0] = -1;
-            mp[1, 1] = 1;
-            mp[2, 2] = 1;
-            return mp;
-        }
 
         //  ---  単位変換関連  ------
 

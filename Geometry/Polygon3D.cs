@@ -78,6 +78,8 @@ namespace CoreLib
         public double mArcDivideAng = Math.PI / 12;     //  円弧の分割角度
         private double mEps = 1E-8;
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         /// <summary>
         /// コンストラクタ
@@ -332,10 +334,10 @@ namespace CoreLib
         /// <returns>円弧</returns>
         public Arc3D getArc3D(int n)
         {
-            int n0 = ylib.mod(n - 1, mPolygon.Count);
-            int n1 = ylib.mod(n, mPolygon.Count);
-            int n2 = ylib.mod(n + 1, mPolygon.Count);
-            int n3 = ylib.mod(n + 2, mPolygon.Count);
+            int n0 = ymath.mod(n - 1, mPolygon.Count);
+            int n1 = ymath.mod(n, mPolygon.Count);
+            int n2 = ymath.mod(n + 1, mPolygon.Count);
+            int n3 = ymath.mod(n + 2, mPolygon.Count);
             if (mPolygon[n1].type == 1)
                 return new Arc3D(toPoint3D(n0), toPoint3D(n1), toPoint3D(n2));
             else if (mPolygon[n2].type == 1)
@@ -403,9 +405,9 @@ namespace CoreLib
                 int np = nearLine(pos, face);
                 if (np < 0)
                     return new Point3D(double.NaN, double.NaN, double.NaN);
-                int np0 = ylib.mod(np - 1, mPolygon.Count);
-                int np1 = ylib.mod(np + 1, mPolygon.Count);
-                int np2 = ylib.mod(np + 2, mPolygon.Count);
+                int np0 = ymath.mod(np - 1, mPolygon.Count);
+                int np1 = ymath.mod(np + 1, mPolygon.Count);
+                int np2 = ymath.mod(np + 2, mPolygon.Count);
                 if (mPolygon[np].type == 1) {
                     Arc3D arc = new Arc3D(toPoint3D(np0), toPoint3D(np), toPoint3D(np1));
                     Point3D ip = arc.intersection(pos, face);

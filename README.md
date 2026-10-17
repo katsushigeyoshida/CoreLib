@@ -67,6 +67,7 @@ YLib  : 種々雑多な関数
 <BR>
 
 ### 履歴  
+2026/10/18 YLibからYMathを分離、InputBox,DiffFolderのダイヤログの機能拡張  
 2026/10/12 YLibからYfileを分離、圧縮ファイル関数を追加  
 2026/06/11 YLibに統計関数の追加,YCalcにRandom関数追加  
 2026/06/05 YLibに有効桁数で丸める関数を追加  

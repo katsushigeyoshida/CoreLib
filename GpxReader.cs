@@ -21,6 +21,8 @@ namespace CoreLib
         public GpsInfoData mGpsInfoData;                            //  gpsデータ情報
 
         YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         public GpxReader()
         {
@@ -181,19 +183,19 @@ namespace CoreLib
                 if (2 < mListGpsPointData.Count) {
                     List<Point> gpsPointList = new List<Point>();
                     int n = 1;
-                    double dis0 = ylib.coordinateDistance(mListGpsPointData[0], mListGpsPointData[1]);
-                    double dis1 = ylib.coordinateDistance(mListGpsPointData[1], mListGpsPointData[2]);
+                    double dis0 = ymath.coordinateDistance(mListGpsPointData[0], mListGpsPointData[1]);
+                    double dis1 = ymath.coordinateDistance(mListGpsPointData[1], mListGpsPointData[2]);
                     if (dis0 < 1.0 || dis1 < 1.0)
                         gpsPointList.Add(mListGpsPointData[0]);
                     for (int i = 1; i < mListGpsPointData.Count - 1; i++) {
-                        dis1 = ylib.coordinateDistance(mListGpsPointData[i], mListGpsPointData[i + 1]);
+                        dis1 = ymath.coordinateDistance(mListGpsPointData[i], mListGpsPointData[i + 1]);
                         if (dis0 < 1.0 || dis1 < 1.0)
                             gpsPointList.Add(mListGpsPointData[i]);
                         dis0 = dis1;
                     }
                     n = mListGpsPointData.Count - 1;
-                    dis0 = ylib.coordinateDistance(mListGpsPointData[n], mListGpsPointData[n - 1]);
-                    dis1 = ylib.coordinateDistance(mListGpsPointData[n], mListGpsPointData[n - 2]);
+                    dis0 = ymath.coordinateDistance(mListGpsPointData[n], mListGpsPointData[n - 1]);
+                    dis1 = ymath.coordinateDistance(mListGpsPointData[n], mListGpsPointData[n - 2]);
                     if (dis0 < 1.0 || dis1 < 1.0)
                         gpsPointList.Add(mListGpsPointData[n]);
                     mListGpsPointData = new List<Point>(gpsPointList);
@@ -352,6 +354,8 @@ namespace CoreLib
         private bool mAreaOn = false;
         private Point mPrevPoint = new Point(double.NaN, double.NaN);
         YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         /// <summary>
         /// データをクリアする
@@ -463,7 +467,7 @@ namespace CoreLib
         public void addDistance(Point loc)
         {
             if (!double.IsNaN(mPrevPoint.X) && !double.IsNaN(mPrevPoint.Y)) {
-                mDistance += ylib.coordinateDistance(mPrevPoint.X, mPrevPoint.Y, loc.X, loc.Y);
+                mDistance += ymath.coordinateDistance(mPrevPoint.X, mPrevPoint.Y, loc.X, loc.Y);
             }
             mPrevPoint = loc;
         }
@@ -605,7 +609,7 @@ namespace CoreLib
         /// <returns>距離</returns>
         public double distance(GpsData p)
         {
-            return YLib.CoordinateDistance(mLongitude, mLatitude, p.mLongitude, p.mLatitude);
+            return YMath.CoordinateDistance(mLongitude, mLatitude, p.mLongitude, p.mLatitude);
         }
 
         /// <summary>

@@ -22,7 +22,7 @@
         <TextBlock Text="サイズ" Height="18" Margin="180,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBlock Name="tbDestSize" Width="100" Height="18" Margin="220,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBlock Name="tbProgress"  Text="進捗" Height="18" Margin="20,105,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox Name="cbUpdate" Content="更新" HorizontalAlignment="Center" Margin="-140,130,0,0" VerticalAlignment="Top"/>
+        <CheckBox Name="cbOverWrite" Content="強制上書き" HorizontalAlignment="Center" Margin="-140,130,0,0" VerticalAlignment="Top"/>
         <CheckBox Name="cbCheckedMessage" Content="確認メッセージを出す" HorizontalAlignment="Center" Margin="80,130,0,0" VerticalAlignment="Top"/>
         <StackPanel Orientation="Horizontal" Margin="0,160,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
             <Button Name="btOK" Content="はい" Width="60" Margin="0,0,0,0" Click="btOK_Click"/>

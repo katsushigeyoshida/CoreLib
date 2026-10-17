@@ -31,6 +31,8 @@ namespace CoreLib.Script
         private Variable mVar;
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         public FuncMath(KScript script)
         {
@@ -240,8 +242,8 @@ namespace CoreLib.Script
             if (mVar.getArrayOder(args[0]) == 1 && mVar.getArrayOder(args[1]) == 1) {
                 List<double> x = mVar.cnvListDouble(args[0]);
                 List<double> y = mVar.cnvListDouble(args[1]);
-                double a = ylib.getRegA(x, y);
-                double b = ylib.getRegB(x, y);
+                double a = ymath.getRegA(x, y);
+                double b = ymath.getRegB(x, y);
                 double[] c = new double[] { a, b };
                 mVar.setReturnArray(c, ret);
             } else {
@@ -266,7 +268,7 @@ namespace CoreLib.Script
             double a = ylib.doubleParse(args[0].mValue);
             double b = ylib.doubleParse(args[1].mValue);
             double c = ylib.doubleParse(args[2].mValue);
-            double[] result = ylib.solveQuadraticEquation(a, b, c).ToArray();
+            double[] result = ymath.solveQuadraticEquation(a, b, c).ToArray();
             //  戻り値の設定
             mVar.setReturnArray(result, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
@@ -287,7 +289,7 @@ namespace CoreLib.Script
             double b = ylib.doubleParse(args[1].mValue);
             double c = ylib.doubleParse(args[2].mValue);
             double d = ylib.doubleParse(args[3].mValue);
-            double[] result = ylib.solveCubicEquation(a, b, c, d).ToArray();
+            double[] result = ymath.solveCubicEquation(a, b, c, d).ToArray();
             //  戻り値の設定
             mVar.setReturnArray(result, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);
@@ -309,7 +311,7 @@ namespace CoreLib.Script
             double c = ylib.doubleParse(args[2].mValue);
             double d = ylib.doubleParse(args[3].mValue);
             double e = ylib.doubleParse(args[4].mValue);
-            double[] result = ylib.solveQuarticEquation(a, b, c, d, e).ToArray();
+            double[] result = ymath.solveQuarticEquation(a, b, c, d, e).ToArray();
             //  戻り値の設定
             mVar.setReturnArray(result, ret);
             mVar.setVariable(new Token("return", TokenType.VARIABLE), ret);

@@ -207,16 +207,21 @@ namespace CoreLib
         //  CRC32
         public ulong GetCrc32L(string path)
         {
-            ulong crc = 0xFFFFFFFFUL;
-            byte[] byteArray = new byte[1024];
-            FileStream sfs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            for (int i = 0; i < sfs.Length; i += 1024) {
-                int size = sfs.Read(byteArray, 0, 1024);
-                crc = CRC321(crc, byteArray, size);
+            try {
+                ulong crc = 0xFFFFFFFFUL;
+                byte[] byteArray = new byte[1024];
+                FileStream sfs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                for (int i = 0; i < sfs.Length; i += 1024) {
+                    int size = sfs.Read(byteArray, 0, 1024);
+                    crc = CRC321(crc, byteArray, size);
+                }
+                crc = ~crc & 0xFFFFFFFFUL;
+                sfs.Close();
+                return crc;
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"GetCrc32L: {e.Message}");
             }
-            crc = ~crc & 0xFFFFFFFFUL;
-            sfs.Close();
-            return crc;
+            return 0;
         }
 
         //  CRC32

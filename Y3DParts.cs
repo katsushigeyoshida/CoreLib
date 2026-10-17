@@ -52,6 +52,7 @@ namespace CoreLib
         private string mName;                   //  エレメント名称
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         public PartsElement() {
             clear();
@@ -62,7 +63,7 @@ namespace CoreLib
         /// </summary>
         public void clear()
         {
-            mMatrix = ylib.unitMatrix(4);
+            mMatrix = ymath.unitMatrix(4);
             mSurfaceList = new List<Surface>();
         }
 
@@ -71,7 +72,7 @@ namespace CoreLib
         /// </summary>
         public void matrixClear()
         {
-            mMatrix = ylib.unitMatrix(4);
+            mMatrix = ymath.unitMatrix(4);
         }
 
         /// <summary>
@@ -80,7 +81,7 @@ namespace CoreLib
         /// <param name="mp">3Dマトリックス</param>
         public void addMatrix(double[,] mp)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, mp);
+            mMatrix = ymath.matrixMulti(mMatrix, mp);
         }
 
         /// <summary>
@@ -89,7 +90,7 @@ namespace CoreLib
         /// <param name="v">移動ベクトル</param>
         public void addTranslate(Point3D v)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.translate3DMatrix(v.x, v.y, v.z));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.translate3DMatrix(v.x, v.y, v.z));
         }
 
         /// <summary>
@@ -98,7 +99,7 @@ namespace CoreLib
         /// <param name="th">X軸回転角(rad)</param>
         public void addRotateX(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.rotateX3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.rotateX3DMatrix(th));
         }
 
         /// <summary>
@@ -107,7 +108,7 @@ namespace CoreLib
         /// <param name="th">Y軸回転角(rad)</param>
         public void addRotateY(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.rotateY3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.rotateY3DMatrix(th));
         }
 
         /// <summary>
@@ -116,7 +117,7 @@ namespace CoreLib
         /// <param name="th">Z軸回転角(rad)</param>
         public void addRotateZ(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.rotateZ3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.rotateZ3DMatrix(th));
         }
 
         /// <summary>
@@ -125,7 +126,7 @@ namespace CoreLib
         /// <param name="v">拡大縮小率</param>
         public void addScale(Point3D v)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.scale3DMatrix(v.x, v.y, v.z));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.scale3DMatrix(v.x, v.y, v.z));
         }
 
         /// <summary>
@@ -219,7 +220,7 @@ namespace CoreLib
         /// <param name="addMatrix">変換マトリックス</param>
         public void setDrawData(Y3DDraw y3Ddraw, double[,] addMatrix)
         {
-            double[,] matrix = ylib.matrixMulti(mMatrix, addMatrix);
+            double[,] matrix = ymath.matrixMulti(mMatrix, addMatrix);
             for (int i = 0; i < mSurfaceList.Count; i++) {
                 List<Point3D> plist = new List<Point3D>();
                 for (int j = 0; j < mSurfaceList[i].mCoordList.Count; j++) {
@@ -237,7 +238,7 @@ namespace CoreLib
         public List<Surface> cnvDrawData(double[,] addMatrix)
         {
             List<Surface> surfaceList = new List<Surface>();
-            double[,] matrix = ylib.matrixMulti(mMatrix, addMatrix);
+            double[,] matrix = ymath.matrixMulti(mMatrix, addMatrix);
             for (int i = 0; i < mSurfaceList.Count; i++) {
                 List<Point3D> plist = new List<Point3D>();
                 for (int j = 0; j < mSurfaceList[i].mCoordList.Count; j++) {
@@ -262,10 +263,12 @@ namespace CoreLib
 
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         public Y3DParts()
         {
-            mMatrix = ylib.unitMatrix(4);
+            mMatrix = ymath.unitMatrix(4);
             mPartsElements = new List<PartsElement>();
             mParts = new List<Y3DParts>();
         }
@@ -275,7 +278,7 @@ namespace CoreLib
         /// </summary>
         public void clear()
         {
-            mMatrix = ylib.unitMatrix(4);
+            mMatrix = ymath.unitMatrix(4);
             mPartsElements.Clear();
             mParts.Clear();
         }
@@ -306,7 +309,7 @@ namespace CoreLib
         public List<Surface> cnvDrawData(double[,] addMatrix)
         {
             List<Surface> surfaceList = new List<Surface>();
-            double[,] matrix = ylib.matrixMulti(mMatrix, addMatrix);
+            double[,] matrix = ymath.matrixMulti(mMatrix, addMatrix);
             for (int i = 0; i < mPartsElements.Count; i++) {
                 surfaceList.AddRange(mPartsElements[i].cnvDrawData(matrix));
             }
@@ -321,7 +324,7 @@ namespace CoreLib
         /// </summary>
         public void matrixClear()
         {
-            mMatrix = ylib.unitMatrix(4);
+            mMatrix = ymath.unitMatrix(4);
         }
 
         /// <summary>
@@ -330,7 +333,7 @@ namespace CoreLib
         /// <param name="mp">3Dマトリックス</param>
         public void addMatrix(double[,] mp)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, mp);
+            mMatrix = ymath.matrixMulti(mMatrix, mp);
         }
 
         /// <summary>
@@ -339,7 +342,7 @@ namespace CoreLib
         /// <param name="v">移動ベクトル</param>
         public void addTranslate(Point3D v)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.translate3DMatrix(v.x, v.y, v.z));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.translate3DMatrix(v.x, v.y, v.z));
         }
 
         /// <summary>
@@ -348,7 +351,7 @@ namespace CoreLib
         /// <param name="th">X軸回転角(rad)</param>
         public void addRotateX(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.rotateX3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.rotateX3DMatrix(th));
         }
 
         /// <summary>
@@ -357,7 +360,7 @@ namespace CoreLib
         /// <param name="th">Y軸回転角(rad)</param>
         public void addRotateY(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.rotateY3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.rotateY3DMatrix(th));
         }
 
         /// <summary>
@@ -366,7 +369,7 @@ namespace CoreLib
         /// <param name="th">Z軸回転角(rad)</param>
         public void addRotateZ(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.rotateZ3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.rotateZ3DMatrix(th));
         }
 
         /// <summary>
@@ -375,7 +378,7 @@ namespace CoreLib
         /// <param name="v">拡大縮小率</param>
         public void addScale(Point3D v)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, ylib.scale3DMatrix(v.x, v.y, v.z));
+            mMatrix = ymath.matrixMulti(mMatrix, ymath.scale3DMatrix(v.x, v.y, v.z));
         }
     }
 }

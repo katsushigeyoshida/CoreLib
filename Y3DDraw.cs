@@ -87,6 +87,8 @@ namespace CoreLib
         public List<Surface> mSurfaceList = new List<Surface>();
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         /// <summary>
         /// コンストラクタ
@@ -301,7 +303,7 @@ namespace CoreLib
         /// </summary>
         public void clear3DMatrix()
         {
-            mMatrix = ylib.unitMatrix(4);
+            mMatrix = ymath.unitMatrix(4);
         }
 
         /// <summary>
@@ -362,7 +364,7 @@ namespace CoreLib
         /// <param name="dz">Z軸方向の移動量</param>
         public void addTarnslate3DMatrix(double dx, double dy, double dz)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, translate3DMatrix(dx, dy, dz));
+            mMatrix = ymath.matrixMulti(mMatrix, translate3DMatrix(dx, dy, dz));
         }
 
         /// <summary>
@@ -372,7 +374,7 @@ namespace CoreLib
         /// <param name="th">回転角(rad)</param>
         public void addRotateX3DMatrix(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, rotateX3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, rotateX3DMatrix(th));
         }
 
         /// <summary>
@@ -382,7 +384,7 @@ namespace CoreLib
         /// <param name="th">回転角(rad)</param>
         public void addRotateY3DMatrix(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, rotateY3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, rotateY3DMatrix(th));
         }
 
         /// <summary>
@@ -392,7 +394,7 @@ namespace CoreLib
         /// <param name="th">回転角(rad)</param>
         public void addRotateZ3DMatrix(double th)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, rotateZ3DMatrix(th));
+            mMatrix = ymath.matrixMulti(mMatrix, rotateZ3DMatrix(th));
         }
 
         /// <summary>
@@ -404,7 +406,7 @@ namespace CoreLib
         /// <param name="sz">Z方向縮尺</param>
         public void addScale3DMatrix(double sx, double sy, double sz)
         {
-            mMatrix = ylib.matrixMulti(mMatrix, scale3DMatrix(sx, sy, sz));
+            mMatrix = ymath.matrixMulti(mMatrix, scale3DMatrix(sx, sy, sz));
         }
 
         /// <summary>
@@ -599,7 +601,7 @@ namespace CoreLib
                 mMatrix = translate3DMatrix(delta.x , -delta.y, 0);
             } else {
                 //  変換マトリックスをクリア
-                mMatrix = ylib.unitMatrix(4);
+                mMatrix = ymath.unitMatrix(4);
                 return false;
             }
             return true;

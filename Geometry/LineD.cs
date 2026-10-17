@@ -87,6 +87,7 @@ namespace CoreLib
     public class LineD
     {
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         public PointD ps = new();
         public PointD pe = new();
@@ -555,8 +556,8 @@ namespace CoreLib
             PointD mp = intersection(c);                    //  線分と中心点との垂点
             double l = distance(c);                    //  垂点と中心点との距離
             //  角度の正規化(0～4π)
-            sa = ylib.mod(sa, Math.PI * 2);
-            ea = ylib.mod(ea, Math.PI * 2);
+            sa = ymath.mod(sa, Math.PI * 2);
+            ea = ymath.mod(ea, Math.PI * 2);
             ea += ea <= sa ? Math.PI * 2.0 : 0.0;
             if (r < l - mEps) {
                 //  交点なし
@@ -586,14 +587,14 @@ namespace CoreLib
                 double th = Math.Acos(l / r);   //  垂線との角度
                 LineD ml = new LineD(c, mp);
                 double a = ml.angle();
-                double ang = ylib.mod(a + th, Math.PI * 2.0);
+                double ang = ymath.mod(a + th, Math.PI * 2.0);
                 ang += ang < sa ? Math.PI * 2 : 0;
                 if (!on || (sa <= ang && ang <= ea)) {
                     PointD p1 = new PointD(c.x + r * Math.Cos(ang), c.y + r * Math.Sin(ang));
                     if (!on || onPoint(p1))
                         pointList.Add(p1);
                 }
-                ang = ylib.mod(a - th, Math.PI * 2.0);
+                ang = ymath.mod(a - th, Math.PI * 2.0);
                 ang += ang < sa ? Math.PI * 2 : 0;
                 if (!on || (sa <= ang && ang <= ea)) {
                     PointD p2 = new PointD(c.x + r * Math.Cos(ang), c.y + r * Math.Sin(ang));

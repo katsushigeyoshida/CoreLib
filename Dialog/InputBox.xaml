@@ -14,9 +14,14 @@
                     <MenuItem Header="コピー" Name="tbCopyMenu" Command="ApplicationCommands.Copy" />
                     <MenuItem Header="切取り" Name="tbCutMenu" Command="ApplicationCommands.Cut" />
                     <MenuItem Header="貼付け" Name="tbPasteMenu" Command="ApplicationCommands.Paste" />
-                    <MenuItem Header="開く" Name="tbOpenMenu" Click="tbMenu_Click" />
-                    <MenuItem Header="計算" Name="tbCalculateMenu" Click="tbMenu_Click" />
-                    <MenuItem Header="Webアドレス変換" Name="tbAdressMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="URL/ファイル名で開く" Name="tbOpenMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="計算 F9" Name="tbCalculateMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="関数一覧" Name="tbFuncListMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="16進10進変換計算 F11" Name="tbHexCalculateMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="10進16進変換" Name="tbDec2HexConvMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="日時の挿入/変換 F8" Name="tbDateTimeMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="Webアドレス変換 F7" Name="tbAdressMenu" Click="tbMenu_Click" />
+                    <MenuItem Header="ファイル選択    F6" Name="tbFileSelectMenu" Click="tbMenu_Click" />
                 </ContextMenu>
             </TextBox.ContextMenu>
         </TextBox>
@@ -33,5 +38,6 @@
         <Button x:Name="BtCalc" Margin="70,0,0,10" ToolTip="計算 F11" Click="Button_Click" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="25">
             <Path Fill="Black" Width="15" Height="15" Margin="3" Data="M 0,0 h 2 v 1 h -2 Z M 0,2 h 2 v 1 h -2 Z" Stretch="Fill" StrokeLineJoin="Round"/>
         </Button>
+        <ComboBox Name="CbSelectEncode" Width="100" Margin="100,0,0,10" VerticalAlignment="Bottom" HorizontalAlignment="Left" SelectionChanged="CbSelectEncode_SelectionChanged" />
     </Grid>
 </Window>

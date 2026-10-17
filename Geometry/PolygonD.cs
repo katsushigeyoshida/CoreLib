@@ -59,6 +59,7 @@ namespace CoreLib
         private double mEps = 1E-8;
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         /// <summary>
         /// コンストラクタ
@@ -457,9 +458,9 @@ namespace CoreLib
                 line1 = null;
                 arc1 = null;
                 ip = null;
-                ii = ylib.mod(i, mPolygon.Count);
-                ii1 = ylib.mod(i + 1, mPolygon.Count);
-                ii2 = ylib.mod(i + 2, mPolygon.Count);
+                ii = ymath.mod(i, mPolygon.Count);
+                ii1 = ymath.mod(i + 1, mPolygon.Count);
+                ii2 = ymath.mod(i + 2, mPolygon.Count);
                 //  線分か円弧化の区別
                 if (mPolygon[ii].type == 0 && mPolygon[ii1].type == 0) {
                     line1 = new LineD(mPolygon[ii], mPolygon[ii1]);
@@ -659,8 +660,8 @@ namespace CoreLib
         public void fillet(double r, PointD pos)
         {
             int n = nearPeackPos(pos);
-            int pn = ylib.mod((n - 1), this.mPolygon.Count);
-            int nn = ylib.mod((n + 1), this.mPolygon.Count);
+            int pn = ymath.mod((n - 1), this.mPolygon.Count);
+            int nn = ymath.mod((n + 1), this.mPolygon.Count);
             LineD line0 = null, line1;
             ArcD arc, arc0 = null, arc1;
             if (mPolygon[n].type == 1) {
@@ -668,12 +669,12 @@ namespace CoreLib
                     n -= 1;
                 else
                     n += 1;
-                n = ylib.mod(n, this.mPolygon.Count);
-                pn = ylib.mod((n - 1), this.mPolygon.Count);
-                nn = ylib.mod((n + 1), this.mPolygon.Count);
+                n = ymath.mod(n, this.mPolygon.Count);
+                pn = ymath.mod((n - 1), this.mPolygon.Count);
+                nn = ymath.mod((n + 1), this.mPolygon.Count);
             }
-            int ppn = ylib.mod((n - 2), this.mPolygon.Count);
-            int nnn = ylib.mod((n + 2), this.mPolygon.Count);
+            int ppn = ymath.mod((n - 2), this.mPolygon.Count);
+            int nnn = ymath.mod((n + 2), this.mPolygon.Count);
             if (r <= 0) return;
             if (mPolygon[pn].type != 1 && mPolygon[nn].type != 1) {
                 line0 = new LineD(mPolygon[pn], mPolygon[n]);
@@ -710,9 +711,9 @@ namespace CoreLib
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolygon.Count; i++) {
-                int ii = ylib.mod(i, mPolygon.Count);
-                int i1 = ylib.mod(i + 1, mPolygon.Count);
-                int i2 = ylib.mod(i + 2, mPolygon.Count);
+                int ii = ymath.mod(i, mPolygon.Count);
+                int i1 = ymath.mod(i + 1, mPolygon.Count);
+                int i2 = ymath.mod(i + 2, mPolygon.Count);
                 if (mPolygon[i1].type == 1) {   //  円弧
                     ArcD arc = new ArcD(mPolygon[ii], mPolygon[i1], mPolygon[i2]);
                     PointD ip = arc.intersection(p);
@@ -738,9 +739,9 @@ namespace CoreLib
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolygon.Count; i++) {
-                int ii = ylib.mod(i, mPolygon.Count);
-                int i1 = ylib.mod(i + 1, mPolygon.Count);
-                int i2 = ylib.mod(i + 2, mPolygon.Count);
+                int ii = ymath.mod(i, mPolygon.Count);
+                int i1 = ymath.mod(i + 1, mPolygon.Count);
+                int i2 = ymath.mod(i + 2, mPolygon.Count);
                 if (mPolygon[i1].type == 1) {   //  円弧
                     ArcD arc = new ArcD(mPolygon[ii], mPolygon[i1], mPolygon[i2]);
                     plist.AddRange(arc.intersection(l));
@@ -764,9 +765,9 @@ namespace CoreLib
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolygon.Count; i++) {
-                int ii = ylib.mod(i, mPolygon.Count);
-                int i1 = ylib.mod(i + 1, mPolygon.Count);
-                int i2 = ylib.mod(i + 2, mPolygon.Count);
+                int ii = ymath.mod(i, mPolygon.Count);
+                int i1 = ymath.mod(i + 1, mPolygon.Count);
+                int i2 = ymath.mod(i + 2, mPolygon.Count);
                 if (mPolygon[i1].type == 1) {   //  円弧
                     ArcD parc = new ArcD(mPolygon[ii], mPolygon[i1], mPolygon[i2]);
                     plist.AddRange(arc.intersection(parc));
@@ -788,9 +789,9 @@ namespace CoreLib
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolygon.Count; i++) {
-                int ii = ylib.mod(i, mPolygon.Count);
-                int i1 = ylib.mod(i + 1, mPolygon.Count);
-                int i2 = ylib.mod(i + 2, mPolygon.Count);
+                int ii = ymath.mod(i, mPolygon.Count);
+                int i1 = ymath.mod(i + 1, mPolygon.Count);
+                int i2 = ymath.mod(i + 2, mPolygon.Count);
                 if (mPolygon[i1].type == 1) {   //  円弧
                     ArcD arc = new ArcD(mPolygon[ii], mPolygon[i1], mPolygon[i2]);
                     plist.AddRange(polyline.intersection(arc));
@@ -812,9 +813,9 @@ namespace CoreLib
         {
             List<PointD> plist = new List<PointD>();
             for (int i = 0; i < mPolygon.Count; i++) {
-                int ii = ylib.mod(i, mPolygon.Count);
-                int i1 = ylib.mod(i + 1, mPolygon.Count);
-                int i2 = ylib.mod(i + 2, mPolygon.Count);
+                int ii = ymath.mod(i, mPolygon.Count);
+                int i1 = ymath.mod(i + 1, mPolygon.Count);
+                int i2 = ymath.mod(i + 2, mPolygon.Count);
                 if (mPolygon[i1].type == 1) {   //  円弧
                     ArcD arc = new ArcD(mPolygon[ii], mPolygon[i1], mPolygon[i2]);
                     plist.AddRange(polygon.intersection(arc));
@@ -894,9 +895,9 @@ namespace CoreLib
             PointD pos = new PointD();
             double l = double.MaxValue;
             for (int i = 0; i < mPolygon.Count; i++) {
-                int ii = ylib.mod(i, mPolygon.Count);
-                int i1 = ylib.mod(i + 1, mPolygon.Count);
-                int i2 = ylib.mod(i + 2, mPolygon.Count);
+                int ii = ymath.mod(i, mPolygon.Count);
+                int i1 = ymath.mod(i + 1, mPolygon.Count);
+                int i2 = ymath.mod(i + 2, mPolygon.Count);
                 if (mPolygon[i1].type == 1) {   //  円弧
                     ArcD arc = new ArcD(mPolygon[ii], mPolygon[i1], mPolygon[i2]);
                     PointD ip = arc.intersection(p);

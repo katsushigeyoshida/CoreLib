@@ -9,51 +9,6 @@ using System.Windows.Media;
 
 namespace CoreLib
 {
-    public class DiffFile
-    {
-        public string mFileName { get; set; }
-        public string mRelPath { get; set; }
-        public DateTime mSrcLastDate { get; set; }
-        public long mSrcSize { get; set; }
-        public ulong mSrcCrc { get; set; }
-        public DateTime mDstLastDate { get; set; }
-        public long mDstSize { get; set; }
-        public ulong mDstCrc { get; set; }
-
-        public DiffFile(string fileName, string relPath, DateTime srcLastDate, int srcSize, ulong srcCrc, DateTime dstLastDate, int dstSize, ulong dstCrc)
-        {
-            mFileName = fileName;
-            mRelPath = relPath;
-            mSrcLastDate = srcLastDate;
-            mSrcSize = srcSize;
-            mSrcCrc = srcCrc;
-            mDstLastDate = dstLastDate;
-            mDstSize = dstSize;
-            mDstCrc = dstCrc;
-        }
-
-        public DiffFile(FilesData fileData)
-        {
-            mFileName = Path.GetFileName(fileData.mRelPath);
-            mRelPath = Path.GetDirectoryName(fileData.mRelPath);
-            mSrcLastDate = fileData.mSrcFile == null ? new DateTime() : fileData.mSrcFile.LastWriteTime;
-            mSrcSize = fileData.mSrcFile == null ? 0 : fileData.mSrcFile.Length;
-            mSrcCrc = fileData.mSrcCrc;
-            mDstLastDate = fileData.mDstFile == null ? new DateTime() : fileData.mDstFile.LastWriteTime;
-            mDstSize = fileData.mDstFile == null ? 0 : fileData.mDstFile.Length;
-            mDstCrc = fileData.mDstCrc;
-        }
-
-        public string getPath()
-        {
-            return Path.Combine(mRelPath, mFileName);
-        }
-
-        public string getPath(string folder)
-        {
-            return Path.Combine(folder, Path.Combine(mRelPath, mFileName));
-        }
-    }
 
     /// <summary>
     /// DiffFolder.xaml の相互作用ロジック
@@ -248,19 +203,14 @@ namespace CoreLib
         private void setDiffFolder(string srcFolder, string dstFolder)
         {
             mDiffFolder = new DirectoryDiff(srcFolder, dstFolder, mHashChk);
-
-            if (rbDiffFile.IsChecked == true) {
-                //  同一ファイルを除く
-                mDiffFolder.stripSameFile();
-            }
+            mDiffFolder.execute();
+            List<FilesData> files = mDiffFolder.stripSameFile(rbDiffFile.IsChecked == true);
 
             if (mDiffFileList == null)
                 mDiffFileList = new List<DiffFile>();
             mDiffFileList.Clear();
-            //dgDiffFolder.Items.Clear();
-            foreach (FilesData filesData in mDiffFolder.mFiles) {
+            foreach (FilesData filesData in files) {
                 mDiffFileList.Add(new DiffFile(filesData));
-                //dgDiffFolder.Items.Add(new DiffFile(filesData));
             }
             dgDiffFolder.ItemsSource = new ReadOnlyCollection<DiffFile>(mDiffFileList);
         }

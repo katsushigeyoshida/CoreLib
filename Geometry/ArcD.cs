@@ -82,6 +82,7 @@ namespace CoreLib
         private double mEps = 1E-8;
 
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
 
         /// <summary>
         /// コンストラクタ
@@ -425,8 +426,8 @@ namespace CoreLib
         /// </summary>
         public void normalize()
         {
-            mSa = ylib.mod(mSa, Math.PI * 2);
-            mEa = ylib.mod(mEa, Math.PI * 2);
+            mSa = ymath.mod(mSa, Math.PI * 2);
+            mEa = ymath.mod(mEa, Math.PI * 2);
             if (mEa <= mSa + mEps)
                 mEa += Math.PI * 2;
         }
@@ -607,8 +608,8 @@ namespace CoreLib
         /// <param name="pos">ピック位置</param>
         public void trimOn(PointD tp, PointD pos)
         {
-            double ang  = ylib.mod(getAngle(tp), Math.PI * 2);
-            double pang = ylib.mod(getAngle(pos), Math.PI * 2);
+            double ang  = ymath.mod(getAngle(tp), Math.PI * 2);
+            double pang = ymath.mod(getAngle(pos), Math.PI * 2);
             if (pang < ang)
                 mEa = ang;
             else
@@ -786,7 +787,7 @@ namespace CoreLib
         public double getAngle(PointD p)
         {
             double ang = p.angle(mCp);
-            ang = ylib.mod(ang, Math.PI * 2);
+            ang = ymath.mod(ang, Math.PI * 2);
             if (ang > mSa)　ang -= Math.PI * 2;
             if (ang < mSa)　ang += Math.PI * 2;
             return ang;
@@ -904,7 +905,7 @@ namespace CoreLib
         public bool innerAngle(double ang)
         {
             normalize();
-            ang = ylib.mod(ang, Math.PI * 2);
+            ang = ymath.mod(ang, Math.PI * 2);
             ang += ang < mSa ? Math.PI * 2 : 0;
             if (ang <= mEa)
                 return true;

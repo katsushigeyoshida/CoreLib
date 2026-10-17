@@ -93,6 +93,8 @@ namespace CoreLib
 
         private double mEps = 1E-8;
         private YLib ylib = new YLib();
+        private YMath ymath = new YMath();
+
 
         /// <summary>
         /// コンストラクタ
@@ -414,10 +416,10 @@ namespace CoreLib
         /// <returns>円弧</returns>
         public Arc3D getArc3D(int n)
         {
-            int n0 = ylib.mod(n - 1, mPolyline.Count);
-            int n1 = ylib.mod(n, mPolyline.Count);
-            int n2 = ylib.mod(n + 1, mPolyline.Count);
-            int n3 = ylib.mod(n + 2, mPolyline.Count);
+            int n0 = ymath.mod(n - 1, mPolyline.Count);
+            int n1 = ymath.mod(n, mPolyline.Count);
+            int n2 = ymath.mod(n + 1, mPolyline.Count);
+            int n3 = ymath.mod(n + 2, mPolyline.Count);
             if (mPolyline[n1].type == 1)
                 return new Arc3D(toPoint3D(n0), toPoint3D(n1), toPoint3D(n2));
             else if (mPolyline[n2].type == 1)

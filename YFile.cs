@@ -134,8 +134,11 @@ namespace CoreLib
         /// <param name="initDir">初期ディレクトリ</param>
         /// <param name="filters">フィルタリスト</param>
         /// <returns>ファイルパス</returns>
-        public string fileSaveSelectDlg(string title, string initDir, List<string[]> filters)
+        public string fileSaveSelectDlg(string title, string initDir, List<string[]> filters = null)
         {
+            if (filters == null) {
+                filters = new List<string[]> { new string[] { "すべてのファイル", "*.*" } };
+            }
             var dlg = new CommonSaveFileDialog {
                 Title = title,
                 InitialDirectory = initDir,
@@ -223,7 +226,15 @@ namespace CoreLib
         public string FileSize2Str(long filesize)
         {
             string buf;
-            if (0 < (filesize >> 30)) {
+            if (0 < (filesize >> 40)) {
+                if ((filesize >> 40) < 10) {
+                    buf = string.Format("{0}.{1:d2}T",
+                        (filesize >> 40), ((filesize & 0xffffffffff) * 100) >> 40);
+                } else {
+                    buf = string.Format("{0}.{1:d1}T",
+                        (filesize >> 40), ((filesize & 0xffffffffff) * 10) >> 40);
+                }
+            } else if (0 < (filesize >> 30)) {
                 if ((filesize >> 30) < 10) {
                     buf = string.Format("{0}.{1:d2}G",
                         (filesize >> 30), ((filesize & 0x3fffffff) * 100) >> 30);
