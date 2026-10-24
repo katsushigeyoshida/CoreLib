@@ -72,7 +72,7 @@ namespace CoreLib
         /// <param name="e"></param>
         private void btNO_Click(object sender, RoutedEventArgs e)
         {
-            if (mIndex < mSrcFiles.Count) {
+            if (mIndex < mSrcFiles.Count - 1) {
                 mIndex++;
                 pbCopyCount.Value++;
                 setFileInfo(mSrcFiles[mIndex]);

@@ -247,8 +247,7 @@ namespace CoreLib
                 saveFile();
             } else {
                 mEditText = EditText.Text;
-                if (!mCallBackOn && DialogResult != null)
-                    DialogResult = true;
+                DialogResult = true;
                 Close();
             }
         }

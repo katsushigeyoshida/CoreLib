@@ -14,8 +14,8 @@ namespace CoreLib
     public partial class FileCopyDialog : Window
     {
         public List<string> mSrcFiles;              //  コピー元ファイルリスト
-        public string mSrcFolder;
-        public string mDestFolder;                  //  コピー先フォルダー
+        public string mSrcFolder;                   //  コピー元フォルダ
+        public string mDestFolder;                  //  コピー先フォルダ
         private int mIndex = 0;                     //  コピー位置
         public bool mSrcRemove = false;             //  削除処理
         public bool mOverWrite = false;             //  強制上書き
@@ -50,6 +50,21 @@ namespace CoreLib
                 Close();
             if (mSrcFolder == null || mSrcFolder == "")
                 mSrcFolder = Path.GetDirectoryName(mSrcFiles[0]);
+
+            if (mDestFolder == null || mDestFolder == "") {
+                MessageBox.Show("転送先フォルダが設定されていません");
+                Close();
+            }
+            mDestFolder = Path.GetFullPath(mDestFolder);
+            if (!Directory.Exists(mDestFolder)) {
+                MessageBoxResult result = ylib.messageBox(this, "転送先のフォルダがありません\n作成しますか?", mDestFolder, "",
+                    MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.No)
+                    return;
+                else if (result == MessageBoxResult.Yes)
+                    Directory.CreateDirectory(mDestFolder);
+            }
+
             mSrcFiles = addFolderFiles(mSrcFiles);
             if (mSrcFiles != null && 0 < mSrcFiles.Count && mDestFolder.Length > 0) {
                 setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
@@ -82,6 +97,8 @@ namespace CoreLib
                     pbCopyCount.Value++;
                     if (mCallBackOn && (mIndex % 200) == 0)
                         callback();
+                    if (mIndex % 10 == 0)
+                        ylib.DoEvents();
                 }
             }
             if (mIndex < mSrcFiles.Count)
@@ -134,35 +151,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// ファイルをアプリで比較
-        /// </summary>
-        /// <param name="srcPath">コピー元ファイル</param>
-        /// <param name="srcFolder">コピー元フォルダ</param>
-        /// <param name="destFolder">コピー先フォルダ</param>
-        private void fileCompre(string srcPath, string srcFolder, string destFolder)
-        {
-            string destPath = srcPath.Replace(srcFolder, destFolder);
-            if (File.Exists(srcPath) && File.Exists(destPath))
-                ylib.processStart(mFileDiffTool, $"\"{srcPath}\" \"{destPath}\"");
-        }
-
-        /// <summary>
-        /// ファイルのコピーまたは移動処理
-        /// </summary>
-        /// <param name="srcPath">コピー元ファイル</param>
-        /// <param name="srcFolder">コピー元フォルダ</param>
-        /// <param name="destFolder">コピー先フォルダー</param>
-        /// <param name="copyType">更新方法(0:日付更新 1:日付またはサイズが異なる  2:上書き 3:新規のみ</param>
-        private void fileCopy(string srcPath, string srcFolder, string destFolder, int copyType)
-        {
-            string destPath = srcPath.Replace(srcFolder, destFolder);
-            yfile.fileCopy(srcPath, destPath, copyType);     //  ディレクトリ自動作成でコピー
-            if (mSrcRemove) {
-                removeFile(srcPath);
-            }
-        }
-
-        /// <summary>
         /// フォルダからファイルを検索して追加
         /// </summary>
         /// <param name="srcFiles">コピー元リスト</param>
@@ -211,15 +199,45 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// ファイルをアプリで比較
+        /// </summary>
+        /// <param name="srcPath">コピー元ファイル</param>
+        /// <param name="srcFolder">コピー元フォルダ</param>
+        /// <param name="destFolder">コピー先フォルダ</param>
+        private void fileCompre(string srcPath, string srcFolder, string destFolder)
+        {
+            string destPath = getDestPath(srcPath, srcFolder, destFolder);
+            if (File.Exists(srcPath) && File.Exists(destPath))
+                ylib.processStart(mFileDiffTool, $"\"{srcPath}\" \"{destPath}\"");
+        }
+
+        /// <summary>
+        /// ファイルのコピーまたは移動処理
+        /// </summary>
+        /// <param name="srcPath">コピー元ファイル</param>
+        /// <param name="srcFolder">コピー元フォルダ</param>
+        /// <param name="destFolder">コピー先フォルダー</param>
+        /// <param name="copyType">更新方法(0:日付更新 1:日付またはサイズが異なる  2:上書き 3:新規のみ</param>
+        private void fileCopy(string srcPath, string srcFolder, string destFolder, int copyType)
+        {
+            string destPath = getDestPath(srcPath, srcFolder, destFolder);
+            yfile.fileCopy(srcPath, destPath, copyType);     //  ディレクトリ自動作成でコピー
+            if (mSrcRemove) {
+                removeFile(srcPath);
+            }
+        }
+
+        /// <summary>
         /// コピーファイルの情報表示
         /// </summary>
-        /// <param name="srcpath">コピー元ファイルパス</param>
+        /// <param name="srcPath">コピー元ファイルパス</param>
         /// <param name="destFolder">コピー先フォルダ</param>
-        private void setFileInfo(string srcpath, string srcFolder, string destFolder)
+        private void setFileInfo(string srcPath, string srcFolder, string destFolder)
         {
-            FileInfo srcFileInfo = new FileInfo(srcpath);
-            string srcName = srcpath.Replace(srcFolder, "").Trim('\\');
+            FileInfo srcFileInfo = new FileInfo(srcPath);
+            (string srcName, srcFolder) = getSrcPath(srcPath, srcFolder);
             string destPath = Path.Combine(destFolder, srcName);
+
             //  コピー元ファイル情報
             tbFileName.Text = srcName.Trim('\\');
             tbSrcFolder.Text = srcFolder;
@@ -246,6 +264,38 @@ namespace CoreLib
                 else
                     btCompare.Visibility = Visibility.Collapsed;
             }
+        }
+
+        /// <summary>
+        /// 転送先ファイルパスの作成
+        /// </summary>
+        /// <param name="srcPath">転送元ファイルパス</param>
+        /// <param name="srcFolder">転送元フォルダ</param>
+        /// <param name="destFolder">転送先フォルダ</param>
+        /// <returns></returns>
+        private string getDestPath(string srcPath, string srcFolder, string destFolder)
+        {
+            if (srcFolder == "")
+                return Path.Combine(destFolder, Path.GetFileName(srcPath));
+            else
+                return srcPath.Replace(srcFolder, destFolder);
+        }
+
+        /// <summary>
+        /// 転送元ファイル名とフォルダ名の取得
+        /// </summary>
+        /// <param name="srcPath">転送元ファイルパス</param>
+        /// <param name="srcFolder">転送元フォルダ</param>
+        /// <returns>(ファイル名とフォルダ名)</returns>
+        private (string name, string folder) getSrcPath(string srcPath, string srcFolder)
+        {
+            string srcName;
+            if (srcFolder == "") {
+                srcName = Path.GetFileName(srcPath);
+                srcFolder = Path.GetDirectoryName(srcPath);
+            } else
+                srcName = srcPath.Replace(srcFolder, "").Trim('\\');
+            return (srcName, srcFolder);
         }
     }
 }

@@ -355,6 +355,13 @@ namespace CoreLib
             }
         }
 
+        /// <summary>
+        /// Zipファイルの解凍
+        /// </summary>
+        /// <param name="zipPath">Zipファイルパス</param>
+        /// <param name="extractFolder">解凍先フォルダ</param>
+        /// <param name="overWrite">上書きの有無</param>
+        /// <returns>解凍結果</returns>
         public bool zipExtract(string zipPath, string extractFolder, bool overWrite = false)
         {
             try {
@@ -430,11 +437,11 @@ namespace CoreLib
 
         /// <summary>
         /// gzipファイルを解凍する
-        /// 拡張子が gz 出ない場合はリネームしてから解凍
+        /// 拡張子が gz でない場合はリネームしてから解凍
         /// </summary>
-        /// <param name="ipath"></param>
-        /// <param name="opath"></param>
-        /// <returns></returns>
+        /// <param name="ipath">gzファイル名</param>
+        /// <param name="opath">出力ファイル名</param>
+        /// <returns>可否</returns>
         public bool gzipDecompress(string ipath, string opath)
         {
             if (!File.Exists(ipath))
@@ -443,7 +450,7 @@ namespace CoreLib
             byte[] header = loadBinData(ipath, 2);
             if (header[0] != 0x1f || header[1] != 0x8b)
                 return false;
-            string inpath = "";
+            string inpath = ipath;
             if (!ipath.ToLower().EndsWith(".gz")) {
                 inpath = Path.Combine(Path.GetDirectoryName(ipath), Path.GetFileNameWithoutExtension(ipath) + ".gz");
                 if (File.Exists(inpath))

@@ -649,7 +649,7 @@ namespace CoreLib
 
         /// <summary>
         /// URLを標準ブラウザで開く
-        /// Process.Start()でエラー(.NET COre)になる時に使用
+        /// Process.Start()でエラー(.NET Core)になる時に使用
         /// https://oita.oika.me/2017/09/17/dotnet-core-process-start-with-url/
         /// https://brockallen.com/2016/09/24/process-start-for-urls-on-net-core/
         /// </summary>

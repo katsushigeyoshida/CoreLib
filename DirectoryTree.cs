@@ -47,7 +47,6 @@ namespace CoreLib
 
             //  折りたたみ処理
             this.Collapsed += (s, e) => {
-                System.Diagnostics.Debug.WriteLine($"Collapsed: {HeaderToString((StackPanel)Header)}");
                 if (mDirectory != null)
                     updateDirectory();
                 else
