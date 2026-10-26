@@ -5,10 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CoreLib"
         mc:Ignorable="d"
-        Title="InputSelect" Height="70" Width="300" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="InputSelect" Height="90" Width="300" Loaded="Window_Loaded" Closing="Window_Closing">
     <Grid>
-        <ComboBox Name="cbText" Margin="10,0,110,0" IsEditable="True" VerticalAlignment="Center" MouseDoubleClick="cbText_MouseDoubleClick" />
-        <Button Name="btOK" Content="OK" Margin="0,0,60,0" Width="50" IsDefault="True" HorizontalAlignment="Right" VerticalAlignment="Center" Click="btOK_Click" />
-        <Button Name="btCancel" Content="Cancel" Margin="0,0,10,0" Width="50" IsCancel="True" VerticalAlignment="Center" HorizontalAlignment="Right" Click="btCancel_Click" />
+        <ComboBox Name="cbText" Margin="10,10,10,0" IsEditable="True" VerticalAlignment="Top" MouseDoubleClick="cbText_MouseDoubleClick" />
+        <CheckBox x:Name="cbCheck" Margin="10,40,0,0" Content="CheckBox" HorizontalAlignment="Left" VerticalAlignment="Top"  />
+        <Button Name="btOK" Content="OK" Margin="0,0,60,10" Width="50" IsDefault="True" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="btOK_Click" />
+        <Button Name="btCancel" Content="Cancel" Margin="0,0,10,10" Width="50" IsCancel="True" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btCancel_Click" />
     </Grid>
 </Window>

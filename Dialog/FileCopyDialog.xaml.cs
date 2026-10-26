@@ -24,7 +24,7 @@ namespace CoreLib
         public bool mCallBackOn = false;            //  コールバック有り
         public Action callback;                     //  コールバック関数
         public string mFileDiffTool = "";           //  ファイル比較アプリ
-
+        private string mErrorMessage = "";
 
         private YLib ylib = new YLib();
         private YFile yfile = new YFile();
@@ -87,12 +87,18 @@ namespace CoreLib
         private void btOK_Click(object sender, RoutedEventArgs e)
         {
             if (mIndex < mSrcFiles.Count) {
-                fileCopy(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2);
+                if (!fileCopy(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
+                    MessageBox.Show($"例外エラー {mErrorMessage}");
+                    return;
+                }
                 mIndex++;
                 pbCopyCount.Value++;
                 while (cbCheckedMessage.IsChecked == false && mIndex < mSrcFiles.Count) {
                     setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
-                    fileCopy(mSrcFiles[mIndex],mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2);
+                    if (!fileCopy(mSrcFiles[mIndex],mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
+                        MessageBox.Show($"例外エラー {mErrorMessage}");
+                        return;
+                    }
                     mIndex++;
                     pbCopyCount.Value++;
                     if (mCallBackOn && (mIndex % 200) == 0)
@@ -218,12 +224,19 @@ namespace CoreLib
         /// <param name="srcFolder">コピー元フォルダ</param>
         /// <param name="destFolder">コピー先フォルダー</param>
         /// <param name="copyType">更新方法(0:日付更新 1:日付またはサイズが異なる  2:上書き 3:新規のみ</param>
-        private void fileCopy(string srcPath, string srcFolder, string destFolder, int copyType)
+        private bool fileCopy(string srcPath, string srcFolder, string destFolder, int copyType)
         {
-            string destPath = getDestPath(srcPath, srcFolder, destFolder);
-            yfile.fileCopy(srcPath, destPath, copyType);     //  ディレクトリ自動作成でコピー
-            if (mSrcRemove) {
-                removeFile(srcPath);
+            try {
+                string destPath = getDestPath(srcPath, srcFolder, destFolder);
+                yfile.fileCopy(srcPath, destPath, copyType);     //  ディレクトリ自動作成でコピー
+                if (mSrcRemove) {
+                    removeFile(srcPath);
+                }
+                return true;
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"YFile.filecopy: {e.Message}");
+                mErrorMessage = e.Message;
+                return false;
             }
         }
 

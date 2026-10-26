@@ -5,22 +5,35 @@ namespace CoreLib
 {
     /// <summary>
     /// InputSelect.xaml の相互作用ロジック
+    /// コンボボックスで文字列リストから項目を選択または入力
+    /// 種別でファイルやフォルダを選択したときは項目のダブルクリックで
+    /// ファイルまたはフォルダ選択ダイヤログを表示する
+    /// 付加機能
+    ///     チェックボックス
     /// </summary>
     public partial class InputSelect : Window
     {
         public double mWindowWidth;                         //  ウィンドウの高さ
         public double mWindowHeight;                        //  ウィンドウ幅
 
+        //  選択の種別
         public enum InputType { TEXT, OPENFILEPATH, SAVEFILEPATH, FOLDER }
         public InputType mInputType = InputType.TEXT;
+        //  ファイル/フォルダ選択時の初期ディレクトリ
         public string mInitDirectory = ".";
+        //  ファイル選択時の選択ファイル種別
         public List<string[]> mFilters = new List<string[]>() {
             new string[]{ "CSVファイル", "*.csv;*.csv" },
             new string[]{ "すべてのファイル", "*.*" }
         };
+        //  入力文字の初期値
         public string mText = "";
+        //  選択文字列リスト
         public List<string> mTextList = new List<string>();
+        //  選択項目
         public int mListIndex = 0;
+        public string mCheckBoxTitle = "";
+        public bool mCheckBocChecked = false;
 
         private YLib ylib = new YLib();
         private YFile yfile = new YFile();
@@ -46,6 +59,11 @@ namespace CoreLib
                 cbText.ToolTip = "フォルダ名の入力、ダブルクリックで選択ダイヤログを表示する";
             else
                 cbText.ToolTip = "ファイル名の入力";
+            if (mCheckBoxTitle == "")
+                cbCheck.Visibility = Visibility.Collapsed;
+            else
+                cbCheck.Content = mCheckBoxTitle;
+            cbCheck.IsChecked = mCheckBocChecked;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -97,6 +115,7 @@ namespace CoreLib
             if (mTextList.Contains(mText))
                 mTextList.Remove(mText);
             mTextList.Insert(0, mText);
+            mCheckBocChecked = cbCheck.IsChecked == true;
             DialogResult = true;
             Close();
         }

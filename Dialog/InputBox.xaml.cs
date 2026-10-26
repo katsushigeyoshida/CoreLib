@@ -146,11 +146,13 @@ namespace CoreLib
                 else {
                     Width = mWindowWidth;
                     int rowCount = mEditText.Count(p => p == '\n') + 1;
+                    double height = SystemParameters.PrimaryScreenHeight;   //  画面サイズの高さ
                     Height = rowCount * mFontSize * 1.2 + 100;
-                    Height = Math.Max(Height, mWindowHeight);
+                    Height = Math.Min(Height, height * 0.7);
                 }
                 OK.IsDefault = false;
             }
+
             //  表示専用(編集不可,OKボタン非表示)設定
             EditText.IsReadOnly = mReadOnly;
             OK.Visibility = mReadOnly ? Visibility.Hidden : Visibility.Visible;
@@ -175,7 +177,6 @@ namespace CoreLib
                 OK.Visibility = Visibility.Hidden;
                 Cancel.Content = "終了";
             }
-            System.Diagnostics.Debug.WriteLine($"Loaded: {mEditText.Length} {EditText.Text.Length}");
 
             EditText.Focus();
         }

@@ -4032,6 +4032,171 @@ namespace CoreLib
             return 0.0;
         }
 
+        //  --- byte変換  ---------------
+
+        /// <summary>
+        /// byteからサイズ分のデータを抽出(リトルエンディアンの時は逆順にする)
+        /// </summary>
+        /// <param name="data">byteデータ</param>
+        /// <param name="pos">位置</param>
+        /// <param name="size">データサイズ</param>
+        /// <param name="littleEndien">エンディアン</param>
+        /// <returns></returns>
+        public byte[] convByte(byte[] data, int pos, int size, bool littleEndien = true)
+        {
+            byte[] ret = new byte[size];
+            Array.Copy(data, pos, ret, 0, size);
+            if (!littleEndien)
+                Array.Reverse(ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// 指定サイズのバイトデータを数値に変換
+        /// </summary>
+        /// <param name="data">バイトデータ</param>
+        /// <param name="size">データサイズ</param>
+        /// <param name="pos">データの位置</param>
+        /// <param name="littleEndien">エンディアン</param>
+        /// <returns>数値</returns>
+        public long toInt(byte[] data, int size, int pos = 0, bool littleEndien = true)
+        {
+            byte[] ret = new byte[size];
+            Array.Copy(data, pos, ret, 0, size);
+            if (!littleEndien)
+                Array.Reverse(ret);
+            return toInt(ret, size);
+        }
+
+        /// <summary>
+        /// 指定サイズのバイトデータを数値に変換
+        /// </summary>
+        /// <param name="data">バイトデータ</param>
+        /// <param name="size"><データサイズ/param>
+        /// <returns>数値</returns>
+        public long toInt(byte[] data, int size)
+        {
+            long n = 0;
+            for (int i = size - 1; 0 <= i; i--) {
+                n *= 0x100;
+                n += data[i];
+            }
+            if (size < 8) {
+                if ((long)(0x80 << 8 * (size - 1)) < n)
+                    n = n - (long)(0x100 << 8 * (size - 1));
+            }
+            return n;
+        }
+
+        /// <summary>
+        /// 指定サイズのバイトデータを数値に変換
+        /// </summary>
+        /// <param name="data">バイトデータ</param>
+        /// <param name="size">データサイズ</param>
+        /// <param name="pos">データの位置</param>
+        /// <param name="littleEndien">エンディアン</param>
+        /// <returns>数値</returns>
+        public ulong toUInt(byte[] data, int size, int pos, bool littleEndien = true)
+        {
+            byte[] ret = new byte[size];
+            Array.Copy(data, pos, ret, 0, size);
+            //  ビックエンディアンの時は逆順にする
+            if (!littleEndien)
+                Array.Reverse(ret);
+            return toUInt(ret, size);
+        }
+
+        /// <summary>
+        /// 指定サイズのバイトデータを数値に変換
+        /// </summary>
+        /// <param name="data">バイトデータ</param>
+        /// <param name="size"><データサイズ/param>
+        /// <returns>数値</returns>
+        public ulong toUInt(byte[] data, int size)
+        {
+            ulong n = 0;
+            for (int i = size - 1; 0 <= i; i--) {
+                n *= 0x100;
+                n += data[i];
+            }
+            return n;
+        }
+
+        /// <summary>
+        /// 10進数文字列をbyte配列文字列に変換
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="littleEndian"></param>
+        /// <returns></returns>
+        public string dec2Byte(string str, bool littleEndian = true)
+        {
+            long val = longParse(str);
+            return long2byteStr(val, littleEndian);
+        }
+
+        /// <summary>
+        /// longをbyte配列文字列に変換
+        /// </summary>
+        /// <param name="val"></param>
+        /// <param name="littleEndian"></param>
+        /// <returns></returns>
+        public string long2byteStr(long val, bool littleEndian = true)
+        {
+            byte[] bytes = BitConverter.GetBytes(val);
+            int n = 0;
+            for (n = bytes.Length - 1; 0 < n; n--)
+                if (bytes[n] != 0) break;
+            string buf = "";
+            if (littleEndian) {
+                for (int i = 0; i <= n && i < bytes.Length; i++)
+                    buf += bytes[i].ToString("X2") + " ";
+            } else {
+                for (int i = n; 0 <= i; i--)
+                    buf += bytes[i].ToString("X2") + " ";
+            }
+            return 0 < buf.Length ? buf.Remove(buf.Length - 1) : "";
+        }
+
+        /// <summary>
+        /// byte配列文字列を10進文字列に変換
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="endian"></param>
+        /// <returns></returns>
+        public string byte2Dec(string str, bool endian = true)
+        {
+            string[] datas = str.Split(' ');
+            long ret = 0;
+            if (endian) {
+                for (int i = datas.Length - 1; 0 <= i; i--) {
+                    if (0 < datas[i].Length)
+                        ret = ret * 256 + longHexParse(datas[i]);
+                }
+            } else {
+                for (int i = 0; i < datas.Length; i++) {
+                    if (0 < datas[i].Length)
+                        ret = ret * 256 + longHexParse(datas[i]);
+                }
+            }
+            return ret.ToString();
+        }
+
+        /// <summary>
+        /// byte配列の文字列を逆順にする(12 34 56 → 56 34 12)
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public string reverseByte(string str)
+        {
+            string[] strings = str.Split(' ');
+            Array.Reverse(strings);
+            string buf = "";
+            for (int i = 0; i < strings.Length; i++)
+                if (strings[i] != " ") buf += strings[i] + " ";
+            return 0 < buf.Length ? buf.Remove(buf.Length - 1) : "";
+        }
+
+
         //  ---  bit演算関連  ------
 
         /// <summary>
@@ -4179,6 +4344,44 @@ namespace CoreLib
                 Buffer.BlockCopy(b, 0, byteArray, sizeof(Int32) * i, sizeof(Int32));
             }
             return byteArray;
+        }
+
+        /// <summary>
+        /// バイナリデータを比較する
+        /// </summary>
+        /// <param name="a">byte配列 a</param>
+        /// <param name="b">byte配列 b</param>
+        /// <returns></returns>
+        public bool ByteComp(byte[] a, byte[] b)
+        {
+            if (a.Length == b.Length) {
+                for (int i = 0; i < a.Length; i++) {
+                    if (a[i] != b[i])
+                        return false;
+                }
+                return true;
+            } else
+                return false;
+        }
+
+        /// <summary>
+        /// バイナリデータを比較する
+        /// </summary>
+        /// <param name="a">byte配列 a</param>
+        /// <param name="astart">開始位置 a</param>
+        /// <param name="b">byte配列 b</param>
+        /// <param name="astart">開始位置 b</param>
+        /// <param name="size">比較するサイズ</param>
+        /// <returns></returns>
+        public bool ByteComp(byte[] a, int astart, byte[] b, int bstart, int size)
+        {
+            if ((a.Length - astart) < size || (b.Length - bstart) < size)
+                return false;
+            for (int i = 0; i < size; i++) {
+                if (a[astart + i] != b[bstart + i])
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>

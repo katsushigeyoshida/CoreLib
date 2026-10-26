@@ -3,6 +3,9 @@
   <PropertyGroup />
   <ItemGroup />
   <ItemGroup>
+    <Compile Update="Dialog\BinView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Dialog\FileCopyDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -10,6 +13,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Dialog\FileDeleteDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Dialog\StatisticDlg.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

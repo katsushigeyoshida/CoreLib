@@ -1,6 +1,7 @@
 ﻿using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
+using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -480,6 +481,26 @@ namespace CoreLib
                 }
             }
             return true;
+        }
+
+        /// <summary>
+        /// Tar ファイルを展開する
+        /// </summary>
+        /// <param name="srcPath">Tarファイルパス</param>
+        /// <param name="extractFolder">展開フォルダ</param>
+        /// <param name="overWrite">上書き</param>
+        /// <returns></returns>
+        public bool tarExtract(string srcPath, string extractFolder, bool overWrite = false)
+        {
+            try {
+                TarFile.ExtractToDirectory(srcPath, extractFolder, overWrite);
+                return true;
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"tarExtract: {e.Message}");
+                mError = true;
+                mErrorMessage = e.Message;
+                return false;
+            }
         }
 
         //  -----------------  ファイル・ディレクトリ検索  ----------------
