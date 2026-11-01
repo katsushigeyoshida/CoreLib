@@ -9,10 +9,14 @@ namespace CoreLib
     /// </summary>
     public partial class FileDeleteDialog : Window
     {
-        public List<string> mSrcFiles;          //  ファイルリスト
-        private int mFileCount = 0;             //  ファイルの総数
-        private int mIndex = 0;                 //  削除位置位置
-        private bool mContinueDeleteMessage = false;        //  削除確認メッセージ表示
+        public List<string> mSrcFiles;                  //  ファイルリスト
+        private int mFileCount = 0;                     //  ファイルの総数
+        private int mIndex = 0;                         //  削除位置位置
+        private string mDeleteFileName = "*.*";         //  削除ファイル
+        private string mExceptFileName = "";            //  削除除外ファイル
+        private string mExceptDirectory = "";           //  削除除外ディレクトリ
+        private bool mContinueDeleteMessage = false;    //  削除確認メッセージ表示
+        public bool mFilter = false;
 
         private YFile yfile = new YFile();
 
@@ -33,10 +37,16 @@ namespace CoreLib
         /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            mSrcFiles = getCopyFiles(mSrcFiles);
+            mSrcFiles = getFiles(mSrcFiles);
             if (mSrcFiles != null && 0 < mSrcFiles.Count) {
                 mFileCount = mSrcFiles.Count;
                 setFileInfo(mSrcFiles[0]);
+            }
+            if (mFilter)
+                spFileSelect.Visibility = Visibility.Visible;
+            else {
+                spFileSelect.Visibility = Visibility.Collapsed;
+                Height -= 20;
             }
             pbCopyCount.Minimum = 0;
             pbCopyCount.Maximum = mSrcFiles.Count;
@@ -50,12 +60,15 @@ namespace CoreLib
         /// <param name="e"></param>
         private void btOK_Click(object sender, RoutedEventArgs e)
         {
+            //  ファイル削除
             if (mIndex < mSrcFiles.Count) {
-                fileDelete(mSrcFiles[mIndex++]);
+                fileDelete(mSrcFiles[mIndex]);
+                directoryDelete(mSrcFiles[mIndex++]);
                 pbCopyCount.Value++;
                 while (cbCheckedMessage.IsChecked == false && mIndex < mSrcFiles.Count) {
                     setFileInfo(mSrcFiles[mIndex]);
-                    fileDelete(mSrcFiles[mIndex++]);
+                    fileDelete(mSrcFiles[mIndex]);
+                    directoryDelete(mSrcFiles[mIndex++]);
                     pbCopyCount.Value++;
                 }
             }
@@ -147,19 +160,63 @@ namespace CoreLib
         /// </summary>
         /// <param name="srcFiles">コピー元リスト</param>
         /// <returns>ファイルリスト</returns>
-        private List<string> getCopyFiles(List<string> srcFiles)
+        private List<string> getFiles(List<string> srcFiles)
         {
-            List<string> copyFiles = new List<string>();
+            List<string> files = new List<string>();
             foreach (string path in srcFiles) {
                 if (Directory.Exists(path)) {
-                    copyFiles.AddRange(yfile.getFiles(Path.Combine(path, "*.*"), true).ToList());
-                    copyFiles.Add(path);
+                    files.AddRange(yfile.getFiles(Path.Combine(path, mDeleteFileName), true).ToList());
+                    files.Add(path);
                 } else if (File.Exists(path)) {
-                    copyFiles.Add(path);
+                    files.Add(path);
                 }
-
             }
-            return copyFiles;
+            return files;
+        }
+
+        private void deleteDirctories(List<string> srcFiles)
+        {
+            foreach (string path in srcFiles) {
+                if (Directory.Exists(path)) {
+                    DirectoryInfo di = new DirectoryInfo(path);
+                    deleteDirctories(di);
+                }
+            }
+        }
+
+        /// <summary>
+        /// フォルダの削除
+        /// </summary>
+        /// <param name="path">フォルダパス</param>
+        private void directoryDelete(string path)
+        {
+            if (Directory.Exists(path)) {
+                deleteDirctories(new DirectoryInfo(path));
+            }
+        }
+
+        /// <summary>
+        /// 空のフォルダを削除する
+        /// </summary>
+        /// <param name="directorr">フォルダ</param>
+        /// <returns>可否</returns>
+        private bool deleteDirctories(DirectoryInfo directory)
+        {
+            try {
+                DirectoryInfo[] directories = directory.GetDirectories();
+                foreach (DirectoryInfo di in directories) {
+                    if (di.Exists) {
+                        if (deleteDirctories(di))
+                            di.Delete();
+                        else
+                            return false;
+                    }
+                }
+                return true;
+            } catch (IOException e) {
+                System.Diagnostics.Debug.WriteLine($"deleteDirctories: {e.Message}");
+                return false;
+            }
         }
     }
 }

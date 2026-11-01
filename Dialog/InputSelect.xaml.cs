@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 
 namespace CoreLib
@@ -16,24 +17,19 @@ namespace CoreLib
         public double mWindowWidth;                         //  ウィンドウの高さ
         public double mWindowHeight;                        //  ウィンドウ幅
 
-        //  選択の種別
+        //  入力データの種類(文字列1行、読込ファイルパス、保存ファイルパス、フォルダ)
         public enum InputType { TEXT, OPENFILEPATH, SAVEFILEPATH, FOLDER }
-        public InputType mInputType = InputType.TEXT;
-        //  ファイル/フォルダ選択時の初期ディレクトリ
-        public string mInitDirectory = ".";
-        //  ファイル選択時の選択ファイル種別
-        public List<string[]> mFilters = new List<string[]>() {
+        public InputType mInputType = InputType.TEXT;       //  入力データの種別
+        public string mInitDirectory = ".";                 //  ファイル/フォルダ選択時の初期ディレクトリ
+        public List<string[]> mFilters = new List<string[]>() { //  ファイル選択時の選択ファイル種別
             new string[]{ "CSVファイル", "*.csv;*.csv" },
             new string[]{ "すべてのファイル", "*.*" }
         };
-        //  入力文字の初期値
-        public string mText = "";
-        //  選択文字列リスト
-        public List<string> mTextList = new List<string>();
-        //  選択項目
-        public int mListIndex = 0;
-        public string mCheckBoxTitle = "";
-        public bool mCheckBocChecked = false;
+        public string mText = "";                           //  入力文字の初期値
+        public List<string> mTextList = new List<string>(); //  選択文字列リスト
+        public int mListIndex = 0;                          //  選択項目
+        public string mCheckBoxTitle = "";                  //  チェックボックスのタイトル
+        public bool mCheckBocChecked = false;               //  チェックボックスの値
 
         private YLib ylib = new YLib();
         private YFile yfile = new YFile();
@@ -87,7 +83,7 @@ namespace CoreLib
                 Top = Properties.Settings.Default.InputSelectTop;
                 Left = Properties.Settings.Default.InputSelectLeft;
                 Width = Properties.Settings.Default.InputSelectWidth;
-                Height = Properties.Settings.Default.InputSelectHeight;
+                //Height = Math.Max(Properties.Settings.Default.InputSelectHeight, 110);
             }
         }
 

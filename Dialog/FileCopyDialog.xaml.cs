@@ -25,6 +25,7 @@ namespace CoreLib
         public Action callback;                     //  コールバック関数
         public string mFileDiffTool = "";           //  ファイル比較アプリ
         private string mErrorMessage = "";
+        public bool mFilter = false;
 
         private YLib ylib = new YLib();
         private YFile yfile = new YFile();
@@ -46,10 +47,32 @@ namespace CoreLib
         /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            if (mFileDiffTool == "")
+                btCompare.Visibility = Visibility.Collapsed;
+            else
+                btCompare.Visibility = Visibility.Visible;
+
+            if (mFilter)
+                spFileSelect.Visibility = Visibility.Visible;
+            else {
+                spFileSelect.Visibility = Visibility.Collapsed;
+                Height -= 20;
+            }
+
+            cbOverWrite.IsChecked = mOverWrite;
+
             if (mSrcFiles == null || mSrcFiles.Count == 0)
                 Close();
             if (mSrcFolder == null || mSrcFolder == "")
                 mSrcFolder = Path.GetDirectoryName(mSrcFiles[0]);
+
+            mSrcFiles = addFolderFiles(mSrcFiles);
+            if (mSrcFiles != null && 0 < mSrcFiles.Count && mDestFolder.Length > 0) {
+                setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
+                pbCopyCount.Minimum = 0;
+                pbCopyCount.Maximum = mSrcFiles.Count;
+                pbCopyCount.Value = 0;
+            }
 
             if (mDestFolder == null || mDestFolder == "") {
                 MessageBox.Show("転送先フォルダが設定されていません");
@@ -64,19 +87,6 @@ namespace CoreLib
                 else if (result == MessageBoxResult.Yes)
                     Directory.CreateDirectory(mDestFolder);
             }
-
-            mSrcFiles = addFolderFiles(mSrcFiles);
-            if (mSrcFiles != null && 0 < mSrcFiles.Count && mDestFolder.Length > 0) {
-                setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
-                pbCopyCount.Minimum = 0;
-                pbCopyCount.Maximum = mSrcFiles.Count;
-                pbCopyCount.Value = 0;
-            }
-            cbOverWrite.IsChecked = mOverWrite;
-            if (mFileDiffTool == "")
-                btCompare.Visibility = Visibility.Collapsed;
-            else
-                btCompare.Visibility = Visibility.Visible;
         }
 
         /// <summary>
