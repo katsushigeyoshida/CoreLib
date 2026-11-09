@@ -122,8 +122,7 @@ namespace CoreLib
                     }
                 } else {
                     removeItemsAll();
-                    foreach (DirectoryInfo dr in drives)
-                        Items.Add(new DirectoryTree(dr.FullName, "Icon\\HardDisk.ico"));
+                    getDrive();
                     return;
                 }
             }

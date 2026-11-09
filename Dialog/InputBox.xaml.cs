@@ -28,6 +28,8 @@ namespace CoreLib
         public string mEditText = "";                       //  編集テキスト
         public bool mFileEdit = false;                      //  ファイル編集
         public string mFilePath = "";                       //  編集ファイルパス
+        public List<string> mFileList;                      //  対象ファイルリスト
+        public int mFileIndex = 0;                          //  表示ファイルの位置
         public byte[] mFileHash = new byte[0];              //  テキストのハッシュコード
 
         public bool mMultiLine = false;                     //  複数行入力可否
@@ -42,7 +44,7 @@ namespace CoreLib
         public int mFontSize = 12;                          //  文字サイズ
         public string mFontFamily = "";                     //  フォントファミリ
         public bool mFontZoomButtomVisible = true;          //  文字ズームボタン表示/非表示
-        public bool mCalcButtonVisible = true;              //  計算ボタン表示/非表示
+        public bool mCalcButtonVisible = false;              //  計算ボタン表示/非表示
 
         public bool mCallBackOn = false;                    //  コールバック有り
         public Action callback;                             //  コールバック関数
@@ -84,10 +86,7 @@ namespace CoreLib
         {
             //  ファイル指定あり
             if (mFileEdit) {
-                if (File.Exists(mFilePath)) {
-                    mEditText = yfile.loadTextFile(mFilePath);
-                    mFileHash = ylib.getHashMD5(mEditText);
-                }
+                loadFile(mFilePath);
                 if (!mReadOnly)
                     OK.Content = "保存";
                 Cancel.Content = "終了";
@@ -135,6 +134,8 @@ namespace CoreLib
             if (mEditText == null)
                 mEditText = "";
             EditText.Text = mEditText;
+            //  文字サイズ
+            EditText.FontSize = mFontSize;
 
             //  複数行入力設定
             if (mMultiLine) {
@@ -151,14 +152,17 @@ namespace CoreLib
                     Height = Math.Min(Height, height * 0.7);
                 }
                 OK.IsDefault = false;
+            } else {
+                //  文字列の大きさを求めTextBoxに入らない場合は水平スクロール領域を追加する
+                Size size = measureText(mEditText);
+                if (EditText.ActualWidth < size.Width)
+                    Height = Height + mFontSize * 1.2;
             }
 
             //  表示専用(編集不可,OKボタン非表示)設定
             EditText.IsReadOnly = mReadOnly;
             OK.Visibility = mReadOnly ? Visibility.Hidden : Visibility.Visible;
-
-            //  文字サイズ
-            EditText.FontSize = mFontSize;
+   
             //  文字サイズズームボタンの表示/非表示
             if (mFontZoomButtomVisible) {
                 BtGZoomDown.Visibility = Visibility.Visible;
@@ -172,6 +176,18 @@ namespace CoreLib
                 BtCalc.Visibility = Visibility.Visible;
             else
                 BtCalc.Visibility = Visibility.Hidden;
+
+            //  次・前のファイルボタンの非表示設定
+            if (mFileList == null || mFileList.Count < 2) {
+                BtPrevFile.Visibility = Visibility.Collapsed;
+                BtNextFile.Visibility = Visibility.Collapsed;
+            } else {
+                BtPrevFile.Visibility = Visibility.Visible;
+                BtNextFile.Visibility = Visibility.Visible;
+                mFileIndex = mFileList.IndexOf(mFilePath);
+                if (mFileIndex < 0) mFileIndex = 0;
+            }
+
             //  コールバック関数
             if (mCallBackOn) {
                 OK.Visibility = Visibility.Hidden;
@@ -254,25 +270,6 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// ファイル保存
-        /// </summary>
-        /// <param name="message">確認メッセージ</param>
-        private void saveFile(bool message = false)
-        {
-            if (!ylib.getHashMD5(EditText.Text).SequenceEqual(mFileHash)) {
-                if (!message || ylib.messageBox(this, "内容が変更されています。\n保存しますか", "確認", "",
-                    MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
-                    if (!File.Exists(mFilePath))
-                        mFilePath = yfile.fileSaveSelectDlg("保存ファイル", ".");
-                    if (0 < mFilePath.Length)
-                        yfile.saveTextFile(mFilePath, EditText.Text);
-                    mEditText = EditText.Text;
-                    mFileHash = ylib.getHashMD5(mEditText);
-                }
-            }
-        }
-
-        /// <summary>
         /// [Cancel] キャンセルボタン
         /// </summary>
         /// <param name="sender"></param>
@@ -298,6 +295,18 @@ namespace CoreLib
                 mFontSize++;
             } else if (bt.Name.CompareTo("BtCalc") == 0) {
                 textCalculate();
+            } else if (bt.Name.CompareTo("BtPrevFile") == 0) {
+                if (0 < mFileIndex) {
+                    saveFile(true);
+                    loadFile(mFileList[--mFileIndex]);
+                    EditText.Text = mEditText;
+                }
+            } else if (bt.Name.CompareTo("BtNextFile") == 0) {
+                if (mFileIndex < mFileList.Count - 1) {
+                    saveFile(true);
+                    loadFile(mFileList[++mFileIndex]);
+                    EditText.Text = mEditText;
+                }
             }
             EditText.FontSize = mFontSize;
         }
@@ -617,6 +626,62 @@ namespace CoreLib
             }
             ep = ep < 0 ? EditText.Text.Length : ep;
             return EditText.Text.Substring(sp + 1, ep - sp - 1);
+        }
+
+        /// <summary>
+        /// ファイルの読込
+        /// </summary>
+        /// <param name="path">ファイルパス</param>
+        private void loadFile(string path)
+        {
+            if (File.Exists(path)) {
+                if (yfile.isBinaryFile(path) != false) {
+                    if (MessageBox.Show($"{path}\nはバイナリファイルの可能性がありますが開きますか?", "確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                        return;
+                }
+                mEditText = yfile.loadTextFile(path);
+                mFileHash = ylib.getHashMD5(mEditText);
+                Title = $"[{Path.GetFileName(path)}]";
+            }
+        }
+
+        /// <summary>
+        /// ファイル保存
+        /// </summary>
+        /// <param name="message">確認メッセージ</param>
+        private void saveFile(bool message = false)
+        {
+            if (!ylib.getHashMD5(EditText.Text).SequenceEqual(mFileHash)) {
+                if (!message || ylib.messageBox(this, "内容が変更されています。\n保存しますか", "確認", "",
+                    MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+                    if (!File.Exists(mFilePath))
+                        mFilePath = yfile.fileSaveSelectDlg("保存ファイル", ".");
+                    if (0 < mFilePath.Length)
+                        yfile.saveTextFile(mFilePath, EditText.Text);
+                    mEditText = EditText.Text;
+                    mFileHash = ylib.getHashMD5(mEditText);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 文字列の大きさを求める
+        /// </summary>
+        /// <param name="text">文字列</param>
+        /// <returns>文字列の大きさ(Size.Width/Height)</returns>
+        public Size measureText(string text)
+        {
+            TextBlock textBlock = new TextBlock();
+            textBlock.Text = text;
+            //textBlock.Foreground = mTextColor;
+            textBlock.FontSize = mFontSize;             //  文字サイズ
+            //  auto sized (https://code.i-harness.com/ja-jp/q/8d5d0e)
+            if (0 < mFontFamily.Length)
+                textBlock.FontFamily = new System.Windows.Media.FontFamily(mFontFamily);
+            textBlock.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
+            textBlock.Arrange(new Rect(textBlock.DesiredSize));
+
+            return new Size(textBlock.ActualWidth, textBlock.ActualHeight);
         }
     }
 }

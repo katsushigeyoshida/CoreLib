@@ -35,6 +35,7 @@ namespace CoreLib
             cbSelectList.Margin = new Thickness(tWidth + 20, 5, 10, 0);
             tbEditText.Margin = new Thickness(tWidth + 20, 35, 10, 0);
             cbSelectList.SelectedIndex = 0;
+            tbEditText.Focus();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

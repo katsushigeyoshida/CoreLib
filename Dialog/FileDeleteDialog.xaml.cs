@@ -127,7 +127,16 @@ namespace CoreLib
             try {
                 if (Directory.Exists(path)) {
                     DirectoryInfo dir = new DirectoryInfo(path);
-                    dir.Delete(true);
+                    if ((dir.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly) {
+                        if (MessageBox.Show("読込専用ディレクトリを削除しますか", "確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK) {
+                            dir.Attributes = FileAttributes.Normal;
+                            dir.Delete();
+                            return true;
+                        }
+                    } else {
+                        dir.Delete(true);
+                        return true;
+                    }
                 } else if (File.Exists(path)) {
                     FileInfo file = new FileInfo(path);
                     if ((file.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly) {

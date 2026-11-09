@@ -5,6 +5,8 @@ using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using SevenZip;
+using System.Diagnostics;
 
 namespace CoreLib
 {
@@ -468,7 +470,7 @@ namespace CoreLib
             GZipStream decompStream                     // 解凍ストリーム
               = new GZipStream(
                 inStream,                               // 入力元となるストリームを指定
-                CompressionMode.Decompress);            // 解凍（圧縮解除）を指定
+                System.IO.Compression.CompressionMode.Decompress);            // 解凍（圧縮解除）を指定
 
             FileStream outStream                        // 出力ストリーム
               = new FileStream(opath, FileMode.Create);
@@ -502,6 +504,67 @@ namespace CoreLib
                 return false;
             }
         }
+
+        /// <summary>
+        /// 7-Zipによる解凍
+        /// 解凍(展開)のみ: APFS, AR, ARJ, CAB, CHM, CPIO, CramFS, DMG, EXT, FAT, GPT, 
+        /// HFS, IHEX, ISO, LZH, LZMA, MBR, MSI, NSIS, NTFS, QCOW2, RAR, RPM, SquashFS, 
+        /// UDF, UEFI, VDI, VHD, VHDX, VMDK, XAR and Z.
+        /// dll : https://7-zip.opensource.jp/
+        /// </summary>
+        /// <param name="srcPath">ファイルパス</param>
+        /// <param name="exractFolder">解凍先フォルダ</param>
+        /// <returns></returns>
+        public bool sevenZipExtract(string srcPath, string exractFolder)
+        {
+            try {
+                using (SevenZipExtractor extractor = new SevenZipExtractor(srcPath)) {
+                    // 解凍を実行
+                    extractor.ExtractArchive(exractFolder);
+                }
+                return true;
+            } catch (SevenZipException e) {
+                Debug.WriteLine("解凍中にエラーが発生しました: " + e.Message);
+                mErrorMessage = $"sevenZipExtract: {e.Message}";
+                return false;
+            } catch (Exception e) {
+                Debug.WriteLine("予期しないエラーが発生しました: " + e.Message);
+                mErrorMessage = $"sevenZipExtract: {e.Message}";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 7-Zipによる圧縮
+        /// 圧縮/解凍(展開): 7z, XZ, BZIP2, GZIP, TAR, ZIP, WIM
+        /// dll : https://7-zip.opensource.jp/
+        /// 参照 : https://af-e.net/csharp-sevenzipsharp/
+        /// </summary>
+        /// <param name="srcPath"></param>
+        /// <param name="destPath"></param>
+        /// <returns></returns>
+        public bool sevenZipCompressor(string srcPath, string destPath)
+        {
+            try {
+                SevenZipCompressor compressor = new SevenZipCompressor();
+                //string sourceFile = "圧縮するファイルのパス";
+                //string destinationArchive = "出力先のアーカイブパス.7z";
+                // 圧縮を実行
+                compressor.CompressFiles(destPath, srcPath);
+                return true;
+            } catch (SevenZipException ex) {
+                // SevenZipSharp特有の例外をキャッチ
+                Debug.WriteLine("圧縮中にエラーが発生しました: " + ex.Message);
+                mErrorMessage = $"sevenZipCompressor: {ex.Message}";
+                return false;
+            } catch (Exception ex) {
+                // その他の例外をキャッチ
+                Debug.WriteLine("予期しないエラーが発生しました: " + ex.Message);
+                mErrorMessage = $"sevenZipCompressor: {ex.Message}";
+                return false;
+            }
+        }
+
 
         //  -----------------  ファイル・ディレクトリ検索  ----------------
 
@@ -1012,6 +1075,45 @@ namespace CoreLib
                 // 書き込み
                 writer.Write(buffer);
             }
+        }
+
+        /// <summary>
+        /// バイナリファイル化の確認
+        /// </summary>
+        /// <param name="path">ファイルパス</param>
+        /// <returns></returns>
+        public bool? isBinaryFile(string path)
+        {
+            if (File.Exists(path)) {
+                byte[] data = loadBinData(path, 1024);
+                return isBinaryData(data);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// テキストデータ化バイナリデータ化の確認
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        private bool isBinaryData(byte[] bytes)
+        {
+            bool isBinary = false;
+            byte b1, b2, b3, b4;
+            for (int i = 0; i < bytes.Length; i++) {
+                b1 = bytes[i];
+                if (b1 < 0x20 && b1 != 0x09 && b1 != 0x0a && b1 != 0x0d)
+                    return true;
+                //if (b1 <= 0x06 || b1 == 0x7F || b1 == 0xFF) {
+                //    //'binary'
+                //    isBinary = true;
+                //    if (b1 == 0x00 && i < bytes.Length - 1 && bytes[i + 1] <= 0x7F) {
+                //        //smells like raw unicode
+                //        return false;
+                //    }
+                //}
+            }
+            return isBinary;
         }
     }
 }

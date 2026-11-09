@@ -60,6 +60,7 @@ namespace CoreLib
             else
                 cbCheck.Content = mCheckBoxTitle;
             cbCheck.IsChecked = mCheckBocChecked;
+            cbText.Focus();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

@@ -87,6 +87,11 @@ namespace CoreLib
                 else if (result == MessageBoxResult.Yes)
                     Directory.CreateDirectory(mDestFolder);
             }
+            if (mSrcRemove) {
+                Title = "ファイルの移動";
+            } else {
+                Title = "ファイルのコピー";
+            }
         }
 
         /// <summary>
@@ -96,24 +101,29 @@ namespace CoreLib
         /// <param name="e"></param>
         private void btOK_Click(object sender, RoutedEventArgs e)
         {
+            int interval = Math.Max(1, mSrcFiles.Count / 100);      //  画面更新のタイミング
             if (mIndex < mSrcFiles.Count) {
-                if (!fileCopy(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
-                    MessageBox.Show($"例外エラー {mErrorMessage}");
+                if (!fileSync(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
                     return;
-                }
+                //if (!fileCopy(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
+                //    MessageBox.Show($"例外エラー {mErrorMessage}");
+                //    return;
+                //}
                 mIndex++;
                 pbCopyCount.Value++;
                 while (cbCheckedMessage.IsChecked == false && mIndex < mSrcFiles.Count) {
                     setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
-                    if (!fileCopy(mSrcFiles[mIndex],mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
-                        MessageBox.Show($"例外エラー {mErrorMessage}");
+                    if (!fileSync(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
                         return;
-                    }
+                    //if (!fileCopy(mSrcFiles[mIndex],mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
+                    //    MessageBox.Show($"例外エラー {mErrorMessage}");
+                    //    return;
+                    //}
                     mIndex++;
                     pbCopyCount.Value++;
-                    if (mCallBackOn && (mIndex % 200) == 0)
+                    if (mCallBackOn && (mIndex % interval) == 0)
                         callback();
-                    if (mIndex % 10 == 0)
+                    if (mIndex % interval == 0)
                         ylib.DoEvents();
                 }
             }
@@ -124,6 +134,31 @@ namespace CoreLib
                     callback();
                 Close();
             }
+        }
+
+        private bool mDeleteMessage = true;         //  削除確認メッセージの有無
+        private bool mDelete = false;               //  削除
+
+        private bool fileSync(string srcPath, string srcFolder, string destFolder, int copyType)
+        {
+            string destPath = getDestPath(srcPath, srcFolder, destFolder);
+            if (!File.Exists(srcPath) && File.Exists(destPath)) {
+                if (mDeleteMessage) {
+                    (MessageBoxResult result, bool cont) = ylib.messageBoxEx(this,
+                        "コピー元にないファイルを削除しますか?",
+                        Path.GetFileName(srcPath), "確認", MessageBoxButton.OKCancel, true);
+                    mDelete = result == MessageBoxResult.OK;
+                    mDeleteMessage = cont;
+                }
+                if (mDelete)
+                    removeFile(destPath);
+            } else {
+                if (!fileCopy(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
+                    MessageBox.Show($"例外エラー {mErrorMessage}");
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -257,15 +292,20 @@ namespace CoreLib
         /// <param name="destFolder">コピー先フォルダ</param>
         private void setFileInfo(string srcPath, string srcFolder, string destFolder)
         {
-            FileInfo srcFileInfo = new FileInfo(srcPath);
             (string srcName, srcFolder) = getSrcPath(srcPath, srcFolder);
             string destPath = Path.Combine(destFolder, srcName);
 
             //  コピー元ファイル情報
+            FileInfo srcFileInfo = new FileInfo(srcPath);
             tbFileName.Text = srcName.Trim('\\');
             tbSrcFolder.Text = srcFolder;
-            tbSrcDateTime.Text = srcFileInfo.LastWriteTime.ToString();
-            tbSrcSize.Text = srcFileInfo.Length.ToString("N0");
+            if (srcFileInfo.Exists) {
+                tbSrcDateTime.Text = srcFileInfo.LastWriteTime.ToString();
+                tbSrcSize.Text = srcFileInfo.Length.ToString("N0");
+            } else {
+                tbSrcDateTime.Text = "---";
+                tbSrcSize.Text = "---";
+            }
             //  コピー先ファイル情報
             FileInfo destFileInfo = new FileInfo(destPath);
             if (destFileInfo.Exists) {
@@ -280,9 +320,9 @@ namespace CoreLib
 
             tbProgress.Text = $"[ {mIndex} / {mSrcFiles.Count} ]";
 
+            //  比較ボタン表示
             if (mFileDiffTool != "") {
-                //  比較ボタン表示
-                if (destFileInfo.Exists)
+                if (srcFileInfo.Exists && destFileInfo.Exists)
                     btCompare.Visibility = Visibility.Visible;
                 else
                     btCompare.Visibility = Visibility.Collapsed;

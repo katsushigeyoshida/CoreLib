@@ -916,7 +916,6 @@ namespace CoreLib
             return op;
         }
 
-
         /// <summary>
         /// 文字列の大きさを求める
         /// </summary>
