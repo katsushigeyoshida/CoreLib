@@ -21,6 +21,9 @@ namespace CoreLib
         public bool mOverWrite = false;             //  強制上書き
         private bool mReadOnlyContinue = false;     //  ReadOnlyファイルの確認無視
         private bool mReadOnlyRemove = false;       //  ReadOnlyファイル削除
+        private bool mDeleteMessage = true;         //  削除確認メッセージの有無
+        private bool mDelete = false;               //  削除
+
         public bool mCallBackOn = false;            //  コールバック有り
         public Action callback;                     //  コールバック関数
         public string mFileDiffTool = "";           //  ファイル比較アプリ
@@ -105,20 +108,12 @@ namespace CoreLib
             if (mIndex < mSrcFiles.Count) {
                 if (!fileSync(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
                     return;
-                //if (!fileCopy(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
-                //    MessageBox.Show($"例外エラー {mErrorMessage}");
-                //    return;
-                //}
                 mIndex++;
                 pbCopyCount.Value++;
                 while (cbCheckedMessage.IsChecked == false && mIndex < mSrcFiles.Count) {
                     setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
                     if (!fileSync(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
                         return;
-                    //if (!fileCopy(mSrcFiles[mIndex],mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
-                    //    MessageBox.Show($"例外エラー {mErrorMessage}");
-                    //    return;
-                    //}
                     mIndex++;
                     pbCopyCount.Value++;
                     if (mCallBackOn && (mIndex % interval) == 0)
@@ -136,9 +131,14 @@ namespace CoreLib
             }
         }
 
-        private bool mDeleteMessage = true;         //  削除確認メッセージの有無
-        private bool mDelete = false;               //  削除
-
+        /// <summary>
+        /// ファイルの同期(基本コピーでファイル元がなければコピー先ファイルを作治よ)
+        /// </summary>
+        /// <param name="srcPath">コピー元ファイルパス</param>
+        /// <param name="srcFolder">コピー元フォルダ</param>
+        /// <param name="destFolder">コピー先フォルダ</param>
+        /// <param name="copyType">コピーの種類(上書き=1/0)</param>
+        /// <returns></returns>
         private bool fileSync(string srcPath, string srcFolder, string destFolder, int copyType)
         {
             string destPath = getDestPath(srcPath, srcFolder, destFolder);
@@ -212,10 +212,9 @@ namespace CoreLib
             foreach (string path in srcFiles) {
                 if (Directory.Exists(path)) {
                     copyFiles.AddRange(yfile.getFiles(Path.Combine(path, "*.*"), true).ToList());
-                } else if (File.Exists(path)) {
+                } else {
                     copyFiles.Add(path);
                 }
-
             }
             return copyFiles;
         }
