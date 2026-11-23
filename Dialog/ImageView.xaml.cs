@@ -22,12 +22,16 @@ namespace CoreLib
         public List<string> mImageList = new List<string>();
         private Point mMousePosition = new Point(0, 0);         //  マウス位置
         private bool mImagMove = false;                         //  イメージ移動フラグ
+        private int[] mOrientationAngle = new int[] { 0, 0, 0, 180, 0, 0, 90, 0, 270 }; //  写真の向き
 
 
         private YLib ylib = new YLib();
         private YFile yfile = new YFile();
 
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
         public ImageView()
         {
             InitializeComponent();
@@ -35,11 +39,21 @@ namespace CoreLib
             WindowFormLoad();
         }
 
+        /// <summary>
+        /// 終了処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             WindowFormSave();
         }
 
+        /// <summary>
+        /// 表示前処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             if (mImageList == null || mImageList.Count == 0) {
@@ -48,10 +62,18 @@ namespace CoreLib
             }
             ImImage.Source = ylib.getBitmapImage(mImagePath);
             FileInfo fi = new FileInfo(mImagePath);
-            Title =$"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N")}";
-            setPhotoInfo(mImagePath);
+            Title =$"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N0")}]";
+            int orientation = setPhotoInfo(mImagePath);
+            resetImage();
+            if (mOrientationAngle[orientation] != 0)
+                rotateImage(mOrientationAngle[orientation]);
         }
 
+        /// <summary>
+        /// Windowサイズ変更
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_LayoutUpdated(object sender, EventArgs e)
         {
             if (WindowState != mWindowState &&
@@ -75,8 +97,10 @@ namespace CoreLib
             double dx = mWindowWidth - mPrevWindowWidth;
             mPrevWindowWidth = mWindowWidth;
             //  表示の更新
-            //sampleGraphInit();
-            //drawSampleGraph(mStartPosition, mEndPosition);
+            int orientation = setPhotoInfo(mImagePath);
+            resetImage();
+            if (mOrientationAngle[orientation] != 0)
+                rotateImage(mOrientationAngle[orientation]);
         }
 
         /// <summary>
@@ -138,6 +162,8 @@ namespace CoreLib
                     editCoordinate(mImagePath);
                 } else if (e.Key == Key.I) {            //  イメージのプロパティ
                     infoImage(mImagePath);
+                } else if (e.Key == Key.M) {            //  GoogleMapで開く
+                    openGooglemap(mImagePath);
                 }
             } else {
                 if (e.Key == Key.Left) {                //  左に移動
@@ -184,8 +210,7 @@ namespace CoreLib
                 ylib.image2Clipbord(ImImage.Source);
             } else if (button.Name == "BtGZoomReset") {
                 //  全体表示(イメージを初期状態にする)
-                Matrix matrix = new Matrix();
-                ImImage.RenderTransform = new MatrixTransform(matrix);
+                resetImage();
             } else if (button.Name == "BtGZoomUp") {
                 //  拡大
                 imageZoom(1.25, cx, cy);
@@ -274,6 +299,9 @@ namespace CoreLib
             } else if (menuItem.Name.CompareTo("imClipCopyMenu") == 0) {
                 //  画像をクリップボードにコピー
                 ylib.image2Clipbord(ImImage.Source);
+            } else if (menuItem.Name.CompareTo("imGoogleMapMenu") == 0) {
+                //  Googlemapで開く
+                openGooglemap(mImagePath);
             } else if (menuItem.Name.CompareTo("imCoordinateMenu") == 0) {
                 //  緯度経度座標編集
                 editCoordinate(mImagePath);
@@ -339,10 +367,22 @@ namespace CoreLib
                     if (!exifInfo.save()) {
                         MessageBox.Show(exifInfo.mErrorMsg);
                     } else {
-                        setPhotoInfo(path);
+                        setPhotoInfo(mImagePath);
                         yfile.setFileDateTime(path, lastDateTime);
                     }
             }
+        }
+
+        /// <summary>
+        /// Google Mapで緯度経度指定で開く
+        /// </summary>
+        /// <param name="path"></param>
+        private void openGooglemap(string path)
+        {
+            ExifInfo exifInfo = new ExifInfo(path);
+            Point coord = exifInfo.getExifGpsCoordinate();
+            if (coord.X != 0 && coord.Y != 0)
+                ylib.openGoogleMap(coord.Y, coord.X);
         }
 
         /// <summary>
@@ -378,8 +418,12 @@ namespace CoreLib
                 mImagePath = mImageList[n + next];
                 ImImage.Source = ylib.getBitmapImage(mImagePath);
                 FileInfo fi = new FileInfo(mImagePath);
-                Title = $"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N")}";
-                setPhotoInfo(mImagePath);
+                Title = $"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N0")} byte]";
+                //  写真の向き設定
+                int orientation = setPhotoInfo(mImagePath);
+                resetImage();
+                if (mOrientationAngle[orientation] != 0)
+                    rotateImage(mOrientationAngle[orientation]);
             }
         }
 
@@ -412,15 +456,25 @@ namespace CoreLib
         /// イメージの回転
         /// </summary>
         /// <param name="angle">回転角(dig)</param>
-        private void rotateImage(double angle)
+        private void rotateImage(double angle, PointD ctr = null)
         {
-            double cx = ImImage.ActualWidth / 2.0;
-            double cy = ImImage.ActualHeight / 2.0;
+            double cx = (ctr == null ? ImImage.ActualWidth : ctr.x) / 2.0;
+            double cy = (ctr == null ? ImImage.ActualHeight : ctr.y) / 2.0;
+            if (cx == 0 || cy == 0)
+                return;
             Matrix matrix = ((MatrixTransform)ImImage.RenderTransform).Matrix;
             matrix.RotateAt(angle, cx, cy);
             ImImage.RenderTransform = new MatrixTransform(matrix);
         }
 
+        /// <summary>
+        /// イメージのMatrxパメータをリセット
+        /// </summary>
+        private void resetImage()
+        {
+            Matrix matrix = new Matrix();
+            ImImage.RenderTransform = new MatrixTransform(matrix);
+        }
         /// <summary>
         /// イメージのプロパティ表示
         /// </summary>
@@ -436,23 +490,32 @@ namespace CoreLib
         /// ステータスバーに画像情報を表示する
         /// </summary>
         /// <param name="path"></param>
-        private void setPhotoInfo(string path)
+        private int setPhotoInfo(string path)
         {
             //  ファイルプロパティ表示
             System.Windows.Media.Imaging.BitmapImage bmpImage = ylib.getBitmapImage(path);
-            ExifInfo exifInfo = new ExifInfo(path);
-            Point coodinate = exifInfo.getExifGpsCoordinate();
-            string[] datetime = exifInfo.getDateTime().Split(':');
-            TbPhotoInfo.Text = datetime.Length == 5 ?
-                $"{datetime[0]}/{datetime[1]}/{datetime[2]}:{datetime[3]}:{datetime[4]}" : exifInfo.getDateTime();
-            if (coodinate.X < 0 || coodinate.Y < 0)
-                TbPhotoInfo.Text += " (座標なし)";
-            List<string> iptc = ylib.getIPTC(path);
-            TbPhotoInfo.Text += " " + (iptc.Count > 3 ? iptc[4] : "") + exifInfo.getUserComment();
-            TbPhotoInfo.Text += " [" + bmpImage.PixelWidth + "x" + bmpImage.PixelHeight + "]";
-            TbPhotoInfo.Text += " " + exifInfo.getCamera("カメラ {0} {1}");
-            TbPhotoInfo.Text += " " + exifInfo.getCameraSetting(" 1/{0} s F{1} ISO {2} 焦点距離 {3} mm");
-            exifInfo.close();
+            int orientation = 0;
+            if (bmpImage != null) {
+                ExifInfo exifInfo = new ExifInfo(path);
+                orientation = exifInfo.getOrientationNo();
+                Point coodinate = exifInfo.getExifGpsCoordinate();
+                string[] datetime = exifInfo.getDateTime().Split(':');
+                TbPhotoInfo.Text = datetime.Length == 5 ?
+                    $"{datetime[0]}/{datetime[1]}/{datetime[2]}:{datetime[3]}:{datetime[4]}" : exifInfo.getDateTime();
+                if (coodinate.X <= 0 || coodinate.Y <= 0) {
+                    TbPhotoInfo.Text += " (座標なし)";
+                    imGoogleMapMenu.Visibility = Visibility.Collapsed;
+                } else {
+                    imGoogleMapMenu.Visibility = Visibility.Visible;
+                }
+                List<string> iptc = ylib.getIPTC(path);
+                TbPhotoInfo.Text += " " + (iptc.Count > 3 ? iptc[4] : "") + exifInfo.getUserComment();
+                TbPhotoInfo.Text += " [" + bmpImage.PixelWidth + "x" + bmpImage.PixelHeight + "]";
+                TbPhotoInfo.Text += " " + exifInfo.getCamera("カメラ {0} {1}");
+                TbPhotoInfo.Text += " " + exifInfo.getCameraSetting(" 1/{0} s F{1} ISO {2} 焦点距離 {3} mm");
+                exifInfo.close();
+            }
+            return orientation;
         }
 
         /// <summary>

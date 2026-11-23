@@ -297,6 +297,17 @@ namespace CoreLib
         }
 
         /// <summary>
+        /// 写真の向き
+        ///     1=水平(0°), 2=水平反転, 3=180°回転, 4=垂直反転, 
+        ///     5=水平反転,270°回転, 6=90°回転, 7=水平反転,90°回転, 8=270°回転
+        /// </summary>
+        /// <returns></returns>
+        public int getOrientationNo()
+        {
+            return ylib.intParse(getExifInfoId(0x0112));
+        }
+
+        /// <summary>
         /// フラッシュの状態
         /// </summary>
         /// <returns>状態</returns>

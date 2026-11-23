@@ -14,6 +14,7 @@ namespace CoreLib
     public partial class FileCopyDialog : Window
     {
         public List<string> mSrcFiles;              //  コピー元ファイルリスト
+        private List<string> mSrcFileList;
         public string mSrcFolder;                   //  コピー元フォルダ
         public string mDestFolder;                  //  コピー先フォルダ
         private int mIndex = 0;                     //  コピー位置
@@ -23,12 +24,17 @@ namespace CoreLib
         private bool mReadOnlyRemove = false;       //  ReadOnlyファイル削除
         private bool mDeleteMessage = true;         //  削除確認メッセージの有無
         private bool mDelete = false;               //  削除
+        private bool mFolderMessage = true;         //  フォルダ作成確認メッセージ
+        private bool mFolderCreate = true;          //  フォルダ作成
+        private List<string> mDeleteFileName = new List<string>();  //  削除ファイル
+        private List<string> mExceptFileName = new List<string>();  //  削除除外ファイル
+        private List<string> mExceptDirectory = new List<string>(); //  削除除外ディレクトリ
 
         public bool mCallBackOn = false;            //  コールバック有り
         public Action callback;                     //  コールバック関数
         public string mFileDiffTool = "";           //  ファイル比較アプリ
         private string mErrorMessage = "";
-        public bool mFilter = false;
+        public bool mFilter = false;                //  対象/除外ファイル/ディレクトリ設定の表示/非表示
 
         private YLib ylib = new YLib();
         private YFile yfile = new YFile();
@@ -50,6 +56,12 @@ namespace CoreLib
         /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            if (mSrcRemove) {
+                Title = "ファイルの移動";
+            } else {
+                Title = "ファイルのコピー";
+            }
+
             if (mFileDiffTool == "")
                 btCompare.Visibility = Visibility.Collapsed;
             else
@@ -64,19 +76,13 @@ namespace CoreLib
 
             cbOverWrite.IsChecked = mOverWrite;
 
+            //  コピー元の状態確認
             if (mSrcFiles == null || mSrcFiles.Count == 0)
                 Close();
             if (mSrcFolder == null || mSrcFolder == "")
                 mSrcFolder = Path.GetDirectoryName(mSrcFiles[0]);
 
-            mSrcFiles = addFolderFiles(mSrcFiles);
-            if (mSrcFiles != null && 0 < mSrcFiles.Count && mDestFolder.Length > 0) {
-                setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
-                pbCopyCount.Minimum = 0;
-                pbCopyCount.Maximum = mSrcFiles.Count;
-                pbCopyCount.Value = 0;
-            }
-
+            //  コピー先の状態確認
             if (mDestFolder == null || mDestFolder == "") {
                 MessageBox.Show("転送先フォルダが設定されていません");
                 Close();
@@ -90,11 +96,51 @@ namespace CoreLib
                 else if (result == MessageBoxResult.Yes)
                     Directory.CreateDirectory(mDestFolder);
             }
-            if (mSrcRemove) {
-                Title = "ファイルの移動";
-            } else {
-                Title = "ファイルのコピー";
+
+            //  コピー元ファイル検索
+            getSrcFiles();
+        }
+
+        /// <summary>
+        /// 終了処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine($"Window_Closing");
+        }
+
+        /// <summary>
+        /// ファイル検索
+        /// </summary>
+        private void getSrcFiles()
+        {
+            mSrcFileList = getFiles(mSrcFiles);
+            if (mSrcFileList != null && 0 < mSrcFileList.Count && mDestFolder.Length > 0) {
+                setFileInfo(mSrcFileList[mIndex], mSrcFolder, mDestFolder);
+                pbCopyCount.Minimum = 0;
+                pbCopyCount.Maximum = mSrcFileList.Count;
+                pbCopyCount.Value = 0;
             }
+        }
+
+        /// <summary>
+        /// [再検索]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btReload_Click(object sender, RoutedEventArgs e)
+        {
+            //  対象/除外ファイル、除外ディレクトリの設定
+            mDeleteFileName = tbFileName.Text.Split(' ').ToList();
+            mDeleteFileName.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+            mExceptFileName = tbExceptFile.Text.Split(' ').ToList();
+            mExceptFileName.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+            mExceptDirectory = tbExceptDirectory.Text.Split(' ').ToList();
+            mExceptDirectory.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+
+            getSrcFiles();
         }
 
         /// <summary>
@@ -104,15 +150,15 @@ namespace CoreLib
         /// <param name="e"></param>
         private void btOK_Click(object sender, RoutedEventArgs e)
         {
-            int interval = Math.Max(1, mSrcFiles.Count / 100);      //  画面更新のタイミング
-            if (mIndex < mSrcFiles.Count) {
-                if (!fileSync(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
+            int interval = Math.Max(1, mSrcFileList.Count / 100);      //  画面更新のタイミング
+            if (mIndex < mSrcFileList.Count) {
+                if (!fileSync(mSrcFileList[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
                     return;
                 mIndex++;
                 pbCopyCount.Value++;
-                while (cbCheckedMessage.IsChecked == false && mIndex < mSrcFiles.Count) {
-                    setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
-                    if (!fileSync(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
+                while (cbCheckedMessage.IsChecked == false && mIndex < mSrcFileList.Count) {
+                    setFileInfo(mSrcFileList[mIndex], mSrcFolder, mDestFolder);
+                    if (!fileSync(mSrcFileList[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2))
                         return;
                     mIndex++;
                     pbCopyCount.Value++;
@@ -122,8 +168,8 @@ namespace CoreLib
                         ylib.DoEvents();
                 }
             }
-            if (mIndex < mSrcFiles.Count)
-                setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
+            if (mIndex < mSrcFileList.Count)
+                setFileInfo(mSrcFileList[mIndex], mSrcFolder, mDestFolder);
             else {
                 if (mCallBackOn)
                     callback();
@@ -153,9 +199,20 @@ namespace CoreLib
                 if (mDelete)
                     removeFile(destPath);
             } else {
-                if (!fileCopy(mSrcFiles[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
-                    MessageBox.Show($"例外エラー {mErrorMessage}");
-                    return false;
+                if (!Directory.Exists(Path.GetDirectoryName(destPath))) {
+                    if (mFolderMessage) {
+                        (MessageBoxResult result, bool cont) = ylib.messageBoxEx(this,
+                            $"{Path.GetDirectoryName(destPath)} フォルダを作成しますか?",
+                            Path.GetFileName(srcPath), "確認", MessageBoxButton.OKCancel, true);
+                        mFolderCreate = result == MessageBoxResult.OK;
+                        mFolderMessage = cont;
+                    }
+                }
+                if (mFolderCreate) {
+                    if (!fileCopy(mSrcFileList[mIndex], mSrcFolder, mDestFolder, cbOverWrite.IsChecked == false ? 0 : 2)) {
+                        MessageBox.Show($"例外エラー {mErrorMessage}");
+                        return false;
+                    }
                 }
             }
             return true;
@@ -170,8 +227,8 @@ namespace CoreLib
         {
             mIndex++;
             pbCopyCount.Value++;
-            if (mIndex < mSrcFiles.Count)
-                setFileInfo(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
+            if (mIndex < mSrcFileList.Count)
+                setFileInfo(mSrcFileList[mIndex], mSrcFolder, mDestFolder);
             else {
                 if (mCallBackOn)
                     callback();
@@ -198,7 +255,7 @@ namespace CoreLib
         /// <param name="e"></param>
         private void btCompare_Click(object sender, RoutedEventArgs e)
         {
-            fileCompre(mSrcFiles[mIndex], mSrcFolder, mDestFolder);
+            fileCompre(mSrcFileList[mIndex], mSrcFolder, mDestFolder);
         }
 
         /// <summary>
@@ -206,17 +263,42 @@ namespace CoreLib
         /// </summary>
         /// <param name="srcFiles">コピー元リスト</param>
         /// <returns>ファイルリスト</returns>
-        private List<string> addFolderFiles(List<string> srcFiles)
+        private List<string> getFiles(List<string> srcFiles)
         {
-            List<string> copyFiles = new List<string>();
+            List<string> fileList = new List<string>();
             foreach (string path in srcFiles) {
                 if (Directory.Exists(path)) {
-                    copyFiles.AddRange(yfile.getFiles(Path.Combine(path, "*.*"), true).ToList());
+                    fileList.AddRange(getFiles(path));
                 } else {
-                    copyFiles.Add(path);
+                    fileList.Add(path);
                 }
             }
-            return copyFiles;
+            return fileList;
+        }
+
+        /// <summary>
+        /// ファイルの検索
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private List<string> getFiles(string path)
+        {
+            List<string> filesList = new List<string>();
+            if (Directory.Exists(path)) {
+                string[] files = Directory.GetFiles(path);
+                foreach (string file in files) {
+                    if (isMatchFile(Path.GetFileName(file)))
+                        filesList.Add(file);
+                }
+                string[] directories = Directory.GetDirectories(path);
+                foreach (string directory in directories) {
+                    if (isMatchDirectory(Path.GetFileName(directory)))
+                        filesList.AddRange(getFiles(directory));
+                }
+            } else if (File.Exists(path)) {
+                filesList.Add(path);
+            }
+            return filesList;
         }
 
         /// <summary>
@@ -317,7 +399,7 @@ namespace CoreLib
                 tbDestSize.Text = "---";
             }
 
-            tbProgress.Text = $"[ {mIndex} / {mSrcFiles.Count} ]";
+            tbProgress.Text = $"[ {mIndex} / {mSrcFileList.Count} ]";
 
             //  比較ボタン表示
             if (mFileDiffTool != "") {
@@ -358,6 +440,43 @@ namespace CoreLib
             } else
                 srcName = srcPath.Replace(srcFolder, "").Trim('\\');
             return (srcName, srcFolder);
+        }
+
+
+        /// <summary>
+        /// 対象ファイルか除外ファイルのチェック
+        /// </summary>
+        /// <param name="fileName">ファイル名</param>
+        /// <returns>可否</returns>
+        private bool isMatchFile(string fileName)
+        {
+            if (mDeleteFileName.Count != 0) {
+                foreach (string deleteFile in mDeleteFileName)
+                    if (ylib.wcMatch(fileName, deleteFile))
+                        return true;
+                return false;
+            }
+            if (mExceptFileName.Count != 0) {
+                foreach (string exceptFile in mExceptFileName)
+                    if (ylib.wcMatch(fileName, exceptFile))
+                        return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 対象フォルダかのチェック(除外フォルダに該当する)
+        /// </summary>
+        /// <param name="directoryName">ディレクトリ名</param>
+        /// <returns>可否</returns>
+        private bool isMatchDirectory(string directoryName)
+        {
+            if (mExceptDirectory.Count != 0) {
+                foreach (string exceptDirectory in mExceptDirectory)
+                    if (ylib.wcMatch(directoryName, exceptDirectory))
+                        return false;
+            }
+            return true;
         }
     }
 }

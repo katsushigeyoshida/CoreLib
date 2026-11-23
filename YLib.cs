@@ -661,7 +661,7 @@ namespace CoreLib
             } catch {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                     //Windowsのとき  
-                    url = url.Replace("&", "^&");
+                    //url = url.Replace("&", "^&");
                     Process.Start(new ProcessStartInfo("cmd", $"/c start　\"\" \"{url}\"") { CreateNoWindow = true });
                 } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                     //Linuxのとき  
@@ -672,6 +672,27 @@ namespace CoreLib
                 } else {
                     throw;
                 }
+            }
+        }
+
+        /// <summary>
+        /// GoogleMapを座標指定で開く
+        /// </summary>
+        /// <param name="latitude">緯度(degree)</param>
+        /// <param name="longitude">経度(degree)</param>
+        public void openGoogleMap(double latitude, double longitude)
+        {
+            if (latitude < -90 || 90 < latitude ||
+                longitude < -180 || 180 < longitude)
+                return;
+            // Google Maps の座標指定 URL
+            string url = $"https://www.google.com/maps?q={latitude},{longitude}";
+            try {
+                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true }); //  必須: デフォルトブラウザで開くため
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"openGoogleMap {e.Message}");
+                mErrorMessage = $"openGoogleMap {e.Message}";
+                mError = true;
             }
         }
 
@@ -3135,8 +3156,13 @@ namespace CoreLib
         {
             if (!File.Exists(path))
                 return null;
-            MemoryStream data = new MemoryStream(File.ReadAllBytes(path));
-            return new System.Drawing.Bitmap(data);
+            try {
+                MemoryStream data = new MemoryStream(File.ReadAllBytes(path));
+                return new System.Drawing.Bitmap(data);
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"getBitmap{e.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -3149,13 +3175,17 @@ namespace CoreLib
         {
             if (!File.Exists(path))
                 return null;
-
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                using (var drawingImage = System.Drawing.Image.FromStream(fs, false, false)) {
-                    BitmapImage bmpImage = cnvBitmap2BitmapImage((System.Drawing.Bitmap)drawingImage, System.Drawing.Imaging.ImageFormat.Jpeg);
-                    drawingImage.Dispose();
-                    return bmpImage;
+            try {
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                    using (var drawingImage = System.Drawing.Image.FromStream(fs, false, false)) {
+                        BitmapImage bmpImage = cnvBitmap2BitmapImage((System.Drawing.Bitmap)drawingImage, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        drawingImage.Dispose();
+                        return bmpImage;
+                    }
                 }
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"getBitmapImage{e.Message}");
+                return null;
             }
         }
 

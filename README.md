@@ -8,6 +8,7 @@ ArcD      : 円弧の幾何計算用
 EllipseD  : 楕円の幾何計算用  
 PolygonD  : ポリゴンの幾何計算用  
 PolylineD : ポリラインの幾何計算用  
+Spline    : スプライン曲線  
 TextD.cs  : 文字列の幾何計算用  
 PartsD    : シンボルの幾何計算用  
 Box       : Rectの代替え幾何ライブラリ  
@@ -38,17 +39,24 @@ WikiData     : WikipediaのHTMLデータ抽出解析用
 WikiDataList : Wikipedia抽出データ管理用  
 
 ### 各種ダイヤログ  
-ChkListDialog : チェックリストダイヤログ  
-ColorDialog   : カラー選択ダイヤログ  
-FullView      : イメージ全画面表示ダイヤログ  
-InputBox      : 文字入力ダイヤログ   
-InputBox2     : 文字入力ダイヤログ(2段)  
-InputSelect   : メニュー選択、文字列入力ダイヤログ(ComboBox)  
-InputSelect2  : メニュー選択、文字列入力ダイヤログ(ComboBox+TextBox)  
-MenuDialog    : メニュー選択ダイヤログ(ListBox)  
-MessageBoxEx  : MessageBox拡張ダイヤログ  
-SelectMenu    : メニュー選択ダイヤログ(ComboBox)  
-SelectMenu2   : メニュー選択ダイヤログ(ComboBox+ListBox)  
+BinView          : バイナリビューワ  
+ChkListDialog    : チェックリストダイヤログ  
+ColorDialog      : カラー選択ダイヤログ  
+DiffFolder       : フォルダ比較ダイヤログ  
+FileCopyDialog   : ファイルコピーダイヤログ  
+FileDeleteDialog : ファイル削除ダイヤログ  
+FullView         : イメージ全画面表示ダイヤログ
+ImageView        : イメージ表示ダイヤログ  
+InputBox         : 文字入力ダイヤログ(エディタ兼用)   
+InputBox2        : 文字入力ダイヤログ(2段)  
+InputBoxMulti    : 複数行入力ダイヤログ  
+InputSelect      : メニュー選択、文字列入力ダイヤログ(ComboBox)  
+InputSelect2     : メニュー選択、文字列入力ダイヤログ(ComboBox+TextBox)  
+MenuDialog       : メニュー選択ダイヤログ(ListBox)  
+MessageBoxEx     : MessageBox拡張ダイヤログ  
+SelectMenu       : メニュー選択ダイヤログ(ComboBox)  
+SelectMenu2      : メニュー選択ダイヤログ(ComboBox+ListBox)  
+StatisticDlg     : 統計処理ダイヤログ(BinView補助)
 
 ### グラフィック表示機能  
 YDraw      : 2Dグラフィック  
@@ -59,7 +67,28 @@ Y3DDraw     : 3D表示
 Y3DGraphics : 3D表示  
 Y3DParts    : 3D部品表示  
 
-### その他 
+### スクリプト機能
+KScript    : スクリプト処理本体  
+KLexer     : 字句解析  
+KParse     : 構文解析  
+Variable   : 変数管理  
+ArrayName  : 配列名処理  
+ScriptLib  : 基本関数  
+Snippet    : スニペット処理  
+Util       : ユーティリティ  
+FuncArray  : 配列関数  
+FuncFile   : ファイル関数  
+FuncMath   : 数値関数  
+FuncMatrix : マトリックス関数  
+FuncString : 文字列関数  
+
+
+### その他
+DirectoryTree
+ExifInfo
+GpxReader
+HashCode
+
 YCalc : 数式処理  
 YFile : ファイル関連処理  
 YLib  : 種々雑多な関数  
@@ -67,6 +96,7 @@ YLib  : 種々雑多な関数
 <BR>
 
 ### 履歴  
+2026/11/14 ImageViewでGoogleMapを緯度経度指定での呼び出し追加  
 2026/10/18 YLibからYMathを分離、InputBox,DiffFolderのダイヤログの機能拡張  
 2026/10/12 YLibからYfileを分離、圧縮ファイル関数を追加  
 2026/06/11 YLibに統計関数の追加,YCalcにRandom関数追加  
