@@ -416,14 +416,16 @@ namespace CoreLib
             int n = mImageList.IndexOf(mImagePath);
             if (0 <= (n + next) && n < mImageList.Count - next) {
                 mImagePath = mImageList[n + next];
-                ImImage.Source = ylib.getBitmapImage(mImagePath);
-                FileInfo fi = new FileInfo(mImagePath);
-                Title = $"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N0")} byte]";
-                //  写真の向き設定
-                int orientation = setPhotoInfo(mImagePath);
-                resetImage();
-                if (mOrientationAngle[orientation] != 0)
-                    rotateImage(mOrientationAngle[orientation]);
+                if (File.Exists(mImagePath)) {
+                    ImImage.Source = ylib.getBitmapImage(mImagePath);
+                    FileInfo fi = new FileInfo(mImagePath);
+                    Title = $"画像データ [ {fi.FullName} ][{fi.LastWriteTime.ToString()}][{fi.Length.ToString("N0")} byte]";
+                    //  写真の向き設定
+                    int orientation = setPhotoInfo(mImagePath);
+                    resetImage();
+                    if (mOrientationAngle[orientation] != 0)
+                        rotateImage(mOrientationAngle[orientation]);
+                }
             }
         }
 

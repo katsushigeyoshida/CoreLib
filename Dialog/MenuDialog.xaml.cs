@@ -34,8 +34,8 @@ namespace CoreLib
         {
             lbMenuList.ItemsSource = mMenuList;
             double menuHeight = (mMenuList.Count + 1) * 24 + 25;
-            Height = Math.Min(menuHeight, 300);
-            Height = Math.Max(menuHeight, 100);
+            Height = Math.Min(menuHeight, SystemParameters.PrimaryScreenHeight * 0.7);
+            Height = Math.Max(Height, 100);
 
             if (mMainWindow != null) {
                 //  親ウィンドウに対しての表示位置

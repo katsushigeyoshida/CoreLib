@@ -282,7 +282,7 @@ namespace CoreLib
         }
 
         /// <summary>
-        /// [+][-] 文字サイズズームボタン
+        /// [+][-] 文字サイズズーム/計算/前のファイル/次のファイル/ボタン
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
