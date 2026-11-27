@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Documents;
 
 namespace CoreLib
 {
@@ -20,10 +22,26 @@ namespace CoreLib
 
         public string mEditText1 = "";
         public string mEditText2 = "";
-        public string mTitle1 = "";
-        public string mTitle2 = "";
-        public bool mMultiLine = false;                         //  複数行入力可否
-        public bool mEditText2Enabled = true;
+        public string mTitle1 = "";                             //  第１カラムタイトル
+        public string mTitle2 = "";                             //  第２カラムタイトル
+        public bool mMultiLine = false;                         //  第２カラム複数行入力可否
+        public bool mEditText1Enabled = true;                   //  第1カラム変更可否
+        public bool mEditText2Enabled = true;                   //  第2カラム変更可否
+
+        public enum ColumnType { TEXT, FILE, FOLDER }           //  カラムの種別
+        public ColumnType mColumnType1 = ColumnType.TEXT;
+        public ColumnType mColumnType2 = ColumnType.TEXT;
+        public List<string[]> mFilter1 = new List<string[]>() {
+                    new string[] { "プログラムファイル", "*.exe"},
+                    new string[] { "すべてのファイル", "*.*"}
+                };
+        public List<string[]> mFilter2 = new List<string[]>() {
+                    new string[] { "プログラムファイル", "*.exe"},
+                    new string[] { "すべてのファイル", "*.*"}
+                };
+
+
+        private YFile yfile = new YFile();
 
         public InputBox2()
         {
@@ -39,6 +57,7 @@ namespace CoreLib
             LbTitle2.Content = mTitle2;
             TbTextBox1.Text = mEditText1;
             TbTextBox2.Text = mEditText2;
+            TbTextBox1.IsEnabled = mEditText1Enabled;
             TbTextBox2.IsEnabled = mEditText2Enabled;
 
             if (mMultiLine) {
@@ -100,6 +119,33 @@ namespace CoreLib
         {
             DialogResult = false;
             Close();
+        }
+
+        private void TbTextBox1_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (mColumnType1 == ColumnType.FILE) {
+                string file = yfile.fileOpenSelectDlg("ファイル選択", "", mFilter1);
+                if (0 < file.Length)
+                    TbTextBox1.Text = file;
+            } else if (mColumnType1 == ColumnType.FOLDER) {
+                string folder = yfile.folderSelect("フォルダの選択", "");
+                if (0 < folder.Length)
+                    TbTextBox1.Text = folder;
+            }
+
+        }
+
+        private void TbTextBox2_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (mColumnType2 == ColumnType.FILE) {
+                string file = yfile.fileOpenSelectDlg("ファイル選択", "", mFilter2);
+                if (0 < file.Length)
+                    TbTextBox2.Text = file;
+            } else if (mColumnType2 == ColumnType.FOLDER) {
+                string folder = yfile.folderSelect("フォルダの選択", "");
+                if (0 < folder.Length)
+                    TbTextBox2.Text = folder;
+            }
         }
     }
 }

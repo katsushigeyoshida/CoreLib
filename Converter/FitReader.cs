@@ -93,13 +93,15 @@ namespace CoreLib
 
         public int size;            //  このデータのサイズ(データには含まれない)
 
+        private YLib ylib = new YLib();
+
         public FileHeader(byte[] data)
         {
             HeaderSize = (int)data[0];
             ProtcolVersion = (int)data[1];
             ProfileVersion = BitConverter.ToInt16(data, 2);
             DataSize = BitConverter.ToInt32(data, 4);
-            DataType = YLib.binary2AsciiString(data, 8, 4);
+            DataType = ylib.binary2AsciiString(data, 8, 4);
             if (14 <= HeaderSize)
                 CRC = BitConverter.ToInt16(data, 12);
             size = HeaderSize;

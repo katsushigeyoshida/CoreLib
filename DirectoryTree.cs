@@ -14,6 +14,8 @@ namespace CoreLib
         public DirectoryInfo mDirectory { get; set; }       //  ディレクトリ情報
         public bool mIsAdd { get; set; }                    //  取得済み
         public TreeViewItem dummy;                          //  子のディレトリ情報
+        public FileAttributes mTargetAttr = FileAttributes.None;    //  対象属性
+        public FileAttributes mExceptAttr = FileAttributes.Hidden | FileAttributes.System;  //  除外属性
 
         private YLib ylib = new();
         private YFile yfile = new YFile();
@@ -24,8 +26,9 @@ namespace CoreLib
         /// </summary>
         /// <param name="path">フルパス</param>
         /// <param name="iconPath">アイコンのパス</param>
-        public DirectoryTree(string path = null, string iconPath = "", string label = "")
+        public DirectoryTree(string path = null, FileAttributes exceptAtr = FileAttributes.Hidden | FileAttributes.System, string iconPath = "", string label = "")
         {
+            mExceptAttr = exceptAtr;
             if (path == null || path.Length == 0) {
                 mDirectory = null;
                 label = label == "" ? "PC" : $"PC [{label}]";
@@ -84,7 +87,7 @@ namespace CoreLib
                 if (driveInfo.IsReady) {
                     label = $" [{driveInfo.VolumeLabel}]";
                 }
-                Items.Add(new DirectoryTree(driveInfo.Name, "..\\Icon\\HardDisk.ico", label));
+                Items.Add(new DirectoryTree(driveInfo.Name, mExceptAttr, "..\\Icon\\HardDisk.ico", label));
             }
             mIsAdd = true;
         }
@@ -97,8 +100,8 @@ namespace CoreLib
             Items.Remove(dummy);
             List<DirectoryInfo> directories = yfile.getDirectoriesInfo(mDirectory.FullName);
             foreach (DirectoryInfo directory in directories) {
-                if ((directory.Attributes & (FileAttributes.Hidden | FileAttributes.System)) == 0)
-                    Items.Add(new DirectoryTree(directory.FullName, "..\\Icon\\FolderClose.ico"));
+                if ((directory.Attributes & mExceptAttr) == 0)
+                    Items.Add(new DirectoryTree(directory.FullName, mExceptAttr, "..\\Icon\\FolderClose.ico"));
             }
             mIsAdd = true;
         }
@@ -116,7 +119,7 @@ namespace CoreLib
                         if (indexOfItemName(drive.FullName) < 0) {
                             removeItemsAll();
                             foreach (DirectoryInfo dr in drives)
-                                Items.Add(new DirectoryTree(dr.FullName, "Icon\\HardDisk.ico"));
+                                Items.Add(new DirectoryTree(dr.FullName, mExceptAttr, "Icon\\HardDisk.ico"));
                             return;
                         }
                     }
@@ -157,10 +160,10 @@ namespace CoreLib
             }
             //  増えたディレクトリの追加
             foreach (var di in directories) {
-                if ((di.Attributes & (FileAttributes.Hidden | FileAttributes.System)) == 0) {
+                if ((di.Attributes & mExceptAttr) == 0) {
                     if (indexOfItemName(di.Name) < 0) {
                         System.Diagnostics.Debug.WriteLine($"not exist: [{di.Name}]");
-                        Items.Add(new DirectoryTree(di.FullName, "Icon\\FolderClose.ico"));
+                        Items.Add(new DirectoryTree(di.FullName, mExceptAttr, "Icon\\FolderClose.ico"));
                     }
                 }
             }
