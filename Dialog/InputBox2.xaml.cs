@@ -20,11 +20,11 @@ namespace CoreLib
         private double mWindowWidth;                            //  ウィンドウの高さ
         private double mWindowHeight;                           //  ウィンドウ幅
 
-        public string mEditText1 = "";
-        public string mEditText2 = "";
-        public string mTitle1 = "";                             //  第１カラムタイトル
-        public string mTitle2 = "";                             //  第２カラムタイトル
-        public bool mMultiLine = false;                         //  第２カラム複数行入力可否
+        public string mEditText1 = "";                          //  第1カラム
+        public string mEditText2 = "";                          //  第2カラム
+        public string mTitle1 = "";                             //  第1カラムタイトル
+        public string mTitle2 = "";                             //  第2カラムタイトル
+        public bool mMultiLine = false;                         //  第1カラム複数行入力可否
         public bool mEditText1Enabled = true;                   //  第1カラム変更可否
         public bool mEditText2Enabled = true;                   //  第2カラム変更可否
 
@@ -43,6 +43,9 @@ namespace CoreLib
 
         private YFile yfile = new YFile();
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
         public InputBox2()
         {
             InitializeComponent();
@@ -51,6 +54,11 @@ namespace CoreLib
             mWindowHeight = Height;
         }
 
+        /// <summary>
+        /// 表示前処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             LbTitle1.Content = mTitle1;
@@ -68,7 +76,12 @@ namespace CoreLib
                 WindowFormLoad();
             }
         }
-
+        
+        /// <summary>
+        /// 終了処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             WindowFormSave();
@@ -107,6 +120,11 @@ namespace CoreLib
             Properties.Settings.Default.Save();
         }
 
+        /// <summary>
+        /// [OK}ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void OK_Click(object sender, RoutedEventArgs e)
         {
             mEditText1 = TbTextBox1.Text;
@@ -115,12 +133,22 @@ namespace CoreLib
             Close();
         }
 
+        /// <summary>
+        /// [キャンセル]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
             Close();
         }
 
+        /// <summary>
+        /// 第1カラムのマウスダブルクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TbTextBox1_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (mColumnType1 == ColumnType.FILE) {
@@ -135,6 +163,11 @@ namespace CoreLib
 
         }
 
+        /// <summary>
+        /// 第2カラムのマウスダブルクリック
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TbTextBox2_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (mColumnType2 == ColumnType.FILE) {
